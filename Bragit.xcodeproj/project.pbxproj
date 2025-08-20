@@ -1,0 +1,750 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E70E4F652E55D95D00CE935E /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F642E55D95D00CE935E /* Then */; };
+		E70E4F682E55D96B00CE935E /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F672E55D96B00CE935E /* SnapKit */; };
+		E70E4F6B2E55D99E00CE935E /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F6A2E55D99E00CE935E /* Auth */; };
+		E70E4F6D2E55D99E00CE935E /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F6C2E55D99E00CE935E /* Storage */; };
+		E70E4F6F2E55D99E00CE935E /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F6E2E55D99E00CE935E /* Supabase */; };
+		E70E4F722E55D9CC00CE935E /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F712E55D9CC00CE935E /* RxCocoa */; };
+		E70E4F742E55D9CC00CE935E /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F732E55D9CC00CE935E /* RxRelay */; };
+		E70E4F762E55D9CC00CE935E /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F752E55D9CC00CE935E /* RxSwift */; };
+		E70E4F792E55D9E400CE935E /* ReactorKit in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F782E55D9E400CE935E /* ReactorKit */; };
+		E70E4F7C2E55DA1100CE935E /* Down in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F7B2E55DA1100CE935E /* Down */; };
+		E70E4F7F2E55DA4600CE935E /* RxFlow in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F7E2E55DA4600CE935E /* RxFlow */; };
+		E70E4F822E55DA8A00CE935E /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F812E55DA8A00CE935E /* Kingfisher */; };
+		E70E4F852E55DAC700CE935E /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F842E55DAC700CE935E /* Dependencies */; };
+		E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F872E55DAEE00CE935E /* LookinServer */; };
+		E70E4F8B2E55DB0A00CE935E /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F8A2E55DB0A00CE935E /* SwiftSoup */; };
+		E7A7368B2E55DCD100E0B9F1 /* Moya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368A2E55DCD100E0B9F1 /* Moya */; };
+		E7A7368D2E55DCD100E0B9F1 /* RxMoya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368C2E55DCD100E0B9F1 /* RxMoya */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E70E4E9F2E55D60E00CE935E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E70E4E802E55D60D00CE935E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E70E4E872E55D60D00CE935E;
+			remoteInfo = Bragit;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		E70E4E882E55D60D00CE935E /* Bragit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bragit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E70E4E9E2E55D60E00CE935E /* BragitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BragitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E70E4EB02E55D60E00CE935E /* Exceptions for "Bragit" folder in "Bragit" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/Info.plist,
+			);
+			target = E70E4E872E55D60D00CE935E /* Bragit */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		E70E4E8A2E55D60D00CE935E /* Bragit */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E70E4EB02E55D60E00CE935E /* Exceptions for "Bragit" folder in "Bragit" target */,
+			);
+			path = Bragit;
+			sourceTree = "<group>";
+		};
+		E70E4EA12E55D60E00CE935E /* BragitTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BragitTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E70E4E852E55D60D00CE935E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E70E4F822E55DA8A00CE935E /* Kingfisher in Frameworks */,
+				E70E4F7F2E55DA4600CE935E /* RxFlow in Frameworks */,
+				E70E4F722E55D9CC00CE935E /* RxCocoa in Frameworks */,
+				E70E4F6F2E55D99E00CE935E /* Supabase in Frameworks */,
+				E70E4F7C2E55DA1100CE935E /* Down in Frameworks */,
+				E70E4F742E55D9CC00CE935E /* RxRelay in Frameworks */,
+				E70E4F6D2E55D99E00CE935E /* Storage in Frameworks */,
+				E70E4F792E55D9E400CE935E /* ReactorKit in Frameworks */,
+				E70E4F652E55D95D00CE935E /* Then in Frameworks */,
+				E70E4F682E55D96B00CE935E /* SnapKit in Frameworks */,
+				E7A7368B2E55DCD100E0B9F1 /* Moya in Frameworks */,
+				E70E4F852E55DAC700CE935E /* Dependencies in Frameworks */,
+				E7A7368D2E55DCD100E0B9F1 /* RxMoya in Frameworks */,
+				E70E4F762E55D9CC00CE935E /* RxSwift in Frameworks */,
+				E70E4F6B2E55D99E00CE935E /* Auth in Frameworks */,
+				E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */,
+				E70E4F8B2E55DB0A00CE935E /* SwiftSoup in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E70E4E9B2E55D60E00CE935E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E70E4E7F2E55D60D00CE935E = {
+			isa = PBXGroup;
+			children = (
+				E70E4E8A2E55D60D00CE935E /* Bragit */,
+				E70E4EA12E55D60E00CE935E /* BragitTests */,
+				E70E4E892E55D60D00CE935E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E70E4E892E55D60D00CE935E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E70E4E882E55D60D00CE935E /* Bragit.app */,
+				E70E4E9E2E55D60E00CE935E /* BragitTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E70E4E872E55D60D00CE935E /* Bragit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E70E4EB12E55D60E00CE935E /* Build configuration list for PBXNativeTarget "Bragit" */;
+			buildPhases = (
+				E70E4E842E55D60D00CE935E /* Sources */,
+				E70E4E852E55D60D00CE935E /* Frameworks */,
+				E70E4E862E55D60D00CE935E /* Resources */,
+				E7A7368E2E55DE7200E0B9F1 /* SwiftLint */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E70E4E8A2E55D60D00CE935E /* Bragit */,
+			);
+			name = Bragit;
+			packageProductDependencies = (
+				E70E4F642E55D95D00CE935E /* Then */,
+				E70E4F672E55D96B00CE935E /* SnapKit */,
+				E70E4F6A2E55D99E00CE935E /* Auth */,
+				E70E4F6C2E55D99E00CE935E /* Storage */,
+				E70E4F6E2E55D99E00CE935E /* Supabase */,
+				E70E4F712E55D9CC00CE935E /* RxCocoa */,
+				E70E4F732E55D9CC00CE935E /* RxRelay */,
+				E70E4F752E55D9CC00CE935E /* RxSwift */,
+				E70E4F782E55D9E400CE935E /* ReactorKit */,
+				E70E4F7B2E55DA1100CE935E /* Down */,
+				E70E4F7E2E55DA4600CE935E /* RxFlow */,
+				E70E4F812E55DA8A00CE935E /* Kingfisher */,
+				E70E4F842E55DAC700CE935E /* Dependencies */,
+				E70E4F872E55DAEE00CE935E /* LookinServer */,
+				E70E4F8A2E55DB0A00CE935E /* SwiftSoup */,
+				E7A7368A2E55DCD100E0B9F1 /* Moya */,
+				E7A7368C2E55DCD100E0B9F1 /* RxMoya */,
+			);
+			productName = Bragit;
+			productReference = E70E4E882E55D60D00CE935E /* Bragit.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E70E4E9D2E55D60E00CE935E /* BragitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E70E4EB62E55D60E00CE935E /* Build configuration list for PBXNativeTarget "BragitTests" */;
+			buildPhases = (
+				E70E4E9A2E55D60E00CE935E /* Sources */,
+				E70E4E9B2E55D60E00CE935E /* Frameworks */,
+				E70E4E9C2E55D60E00CE935E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E70E4EA02E55D60E00CE935E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E70E4EA12E55D60E00CE935E /* BragitTests */,
+			);
+			name = BragitTests;
+			packageProductDependencies = (
+			);
+			productName = BragitTests;
+			productReference = E70E4E9E2E55D60E00CE935E /* BragitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E70E4E802E55D60D00CE935E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					E70E4E872E55D60D00CE935E = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					E70E4E9D2E55D60E00CE935E = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = E70E4E872E55D60D00CE935E;
+					};
+				};
+			};
+			buildConfigurationList = E70E4E832E55D60D00CE935E /* Build configuration list for PBXProject "Bragit" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E70E4E7F2E55D60D00CE935E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E70E4F632E55D95D00CE935E /* XCRemoteSwiftPackageReference "Then" */,
+				E70E4F662E55D96B00CE935E /* XCRemoteSwiftPackageReference "SnapKit" */,
+				E70E4F692E55D99E00CE935E /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				E70E4F702E55D9CC00CE935E /* XCRemoteSwiftPackageReference "RxSwift" */,
+				E70E4F772E55D9E400CE935E /* XCRemoteSwiftPackageReference "ReactorKit" */,
+				E70E4F7A2E55DA1100CE935E /* XCRemoteSwiftPackageReference "Down" */,
+				E70E4F7D2E55DA4600CE935E /* XCRemoteSwiftPackageReference "RxFlow" */,
+				E70E4F802E55DA8A00CE935E /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				E70E4F832E55DAC700CE935E /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+				E70E4F862E55DAEE00CE935E /* XCRemoteSwiftPackageReference "LookinServer" */,
+				E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E70E4E892E55D60D00CE935E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E70E4E872E55D60D00CE935E /* Bragit */,
+				E70E4E9D2E55D60E00CE935E /* BragitTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E70E4E862E55D60D00CE935E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E70E4E9C2E55D60E00CE935E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E7A7368E2E55DE7200E0B9F1 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ -x /opt/homebrew/bin/swiftlint ]; then\n  /opt/homebrew/bin/swiftlint\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E70E4E842E55D60D00CE935E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E70E4E9A2E55D60E00CE935E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E70E4EA02E55D60E00CE935E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E70E4E872E55D60D00CE935E /* Bragit */;
+			targetProxy = E70E4E9F2E55D60E00CE935E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		E70E4EB22E55D60E00CE935E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Bragit/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Bragit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Bragit.Bragit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		E70E4EB32E55D60E00CE935E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Bragit/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Bragit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Bragit.Bragit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		E70E4EB42E55D60E00CE935E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E70E4EB52E55D60E00CE935E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		E70E4EB72E55D60E00CE935E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Bragit.BragitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bragit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Bragit";
+			};
+			name = Debug;
+		};
+		E70E4EB82E55D60E00CE935E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Bragit.BragitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bragit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Bragit";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E70E4E832E55D60D00CE935E /* Build configuration list for PBXProject "Bragit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E70E4EB42E55D60E00CE935E /* Debug */,
+				E70E4EB52E55D60E00CE935E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E70E4EB12E55D60E00CE935E /* Build configuration list for PBXNativeTarget "Bragit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E70E4EB22E55D60E00CE935E /* Debug */,
+				E70E4EB32E55D60E00CE935E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E70E4EB62E55D60E00CE935E /* Build configuration list for PBXNativeTarget "BragitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E70E4EB72E55D60E00CE935E /* Debug */,
+				E70E4EB82E55D60E00CE935E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E70E4F632E55D95D00CE935E /* XCRemoteSwiftPackageReference "Then" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/devxoul/Then.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
+		E70E4F662E55D96B00CE935E /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.1;
+			};
+		};
+		E70E4F692E55D99E00CE935E /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+		E70E4F702E55D9CC00CE935E /* XCRemoteSwiftPackageReference "RxSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ReactiveX/RxSwift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.9.0;
+			};
+		};
+		E70E4F772E55D9E400CE935E /* XCRemoteSwiftPackageReference "ReactorKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ReactorKit/ReactorKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.2.0;
+			};
+		};
+		E70E4F7A2E55DA1100CE935E /* XCRemoteSwiftPackageReference "Down" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/iwasrobbed/Down";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+		E70E4F7D2E55DA4600CE935E /* XCRemoteSwiftPackageReference "RxFlow" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxFlow";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.13.2;
+			};
+		};
+		E70E4F802E55DA8A00CE935E /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.5.0;
+			};
+		};
+		E70E4F832E55DAC700CE935E /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-dependencies?tab=readme-ov-file";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.4;
+			};
+		};
+		E70E4F862E55DAEE00CE935E /* XCRemoteSwiftPackageReference "LookinServer" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/QMUI/LookinServer/";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.8;
+			};
+		};
+		E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.3;
+			};
+		};
+		E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Moya/Moya";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 15.0.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E70E4F642E55D95D00CE935E /* Then */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F632E55D95D00CE935E /* XCRemoteSwiftPackageReference "Then" */;
+			productName = Then;
+		};
+		E70E4F672E55D96B00CE935E /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F662E55D96B00CE935E /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+		E70E4F6A2E55D99E00CE935E /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F692E55D99E00CE935E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		E70E4F6C2E55D99E00CE935E /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F692E55D99E00CE935E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		E70E4F6E2E55D99E00CE935E /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F692E55D99E00CE935E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		E70E4F712E55D9CC00CE935E /* RxCocoa */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F702E55D9CC00CE935E /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxCocoa;
+		};
+		E70E4F732E55D9CC00CE935E /* RxRelay */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F702E55D9CC00CE935E /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxRelay;
+		};
+		E70E4F752E55D9CC00CE935E /* RxSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F702E55D9CC00CE935E /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxSwift;
+		};
+		E70E4F782E55D9E400CE935E /* ReactorKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F772E55D9E400CE935E /* XCRemoteSwiftPackageReference "ReactorKit" */;
+			productName = ReactorKit;
+		};
+		E70E4F7B2E55DA1100CE935E /* Down */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F7A2E55DA1100CE935E /* XCRemoteSwiftPackageReference "Down" */;
+			productName = Down;
+		};
+		E70E4F7E2E55DA4600CE935E /* RxFlow */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F7D2E55DA4600CE935E /* XCRemoteSwiftPackageReference "RxFlow" */;
+			productName = RxFlow;
+		};
+		E70E4F812E55DA8A00CE935E /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F802E55DA8A00CE935E /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		E70E4F842E55DAC700CE935E /* Dependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F832E55DAC700CE935E /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			productName = Dependencies;
+		};
+		E70E4F872E55DAEE00CE935E /* LookinServer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F862E55DAEE00CE935E /* XCRemoteSwiftPackageReference "LookinServer" */;
+			productName = LookinServer;
+		};
+		E70E4F8A2E55DB0A00CE935E /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+		E7A7368A2E55DCD100E0B9F1 /* Moya */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */;
+			productName = Moya;
+		};
+		E7A7368C2E55DCD100E0B9F1 /* RxMoya */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */;
+			productName = RxMoya;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E70E4E802E55D60D00CE935E /* Project object */;
+}

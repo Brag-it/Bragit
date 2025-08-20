@@ -1,0 +1,68 @@
+# SwiftLint가 검사할 소스 디렉토리 설정
+included:
+  - Bragit/App
+  - Bragit/Presentation
+  - Bragit/Model
+  - Bragit/Managers
+  
+# 검사에서 제외할 디렉토리 (외부 의존성, 설정 등)
+excluded:
+  - Pods                    # CocoaPods 의존성 제외
+  - Carthage                # Carthage 의존성 제외
+  - .git                    # Git 내부 디렉토리 제외
+  - .github                 # GitHub 설정 디렉토리 제외
+  - fastlane                # Fastlane 배포 설정 제외
+  - DerivedData             # Xcode 빌드 캐시 제외
+
+# 비활성화할 SwiftLint 기본 룰 목록 (팀 스타일 가이드 기준)
+disabled_rules:
+  - type_name                     # 타입 이름 길이 제한 해제 (의도적으로 긴 이름 허용)
+  - function_body_length          # 함수 길이 제한 해제 (상황에 따라 긴 함수 허용)
+  - file_length                   # 파일 전체 길이 제한 해제
+  - force_cast                    # as! 강제 캐스팅 허용 (주의해서 사용)
+  - force_try                     # try! 허용 (필요 시 명시적으로 사용)
+  - nesting                       # 중첩 제한 해제 (UI 코드 등에서 유연하게 사용)
+  - todo                          # TODO 주석 감지 안 함 (기획 중일 수 있음)
+  - comment_spacing               # 주석 앞 공백 스타일 무시
+  - inclusive_language            # 표현 제한 룰 비활성화 (팀에서 자유롭게 사용)
+  - redundant_string_enum_value   # enum 중복 rawValue 허용
+  - empty_enum_arguments          # 빈 enum 파라미터 허용
+  - let_var_whitespace            # let/var 선언 간 공백 규칙 비활성화
+
+# 기본 비활성화된 룰 중, 유용한 것만 선택적으로 활성화
+opt_in_rules:
+  - empty_count                   # count == 0 → isEmpty 사용 권장
+  - explicit_init                 # String("abc") 같이 명시적 init 감지
+  - fatal_error_message           # fatalError에 메시지가 없으면 경고
+  - first_where                   # filter.first → first(where:) 권장
+  - joined_default_parameter      # joined(separator: "") → joined()로 간결화
+  - private_action                # @IBAction은 private 권장 (외부 노출 방지)
+  - private_outlet                # @IBOutlet은 private 권장 (외부 노출 방지)
+  - vertical_whitespace           # 불필요한 빈 줄 감지
+  - yoda_condition                # if 1 == value 형태 금지 → value == 1 형태 권장
+  - trailing_closure              # 마지막 인자가 클로저일 경우 trailing closure 문법 사용 권장
+  - trailing_newline              # 파일 끝에 빈 줄이 없으면 경고 (POSIX 규칙)
+  - trailing_whitespace           # 줄 끝에 불필요한 공백 감지
+  - indentation_width
+
+# 한 줄의 최대 길이 설정
+line_length:
+  warning: 120                   # 120자 이상일 경우 경고
+  error: 120                     # 120자 이상일 경우 에러
+  ignores_comments: true         # 주석은 줄 길이에서 제외
+  ignores_urls: true             # URL은 줄 길이에서 제외
+
+# 너무 짧은 식별자(변수명 등) 방지
+identifier_name:
+  min_length:
+    warning: 3                   # 3자 미만일 경우 경고
+    error: 2                     # 2자 미만일 경우 에러
+  excluded:                      # 아래 예외 이름은 허용
+    - id                         # 일반적으로 자주 쓰임
+    - x                          # 좌표, 수학적 계산 등에 자주 사용
+    - y
+
+# 들여쓰기 스타일 설정
+indentation_width:
+  indentation_width: 2                # 들여쓰기 폭 2칸 (공식 Swift 스타일 기준)
+  include_comments: true              # 주석 들여쓰기 검사

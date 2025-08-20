@@ -1,0 +1,23 @@
+name: 🎨 Style
+description: UI, 파일명, 변수명 등 스타일 변경
+title: "🎨 Style: "
+labels: ["🎨 Style"]
+body:
+  - type: input
+    id: branch
+    attributes:
+      label: 📍 브랜치 이름
+      description: 작업할 브랜치 이름을 명확하게 작성해주세요 예) Style/#이슈번호-작업명
+      placeholder: 예) Style/#이슈번호-작업명
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: ✨ 정리한 스타일 내용
+      placeholder: 어떤 스타일을 수정 하나요?
+  - type: textarea
+    id: details
+    attributes:
+      label: ✏️ 상세 설명
+      description: 전반적인 정리 내용 등을 간단히 작성해주세요.

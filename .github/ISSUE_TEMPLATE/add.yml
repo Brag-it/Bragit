@@ -1,0 +1,23 @@
+name: 📦 Add
+description: 새로운 파일이나 패키지 추가할 때
+title: "📦 Add: "
+labels: ["📦 Add"]
+body:
+  - type: input
+    id: branch
+    attributes:
+      label: 📍 브랜치 이름
+      description: 작업할 브랜치 이름을 명확하게 작성해주세요 예) Add/#이슈번호-작업명
+      placeholder: 예) Add/#이슈번호-작업명
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: ✨ 간단 요약
+      placeholder: 어떤 파일/패키지를 추가하나요?
+  - type: textarea
+    id: details
+    attributes:
+      label: ✏️ 상세 설명
+      placeholder: 자세한 설명을 적어주세요

@@ -1,0 +1,23 @@
+name: 🗑️ Remove
+description: 불필요한 파일/코드 제거
+title: "🗑️ Remove: "
+labels: ["🗑️ Remove"]
+body:
+  - type: input
+    id: branch
+    attributes:
+      label: 📍 브랜치 이름
+      description: 작업할 브랜치 이름을 명확하게 작성해주세요 예) Remove/#이슈번호-작업명
+      placeholder: 예) Remove/#이슈번호-작업명
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: ✨ 삭제 내용 요약
+      placeholder: 어떤 코드를 삭제하나요?
+  - type: textarea
+    id: details
+    attributes:
+      label: ✏️ 상세 설명
+      description: 왜 삭제되었는지, 의존성이 있는 모듈이 있는지 등을 작성해주세요.

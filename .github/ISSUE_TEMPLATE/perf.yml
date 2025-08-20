@@ -1,0 +1,23 @@
+name: 🚀 Perf
+description: 성능 개선
+title: "🚀 Perf: "
+labels: ["🚀 Perf"]
+body:
+  - type: input
+    id: branch
+    attributes:
+      label: 📍 브랜치 이름
+      description: 작업할 브랜치 이름을 명확하게 작성해주세요 예) Perf/#이슈번호-작업명
+      placeholder: 예) Perf/#이슈번호-작업명
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: ✨ 성능 개선 요약
+      placeholder: 어떤 성능을 어떻게 개선하나요?
+  - type: textarea
+    id: details
+    attributes:
+      label: ✏️ 상세 설명
+      description: 병목 지점, 개선 방식, 성능 비교 결과 등이 있다면 작성해주세요.
