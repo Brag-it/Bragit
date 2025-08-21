@@ -80,7 +80,7 @@ extension SceneDelegate {
     let appearance = UITabBarAppearance()
     appearance.configureWithOpaqueBackground()
     appearance.backgroundColor = .systemBackground
-    appearance.shadowColor = .clear
+    appearance.shadowColor = .lightGray
 
     let fontAttributes: [NSAttributedString.Key: Any] = [
       .font: UIFont.pretendard(size: 12, weight: .medium)
