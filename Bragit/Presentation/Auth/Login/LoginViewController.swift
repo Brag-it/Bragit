@@ -1,0 +1,220 @@
+//
+//  LoginViewController.swift
+//  Bragit
+//
+//  Created by luca on 8/21/25.
+//
+
+import AuthenticationServices
+import CryptoKit
+import ReactorKit
+import RxCocoa
+import RxSwift
+import SnapKit
+import Then
+import UIKit
+
+final class LoginViewController: UIViewController, View {
+  var disposeBag = DisposeBag()
+  private var currentNonce: String?
+
+  // MARK: UI
+  let googleButton = UIButton(type: .system).then {
+    $0.layer.cornerRadius = 12
+    $0.setTitle("Google로 로그인􀀲", for: .normal)
+  }
+
+  let kakaoButton = UIButton(type: .system).then {
+    $0.layer.cornerRadius = 12
+    $0.setTitle("카카오로 로그인􀀲", for: .normal)
+  }
+
+  let appleButton = ASAuthorizationAppleIDButton(type: .signIn, style: .black).then {
+    $0.cornerRadius = 12
+  }
+
+  let mailButton = UIButton(type: .system).then {
+    $0.layer.cornerRadius = 12
+    $0.setTitle("이메일로 로그인􀀲", for: .normal)
+  }
+
+  let signUpButton = UIButton(type: .system).then {
+    $0.layer.cornerRadius = 12
+    $0.setTitle("회원 가입하기", for: .normal)
+  }
+
+  // MARK: viewDidLoad
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    // TODO: 테스트
+    //    title = "로그인"
+    view.backgroundColor = .systemBackground
+
+    if reactor == nil { reactor = LoginReactor() }
+
+    setupLayout()
+  }
+
+  // MARK: LAYOUT
+  private func setupLayout() {
+    view.backgroundColor = .systemBackground
+
+    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
+      $0.axis = .vertical
+      $0.spacing = 10
+      $0.alignment = .fill
+      $0.distribution = .fill
+    }
+
+    view.addSubview(stack)
+
+    [appleButton, googleButton, kakaoButton, mailButton].forEach {
+      $0.snp.makeConstraints {
+        $0.height.equalTo(48)
+      }
+    }
+
+    stack.snp.makeConstraints {
+      $0.bottom.equalTo(signUpButton.snp.top).offset(-32)
+      $0.leading.trailing.equalToSuperview().inset(20)
+    }
+
+    signUpButton.snp.makeConstraints {
+      $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+      $0.centerX.equalToSuperview()
+    }
+  }
+
+  // MARK: Reactor Binding
+  func bind(reactor: LoginReactor) {
+    appleButton.rx.controlEvent(.touchUpInside)
+      .subscribe { [weak self] _ in
+        self?.startAppleFlow()
+      }.disposed(by: disposeBag)
+
+    // state -> ui
+    reactor.state.map(\.isLoading)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .subscribe { [weak self] event in
+        if case .next(let loading) = event {
+          self?.view.isUserInteractionEnabled = !loading
+          self?.navigationItem.prompt = loading ? "로그인 중입니다." : nil
+        }
+      }.disposed(by: disposeBag)
+
+    //    reactor.state.compactMap(\.errorMessage)
+    //      .observe(on: MainScheduler.instance)
+    //      .subscribe { [weak self] event in
+    //        if case .next(let msg) = event {
+    //          let alertController = UIAlertController(
+    //            title: "오류",
+    //            message: msg,
+    //            preferredStyle: .alert
+    //          )
+    //          alertController.addAction(.init(title: "확인", style: .default))
+    //          self?.present(alertController, animated: true)
+    //        }
+    //      }.disposed(by: disposeBag)
+
+    reactor.state.compactMap(\.errorMessage)
+      .observe(on: MainScheduler.instance)
+      .subscribe(onNext: { [weak self] msg in self?.alert(msg) })
+      .disposed(by: disposeBag)
+
+    reactor.state.compactMap(\.route)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .subscribe { [weak self] event in
+        if case .next(let route) = event {
+          switch route {
+          case .signInIsComplete:
+            let viewController = UIViewController()
+            viewController.title = "메인"
+            self?.navigationController?.setViewControllers([viewController], animated: true)
+          }
+        }
+      }.disposed(by: disposeBag)
+  }
+}
+
+// MARK: Apple UI
+extension LoginViewController:
+  ASAuthorizationControllerDelegate,
+  ASAuthorizationControllerPresentationContextProviding
+{
+
+  private func startAppleFlow() {
+    let nonce = randomNonce()
+    currentNonce = nonce
+
+    let request = ASAuthorizationAppleIDProvider().createRequest()
+    request.requestedScopes = [.fullName, .email]
+    request.nonce = sha256(nonce)
+
+    let controller = ASAuthorizationController(authorizationRequests: [request])
+    controller.delegate = self
+    controller.presentationContextProvider = self
+    controller.performRequests()
+  }
+  
+  func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+    view.window ?? ASPresentationAnchor()
+  }
+
+  func authorizationController(
+    controller: ASAuthorizationController,
+    didCompleteWithAuthorization authorization: ASAuthorization
+  ) {
+    guard
+      let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+      let tokenData = credential.identityToken,
+      let idToken = String(data: tokenData, encoding: .utf8),
+      let nonce = currentNonce,
+      let reactor
+    else {
+      alert("Apple 자격이 유효하지 않습니다.")
+      return
+    }
+    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce))
+  }
+
+  func authorizationController(
+    controller: ASAuthorizationController,
+    didCompleteWithError error: Error
+  ) {
+    alert("Apple 로그인 실패: \(error.localizedDescription)")
+  }
+}
+
+private extension LoginViewController {
+  func randomNonce(length: Int = 32) -> String {
+    precondition(length > 0)
+    let charSet: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+    var result = ""
+    var remaining = length
+
+    while remaining > 0 {
+      var random: UInt8 = 0
+      let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+      if status != errSecSuccess { fatalError("Unable to generate nonce.") }
+      if random < charSet.count {
+        result.append(charSet[Int(random % UInt8(charSet.count))])
+        remaining -= 1
+      }
+    }
+    return result
+  }
+
+  func sha256(_ input: String) -> String {
+    let inputData = Data(input.utf8)
+    let hashed = SHA256.hash(data: inputData)
+    return hashed.compactMap { String(format: "%02x", $0) }.joined()
+  }
+
+  func alert(_ message: String) {
+    let alertController = UIAlertController(title: "Notice", message: message, preferredStyle: .alert)
+    alertController.addAction(.init(title: "OK", style: .default))
+    present(alertController, animated: true)
+  }
+}

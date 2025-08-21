@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8179DD262E55EF4000F55FDB /* dsa.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8179DD252E55EF3C00F55FDB /* dsa.swift */; };
 		E70E4F652E55D95D00CE935E /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F642E55D95D00CE935E /* Then */; };
 		E70E4F682E55D96B00CE935E /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F672E55D96B00CE935E /* SnapKit */; };
 		E70E4F6B2E55D99E00CE935E /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F6A2E55D99E00CE935E /* Auth */; };
@@ -37,6 +38,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		8179DD252E55EF3C00F55FDB /* dsa.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dsa.swift; sourceTree = "<group>"; };
 		E70E4E882E55D60D00CE935E /* Bragit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bragit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E70E4E9E2E55D60E00CE935E /* BragitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BragitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -105,6 +107,7 @@
 		E70E4E7F2E55D60D00CE935E = {
 			isa = PBXGroup;
 			children = (
+				8179DD252E55EF3C00F55FDB /* dsa.swift */,
 				E70E4E8A2E55D60D00CE935E /* Bragit */,
 				E70E4EA12E55D60E00CE935E /* BragitTests */,
 				E70E4E892E55D60D00CE935E /* Products */,
@@ -194,7 +197,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					E70E4E872E55D60D00CE935E = {
 						CreatedOnToolsVersion = 16.4;
@@ -283,6 +286,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8179DD262E55EF4000F55FDB /* dsa.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,9 +313,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Bragit/Bragit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 95366L65VG;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Bragit/Resources/Info.plist;
@@ -344,9 +349,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Bragit/Bragit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 95366L65VG;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Bragit/Resources/Info.plist;
@@ -434,6 +440,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -441,6 +448,8 @@
 		};
 		E70E4EB52E55D60E00CE935E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = E70E4E8A2E55D60D00CE935E /* Bragit */;
+			baseConfigurationReferenceRelativePath = Resources/Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -490,6 +499,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
