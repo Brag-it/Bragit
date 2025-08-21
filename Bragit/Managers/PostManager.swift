@@ -32,7 +32,7 @@ class PostManager {
 
     post = try await client
       .from("Post")
-      .select("*, Tag(*), comment_count:Comment(count)")
+      .select("*, Tag(*), comment_count:Comment(count), User_Info(nickname, profile)")
       .execute()
       .value
 
@@ -43,7 +43,7 @@ class PostManager {
   func searchFeed(tagID: String) async throws -> [Post] {
     let posts: [Post] = try await client
       .from("Post")
-      .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*)")
+      .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(nickname, profile)")
       .eq("post_tags.tag_id", value: tagID)
       .execute()
       .value
@@ -67,14 +67,14 @@ class PostManager {
   func searchPosts(searchText: String) async throws -> [Post] {
     async let postsWithMatchingContent: [Post] = try client
       .from("Post")
-      .select("*, Tag(*), comment_count:Comment(count)")
+      .select("*, Tag(*), comment_count:Comment(count), User_Info(nickname, profile)")
       .or("title.ilike.%\(searchText)%, detail.ilike.%\(searchText)%, description.ilike.*\(searchText)*")
       .execute()
       .value
 
     async let postsWithMatchingTag: [Post] = try client
       .from("Post")
-      .select("*, Tag!inner(*), comment_count:Comment(count)")
+      .select("*, Tag!inner(*), comment_count:Comment(count), User_Info(nickname, profile)")
       .ilike("Tag.tag", pattern: "%\(searchText)%")
       .execute()
       .value

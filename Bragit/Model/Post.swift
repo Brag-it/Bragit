@@ -1,3 +1,4 @@
+
 //
 //  Post.swift
 //  Bragit
@@ -15,7 +16,7 @@ struct Post: Identifiable, Codable, Hashable {
   let id: UUID                     // 게시글 ID (PK)
   var title: String                // 제목
   var thumbnailImage: String?      // 썸네일
-  var authorId: UUID?              // 작성자 ID (FK) nil 일시 탈퇴한 유저
+  var author: Author?              // 작성자
   var date: Date                   // 작성일자
   var tags: [Tag]                  // 태그
   var detail: String               // 내용
@@ -28,7 +29,7 @@ struct Post: Identifiable, Codable, Hashable {
     case id
     case title
     case thumbnailImage = "thumbnail_image"
-    case authorId = "author_id"
+    case author = "User_Info"
     case date
     case tags = "Tag"
     case detail
@@ -47,7 +48,7 @@ struct Post: Identifiable, Codable, Hashable {
     id = try container.decode(UUID.self, forKey: .id)
     title = try container.decode(String.self, forKey: .title)
     thumbnailImage = try container.decodeIfPresent(String.self, forKey: .thumbnailImage)
-    authorId = try container.decodeIfPresent(UUID.self, forKey: .authorId)
+    author = try container.decodeIfPresent(Author.self, forKey: .author)
     date = try container.decode(Date.self, forKey: .date)
     tags = try container.decode([Tag].self, forKey: .tags)
     detail = try container.decode(String.self, forKey: .detail)
@@ -64,7 +65,7 @@ struct Post: Identifiable, Codable, Hashable {
     try container.encode(id, forKey: .id)
     try container.encode(title, forKey: .title)
     try container.encodeIfPresent(thumbnailImage, forKey: .thumbnailImage)
-    try container.encodeIfPresent(authorId, forKey: .authorId)
+    try container.encodeIfPresent(author, forKey: .author)
     try container.encode(date, forKey: .date)
     try container.encode(tags, forKey: .tags)
     try container.encode(detail, forKey: .detail)
@@ -81,3 +82,9 @@ struct Tag: Identifiable, Codable, Hashable {
   var tag: String
   var count: Int
 }
+
+struct Author: Codable, Hashable {
+  var nickname: String?
+  var profile: String?
+}
+
