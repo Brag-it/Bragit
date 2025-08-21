@@ -52,6 +52,16 @@ class PostManager {
   }
 
   // 태그 검색
+  func searchTags(searchText: String) async throws -> [Tag] {
+    let tags: [Tag] = try await client
+      .from("Tag")
+      .select()
+      .ilike("tag", pattern: "%\(searchText)%")
+      .execute()
+      .value
+
+    return tags
+  }
 
   // 게시글 검색
 
