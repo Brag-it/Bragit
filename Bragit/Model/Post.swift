@@ -7,7 +7,11 @@
 
 import Foundation
 
-struct Post: Identifiable, Codable {
+struct Post: Identifiable, Codable, Hashable {
+  static func == (lhs: Post, rhs: Post) -> Bool {
+    lhs.id == rhs.id
+  }
+
   let id: UUID                     // 게시글 ID (PK)
   var title: String                // 제목
   var thumbnailImage: String?      // 썸네일
@@ -72,7 +76,7 @@ struct Post: Identifiable, Codable {
   }
 }
 
-struct Tag: Identifiable, Codable {
+struct Tag: Identifiable, Codable, Hashable {
   let id: String
   var tag: String
   var count: Int
