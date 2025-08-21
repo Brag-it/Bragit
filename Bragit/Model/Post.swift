@@ -14,16 +14,16 @@ struct Post: Identifiable, Codable, Hashable {
   }
 
   let id: UUID                     // 게시글 ID (PK)
-  var title: String                // 제목
-  var thumbnailImage: String?      // 썸네일
+  let title: String                // 제목
+  let thumbnailImage: String?      // 썸네일
   var author: Author?              // 작성자
-  var date: Date                   // 작성일자
-  var tags: [Tag]                  // 태그
-  var detail: String               // 내용
+  let date: Date                   // 작성일자
+  let tags: [Tag]                  // 태그
+  let detail: String               // 내용
   var like: Int                    // 좋아요 수
   var reports: Int                 // 신고 수
   var commentCount: Int            // 댓글 수
-  var description: String          // 미리보기 글
+  let description: String          // 미리보기 글
 
   enum CodingKeys: String, CodingKey {
     case id
@@ -79,12 +79,12 @@ struct Post: Identifiable, Codable, Hashable {
 
 struct Tag: Identifiable, Codable, Hashable {
   let id: String
-  var tag: String
-  var count: Int
+  let tag: String
+  let count: Int
 }
 
 struct Author: Codable, Hashable {
-  var nickname: String?
-  var profile: String?
+  let id: String
+  let nickname: String?
+  let profile: String?
 }
-
