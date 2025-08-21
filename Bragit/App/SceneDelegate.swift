@@ -38,3 +38,52 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
   }
 }
 
+extension SceneDelegate {
+  func makeTabBarController() -> UITabBarController {
+    let homeVC = HomeViewController()
+    let favoriteVC = FavoriteViewController()
+    let writeVC = WriteViewController()
+    let myPageVC = MyPageViewController()
+
+    let tabBarController = UITabBarController()
+
+    homeVC.tabBarItem = UITabBarItem(
+      title: "홈",
+      image: .home,
+      tag: 0
+    )
+
+    favoriteVC.tabBarItem = UITabBarItem(
+      title: "관심",
+      image: .favorite,
+      tag: 1
+    )
+
+    writeVC.tabBarItem = UITabBarItem(
+      title: "글쓰기",
+      image: .write,
+      tag: 2
+    )
+
+    myPageVC.tabBarItem = UITabBarItem(
+      title: "마이",
+      image: .mypage,
+      tag: 3
+    )
+
+    tabBarController.viewControllers = [homeVC, favoriteVC, writeVC, myPageVC].map {
+      UINavigationController(rootViewController: $0)
+    }
+    tabBarController.tabBar.tintColor = .systemBlue
+
+    /// 하단 탭바의 경계션 표현
+    let appearance = UITabBarAppearance()
+    appearance.configureWithOpaqueBackground()
+    appearance.backgroundColor = .systemBackground
+    appearance.shadowColor = .clear
+    tabBarController.tabBar.standardAppearance = appearance
+    tabBarController.tabBar.scrollEdgeAppearance = tabBarController.tabBar.standardAppearance
+
+    return tabBarController
+  }
+}
