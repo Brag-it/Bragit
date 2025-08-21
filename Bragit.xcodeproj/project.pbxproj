@@ -45,6 +45,7 @@
 		E70E4EB02E55D60E00CE935E /* Exceptions for "Bragit" folder in "Bragit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Resources/Config.xcconfig,
 				Resources/Info.plist,
 			);
 			target = E70E4E872E55D60D00CE935E /* Bragit */;
