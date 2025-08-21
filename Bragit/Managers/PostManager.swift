@@ -64,6 +64,31 @@ class PostManager {
   }
 
   // 게시글 검색
+  func searchPosts(searchText: String) async throws -> [Post] {
+    async let postsWithMatchingContent: [Post] = try client
+      .from("Post")
+      .select("*, Tag(*), comment_count:Comment(count)")
+      .or("title.ilike.%\(searchText)%, detail.ilike.%\(searchText)%, description.ilike.*\(searchText)*")
+      .execute()
+      .value
+
+    async let postsWithMatchingTag: [Post] = try client
+      .from("Post")
+      .select("*, Tag!inner(*), comment_count:Comment(count)")
+      .ilike("Tag.tag", pattern: "%\(searchText)%")
+      .execute()
+      .value
+
+    let (contentResults, tagResults) = try await (postsWithMatchingContent, postsWithMatchingTag)
+    let allPosts = contentResults + tagResults
+
+    var uniquePosts = [UUID: Post]()
+    for post in allPosts {
+      uniquePosts[post.id] = post
+    }
+
+    return Array(uniquePosts.values)
+  }
 
   // 사용자 닉네임 검색
 }
