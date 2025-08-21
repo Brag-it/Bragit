@@ -18,7 +18,7 @@ struct Post: Identifiable, Codable, Hashable {
   var author: Author?              // 작성자
   let date: Date                   // 작성일자
   let tags: [Tag]                  // 태그
-  let detail: String               // 내용
+  let content: String               // 내용
   var like: Int                    // 좋아요 수
   var reports: Int                 // 신고 수
   var commentCount: Int            // 댓글 수
@@ -31,7 +31,7 @@ struct Post: Identifiable, Codable, Hashable {
     case author = "User_Info"
     case date
     case tags = "Tag"
-    case detail
+    case content
     case like
     case reports
     case commentCount = "comment_count"
@@ -50,7 +50,7 @@ struct Post: Identifiable, Codable, Hashable {
     author = try container.decodeIfPresent(Author.self, forKey: .author)
     date = try container.decode(Date.self, forKey: .date)
     tags = try container.decode([Tag].self, forKey: .tags)
-    detail = try container.decode(String.self, forKey: .detail)
+    content = try container.decode(String.self, forKey: .content)
     like = try container.decode(Int.self, forKey: .like)
     reports = try container.decode(Int.self, forKey: .reports)
     description = try container.decode(String.self, forKey: .description)
@@ -67,7 +67,7 @@ struct Post: Identifiable, Codable, Hashable {
     try container.encodeIfPresent(author, forKey: .author)
     try container.encode(date, forKey: .date)
     try container.encode(tags, forKey: .tags)
-    try container.encode(detail, forKey: .detail)
+    try container.encode(content, forKey: .content)
     try container.encode(like, forKey: .like)
     try container.encode(reports, forKey: .reports)
     try container.encode(description, forKey: .description)

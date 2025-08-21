@@ -68,7 +68,7 @@ class PostManager {
     async let postsWithMatchingContent: [Post] = try client
       .from("Post")
       .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
-      .or("title.ilike.%\(searchText)%, detail.ilike.%\(searchText)%, description.ilike.*\(searchText)*")
+      .or("title.ilike.%\(searchText)%, content.ilike.%\(searchText)%, description.ilike.*\(searchText)*")
       .execute()
       .value
 
