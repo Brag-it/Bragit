@@ -38,4 +38,22 @@ class PostManager {
 
     return post
   }
+
+  // 태그 id로 게시글 가져오기
+  func searchFeed(tagID: String) async throws -> [Post] {
+    let posts: [Post] = try await client
+      .from("Post")
+      .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*)")
+      .eq("post_tags.tag_id", value: tagID)
+      .execute()
+      .value
+
+    return posts
+  }
+
+  // 태그 검색
+
+  // 게시글 검색
+
+  // 사용자 닉네임 검색
 }
