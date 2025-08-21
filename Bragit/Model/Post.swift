@@ -18,6 +18,7 @@ struct Post: Identifiable, Codable {
   var like: Int                    // 좋아요 수
   var reports: Int                 // 신고 수
   var commentCount: Int            // 댓글 수
+  var description: String          // 미리보기 글
 
   enum CodingKeys: String, CodingKey {
     case id
@@ -30,6 +31,7 @@ struct Post: Identifiable, Codable {
     case like
     case reports
     case commentCount = "comment_count"
+    case description
   }
 
   private struct CommentCountWrapper: Codable {
@@ -47,6 +49,7 @@ struct Post: Identifiable, Codable {
     detail = try container.decode(String.self, forKey: .detail)
     like = try container.decode(Int.self, forKey: .like)
     reports = try container.decode(Int.self, forKey: .reports)
+    description = try container.decode(String.self, forKey: .description)
 
     let commentCountWrappers = try container.decode([CommentCountWrapper].self, forKey: .commentCount)
     commentCount = commentCountWrappers.first?.count ?? 0
@@ -63,7 +66,7 @@ struct Post: Identifiable, Codable {
     try container.encode(detail, forKey: .detail)
     try container.encode(like, forKey: .like)
     try container.encode(reports, forKey: .reports)
-
+    try container.encode(description, forKey: .description)
     let commentCountWrappers = [CommentCountWrapper(count: commentCount)]
     try container.encode(commentCountWrappers, forKey: .commentCount)
   }
