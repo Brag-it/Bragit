@@ -89,6 +89,4 @@ class PostManager {
 
     return Array(uniquePosts.values)
   }
-
-  // 사용자 닉네임 검색
 }
