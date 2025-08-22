@@ -46,6 +46,7 @@ extension SceneDelegate {
     let myPageVC = MyPageViewController()
 
     let tabBarController = UITabBarController()
+    tabBarController.delegate = self
 
     homeVC.tabBarItem = UITabBarItem(
       title: "홈",
@@ -92,5 +93,19 @@ extension SceneDelegate {
     tabBarController.tabBar.scrollEdgeAppearance = tabBarController.tabBar.standardAppearance
 
     return tabBarController
+  }
+}
+
+extension SceneDelegate: UITabBarControllerDelegate {
+  func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+    guard let index = tabBarController.viewControllers?.firstIndex(where: { $0 == viewController }), index == 2 else {
+      return true
+    }
+    let navigation = UINavigationController(rootViewController: WriteViewController())
+    navigation.modalPresentationStyle = .fullScreen
+//    navigation.modalTransitionStyle = .crossDissolve
+
+    tabBarController.selectedViewController?.present(navigation, animated: true)
+    return false
   }
 }
