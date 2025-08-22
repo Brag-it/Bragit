@@ -7,7 +7,7 @@
 
 // 1. VC가 .tapApple(idToken, nonce) 액션 전송
 // 2. Supabase 교환(AuthService) -> 세션(uid/email)
-// 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 라우팅 State 방출
+// 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 
 import Foundation
 import ReactorKit
@@ -43,16 +43,6 @@ final class LoginReactor: Reactor {
 
   // Supabase 의존성 (현재 코드와 동일한 생성값을 기본 주입)
   private let supabase: SupabaseClient
-
-  //
-  //  init(
-  //    supabase: SupabaseClient = {
-  //      let keys = LoginReactor.loadKeys()
-  //      return SupabaseClient(supabaseURL: URL(string: keys.url)!, supabaseKey: keys.key)
-  //    }()
-  //  ) {
-  //    self.supabase = supabase
-  //  }
   init(supabase: SupabaseClient = AuthClient.shared) {
     self.supabase = supabase
   }
@@ -68,7 +58,7 @@ final class LoginReactor: Reactor {
         .just(.setLoading(true)),
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
-        .just(.setLoading(false)),
+        .just(.setLoading(false))
       ])
     }
   }

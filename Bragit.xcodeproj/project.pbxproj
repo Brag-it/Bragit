@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8179DD262E55EF4000F55FDB /* dsa.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8179DD252E55EF3C00F55FDB /* dsa.swift */; };
 		E70E4F652E55D95D00CE935E /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F642E55D95D00CE935E /* Then */; };
 		E70E4F682E55D96B00CE935E /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F672E55D96B00CE935E /* SnapKit */; };
 		E70E4F6B2E55D99E00CE935E /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F6A2E55D99E00CE935E /* Auth */; };
@@ -38,7 +37,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		8179DD252E55EF3C00F55FDB /* dsa.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dsa.swift; sourceTree = "<group>"; };
 		E70E4E882E55D60D00CE935E /* Bragit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bragit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E70E4E9E2E55D60E00CE935E /* BragitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BragitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -107,7 +105,6 @@
 		E70E4E7F2E55D60D00CE935E = {
 			isa = PBXGroup;
 			children = (
-				8179DD252E55EF3C00F55FDB /* dsa.swift */,
 				E70E4E8A2E55D60D00CE935E /* Bragit */,
 				E70E4EA12E55D60E00CE935E /* BragitTests */,
 				E70E4E892E55D60D00CE935E /* Products */,
@@ -286,7 +283,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8179DD262E55EF4000F55FDB /* dsa.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

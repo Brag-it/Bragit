@@ -5,25 +5,36 @@
 //  Created by luca on 8/21/25.
 //
 
-import Supabase
 import Foundation
+import Supabase
+
+enum Config {
+  static var supabaseURL: URL {
+    guard
+      let raw = Bundle.main.object(forInfoDictionaryKey: "Supabase URL") as? String
+    else {
+      fatalError("Info.plist: Supabase URL have a problem.")
+    }
+    let urlString = raw.hasPrefix("http") ? raw : "https://\(raw)"
+    guard let url = URL(string: urlString) else {
+      fatalError("Supabase URL: \(urlString)")
+    }
+    return url
+  }
+
+  static var supabaseKey: String {
+    guard let key = Bundle.main.object(forInfoDictionaryKey: "Supabase api") as? String, !key.isEmpty else {
+      fatalError("Info.plist: Supabase api have a problem.")
+    }
+    return key
+  }
+}
 
 enum AuthClient {
   static let shared: SupabaseClient = {
-    let (url, key) = Self.loadKeys()
-    return SupabaseClient(supabaseURL: url, supabaseKey: key)
+    SupabaseClient(
+      supabaseURL: Config.supabaseURL,
+      supabaseKey: Config.supabaseKey
+    )
   }()
-  
-  private static func loadKeys() -> (URL, String) {
-    guard
-      let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
-      let dict = NSDictionary(contentsOfFile: path) as? [String: Any],
-      let urlStr = dict["SUPABASE_URL"] as? String,
-      let key = dict["SUPABASE_KEY"] as? String,
-      let url = URL(string: urlStr)
-    else {
-      fatalError("SupabaseKeys are missing or invalid")
-    }
-    return (url, key)
-  }
 }

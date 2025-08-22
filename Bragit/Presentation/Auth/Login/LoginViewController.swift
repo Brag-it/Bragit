@@ -19,13 +19,16 @@ final class LoginViewController: UIViewController, View {
   private var currentNonce: String?
 
   // MARK: UI
+  // 버튼은 어차피 나중에 api로 제공되니 임시로 넣은 것
   let googleButton = UIButton(type: .system).then {
     $0.layer.cornerRadius = 12
+    $0.backgroundColor = .white
     $0.setTitle("Google로 로그인􀀲", for: .normal)
   }
 
   let kakaoButton = UIButton(type: .system).then {
     $0.layer.cornerRadius = 12
+    $0.backgroundColor = UIColor(red: 0.996, green: 0.898, blue: 0, alpha: 1)
     $0.setTitle("카카오로 로그인􀀲", for: .normal)
   }
 
@@ -35,6 +38,7 @@ final class LoginViewController: UIViewController, View {
 
   let mailButton = UIButton(type: .system).then {
     $0.layer.cornerRadius = 12
+    $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
     $0.setTitle("이메일로 로그인􀀲", for: .normal)
   }
 
@@ -59,7 +63,8 @@ final class LoginViewController: UIViewController, View {
   private func setupLayout() {
     view.backgroundColor = .systemBackground
 
-    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
+//    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
+    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, mailButton]).then {
       $0.axis = .vertical
       $0.spacing = 10
       $0.alignment = .fill
@@ -67,6 +72,7 @@ final class LoginViewController: UIViewController, View {
     }
 
     view.addSubview(stack)
+    view.addSubview(signUpButton)
 
     [appleButton, googleButton, kakaoButton, mailButton].forEach {
       $0.snp.makeConstraints {
@@ -99,7 +105,7 @@ final class LoginViewController: UIViewController, View {
       .subscribe { [weak self] event in
         if case .next(let loading) = event {
           self?.view.isUserInteractionEnabled = !loading
-          self?.navigationItem.prompt = loading ? "로그인 중입니다." : nil
+          //          self?.navigationItem.prompt = loading ? "로그인 중입니다." : nil
         }
       }.disposed(by: disposeBag)
 
@@ -119,7 +125,9 @@ final class LoginViewController: UIViewController, View {
 
     reactor.state.compactMap(\.errorMessage)
       .observe(on: MainScheduler.instance)
-      .subscribe(onNext: { [weak self] msg in self?.alert(msg) })
+      .subscribe(onNext: { [weak self] msg in
+        self?.alert(msg)
+      })
       .disposed(by: disposeBag)
 
     reactor.state.compactMap(\.route)
@@ -157,7 +165,7 @@ extension LoginViewController:
     controller.presentationContextProvider = self
     controller.performRequests()
   }
-  
+
   func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
     view.window ?? ASPresentationAnchor()
   }
@@ -187,8 +195,12 @@ extension LoginViewController:
   }
 }
 
-private extension LoginViewController {
-  func randomNonce(length: Int = 32) -> String {
+extension LoginViewController {
+  // nonce: Number Used Once
+  // Sign in with Apple에서 권장(nonce 생성 및 해시 적용)
+  
+  // nonce 생성(32자 랜덤 문자열 생성)
+  fileprivate func randomNonce(length: Int = 32) -> String {
     precondition(length > 0)
     let charSet: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
     var result = ""
@@ -206,13 +218,14 @@ private extension LoginViewController {
     return result
   }
 
-  func sha256(_ input: String) -> String {
+  // nonce -> 해시 변환
+  fileprivate func sha256(_ input: String) -> String {
     let inputData = Data(input.utf8)
     let hashed = SHA256.hash(data: inputData)
     return hashed.compactMap { String(format: "%02x", $0) }.joined()
   }
 
-  func alert(_ message: String) {
+  fileprivate func alert(_ message: String) {
     let alertController = UIAlertController(title: "Notice", message: message, preferredStyle: .alert)
     alertController.addAction(.init(title: "OK", style: .default))
     present(alertController, animated: true)
