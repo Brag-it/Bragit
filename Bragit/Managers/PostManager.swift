@@ -9,6 +9,7 @@ import Foundation
 
 import Supabase
 import RxSwift
+import Dependencies
 
 protocol PostManagerProtocol {
   func fetchMainFeedData(from: Int, to: Int) async throws -> [Post]
@@ -19,22 +20,7 @@ protocol PostManagerProtocol {
 }
 
 class PostManager: PostManagerProtocol {
-  private let client: SupabaseClient
-
-  init() {
-    let apiKey = Bundle.main.infoDictionary?["Supabase api"] as? String ?? ""
-    let urlString = Bundle.main.infoDictionary?["Supabase URL"] as? String ?? ""
-
-    if apiKey.isEmpty || urlString.isEmpty {
-      fatalError("⚠️ SUPABASE_API_KEY, SUPABASE_URL Config 설정 빠짐!!")
-    }
-
-    if let url = URL(string: "https://" + urlString) {
-      client = SupabaseClient(supabaseURL: url, supabaseKey: apiKey)
-    } else {
-      fatalError("⚠️ URL 구성 오류")
-    }
-  }
+  @Dependency(\.supabase) var client
 
   // 메인 피드 게시글 가져오기
   func fetchMainFeedData(from: Int, to: Int) async throws -> [Post] {
