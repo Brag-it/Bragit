@@ -13,25 +13,19 @@ import RxCocoa
 
 final class WriteViewController: UIViewController {
 
-  let disposeBag = DisposeBag()
+  private let disposeBag = DisposeBag()
 
-  let alert = AlertView.makeAlert(style: .tempSaveDraft)
-
-  private let doneButton = UIBarButtonItem(title: "완료", style: .done, target: nil, action: nil).then {
-    $0.isEnabled = false
-    $0.setTitleTextAttributes([
-      .font: UIFont.pretendard(size: 14, weight: .regular)
-    ], for: .normal)
-    $0.setTitleTextAttributes([
-      .font: UIFont.pretendard(size: 14, weight: .regular)
-    ], for: .disabled)
-  }
+  private let alert = AlertView.makeAlert(style: .tempSaveDraft)
 
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
-    navigationItem.title = "글쓰기"
-    navigationItem.rightBarButtonItem = doneButton
+    setupNavigationBar(
+        title: "글쓰기",
+        leftImage: UIImage(named: "backIcon"),
+        rightTitle: "완료"
+      )
+
     bind()
   }
 
@@ -44,6 +38,43 @@ final class WriteViewController: UIViewController {
       .bind { print("오른쪽 버튼 누름") }
       .disposed(by: disposeBag)
 
-//    alert.show(in: self.view)
+    //    alert.show(in: self.view)
+  }
+}
+
+
+// MARK: - NavigationBar
+extension UIViewController {
+  func setupNavigationBar(
+    title: String,
+    leftImage: UIImage? = nil,
+    rightTitle: String? = nil
+  ) {
+    // 타이틀
+    navigationController?.navigationBar.titleTextAttributes = [
+      .font: UIFont.pretendard(size: 18, weight: .bold),
+      .foregroundColor: UIColor.label
+    ]
+    navigationItem.title = title
+
+    // 왼쪽 버튼
+    if let leftImage = leftImage {
+      let leftButton = UIBarButtonItem(image: leftImage, style: .plain, target: nil, action: nil)
+      navigationItem.leftBarButtonItem = leftButton
+    }
+
+    // 오른쪽 버튼
+    if let rightTitle = rightTitle {
+      let rightButton = UIBarButtonItem(title: rightTitle, style: .done, target: nil, action: nil)
+      rightButton.setTitleTextAttributes([
+        .font: UIFont.pretendard(size: 16, weight: .bold),
+        .foregroundColor: UIColor.systemBlue
+      ], for: .normal)
+      rightButton.setTitleTextAttributes([
+        .font: UIFont.pretendard(size: 16, weight: .bold),
+        .foregroundColor: UIColor.systemGray
+      ], for: .disabled)
+      navigationItem.rightBarButtonItem = rightButton
+    }
   }
 }
