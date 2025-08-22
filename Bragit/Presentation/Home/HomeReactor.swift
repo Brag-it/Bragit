@@ -5,84 +5,83 @@
 //  Created by seongjun cho on 8/21/25.
 //
 
-import ReactorKit
 import Foundation
+
+import ReactorKit
+import Then
+import Dependencies
 
 class HomeReactor: Reactor {
   var initialState: State
-  private let postManager: PostManagerProtocol
+  @Dependency(\.postManager) var postManager
   private let disposeBag = DisposeBag()
 
   enum Action {
     case loadPosts
     case loadNextPosts
   }
-  
+
   enum Mutation {
     case setLoading(Bool)
     case setPosts([Post])
     case appendPosts([Post])
   }
 
-  struct State {
+  struct State: Then {
     var posts: [Post] = []
     var isLoading: Bool = false
   }
 
-  init(postManager: PostManagerProtocol) {
+  init() {
     self.initialState = State()
-    self.postManager = postManager
   }
 
   func mutate(action: Action) -> Observable<Mutation> {
     if currentState.isLoading {
-        return .empty()
+      return .empty()
     }
     switch action {
     case .loadPosts:
       return .concat([
         .just(.setLoading(true)),
-        Single.create { [weak self] single in
-          guard let self = self else {
-            single(.success(.appendPosts([])))
-            return Disposables.create()
-          }
-          Task {
-            do {
-              let posts = try await self.postManager.fetchMainFeedData(from: 0, to: 10)
-              single(.success(.setPosts(posts)))
-            } catch {
-              single(.failure(error))
-            }
-          }
-          return Disposables.create()
-        }.asObservable(),
+        postManager
+          .rxFetchMainFeedData(
+            from: 0,
+            to: 10)
+          .map { .setPosts($0) },
         .just(.setLoading(false))
       ])
     case .loadNextPosts:
       return .concat([
         .just(.setLoading(true)),
-        Single.create { [weak self] single in
-          guard let self = self else {
-            single(.success(.appendPosts([])))
-            return Disposables.create()
-          }
-
-          Task {
-            do {
-              let posts = try await self.postManager
-                .fetchMainFeedData(from: self.initialState.posts.count,
-                                   to: self.initialState.posts.count + 10
-                )
-              single(.success(.setPosts(posts)))
-            } catch {
-              single(.failure(error))
-            }
-          }
-          return Disposables.create()
-        }.asObservable(),
+        postManager
+          .rxFetchMainFeedData(
+            from: self.currentState.posts.count,
+            to: self.currentState.posts.count + 10)
+          .map { .appendPosts($0) },
         .just(.setLoading(false))
       ])
     }
+  }
+
+  func reduce(state: State, mutation: Mutation) -> State {
+    switch mutation {
+    case .setLoading(let isLoading):
+      return state.with {
+        $0.isLoading = isLoading
+      }
+    case .setPosts(let posts):
+      return state.with {
+        $0.posts = posts
+      }
+    case .appendPosts(let posts):
+      return state.with {
+        $0.posts.append(contentsOf: posts)
+      }
+    }
+  }
+
+  func transform(state: Observable<State>) -> Observable<State> {
+    state.observe(on: MainScheduler.instance)
   }
 }
