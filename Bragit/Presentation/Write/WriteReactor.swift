@@ -10,9 +10,9 @@ import RxSwift
 
 class WriteReactor: Reactor {
   var initialState: State
-  
+
   private let disposeBag = DisposeBag()
-  
+
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
 
@@ -37,7 +37,6 @@ class WriteReactor: Reactor {
     switch action {
     }
   }
-
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
   func reduce(state: State, mutation: Mutation) -> State {
