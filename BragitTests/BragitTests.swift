@@ -1,17 +1,18 @@
-//
-//  BragitTests.swift
-//  BragitTests
-//
-//  Created by 이태윤 on 8/20/25.
-//
 
 import Testing
 @testable import Bragit
+import Dependencies
+import ReactorKit
 
 struct BragitTests {
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    }
+  @Test func HomeReactorTest() async throws {
+    let reactor: HomeReactor = HomeReactor()
 
+    reactor.action.onNext(.loadNextPosts)
+    #expect(reactor.currentState.posts.count != 0)
+
+    reactor.action.onNext(.loadPosts)
+    #expect(reactor.currentState.posts.count != 0)
+  }
 }
