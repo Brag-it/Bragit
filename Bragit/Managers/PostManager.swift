@@ -6,9 +6,19 @@
 //
 
 import Foundation
-import Supabase
 
-class PostManager {
+import Supabase
+import RxSwift
+
+protocol PostManagerProtocol {
+  func fetchMainFeedData(from: Int, to: Int) async throws -> [Post]
+  func searchFeed(tagID: String) async throws -> [Post]
+  func searchPosts(searchText: String) async throws -> [Post]
+  func searchTags(searchText: String) async throws -> [Tag]
+  func rxFetchMainFeedData(from: Int, to: Int) -> Observable<[Post]>
+}
+
+class PostManager: PostManagerProtocol {
   private let client: SupabaseClient
 
   init() {
@@ -27,16 +37,41 @@ class PostManager {
   }
 
   // 메인 피드 게시글 가져오기
-  func fetchMainFeedData() async throws -> [Post] {
+  func fetchMainFeedData(from: Int, to: Int) async throws -> [Post] {
     var post = [Post]()
 
     post = try await client
       .from("Post")
       .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
+      .range(from: from, to: to)
       .execute()
       .value
 
     return post
+  }
+
+  func rxFetchMainFeedData(from: Int, to: Int) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let posts = try await self.fetchMainFeedData(
+            from: from,
+            to: to
+          )
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
   }
 
   // 태그 id로 게시글 가져오기
