@@ -101,11 +101,7 @@ extension SceneDelegate: UITabBarControllerDelegate {
     guard let index = tabBarController.viewControllers?.firstIndex(where: { $0 == viewController }), index == 2 else {
       return true
     }
-    let navigation = UINavigationController(rootViewController: WriteViewController())
-    navigation.modalPresentationStyle = .fullScreen
-//    navigation.modalTransitionStyle = .crossDissolve
-
-    tabBarController.selectedViewController?.present(navigation, animated: true)
+    tabBarController.selectedViewController?.present(WriteViewController(), animated: true)
     return false
   }
 }

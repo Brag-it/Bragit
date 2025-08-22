@@ -14,19 +14,21 @@ import RxCocoa
 class WriteViewController: UIViewController {
 
   private let disposeBag = DisposeBag()
+  private let headerView = UIView()
 
   private let alert = AlertView.makeAlert(style: .tempSaveDraft)
+
+  private let backButton = UIButton(type: .system).then {
+    $0.setImage(.xMarker, for: .normal)
+    $0.tintColor = .black
+  }
 
   private let titleLabel = UILabel().then {
     $0.text = "글쓰기"
     $0.font = .pretendard(size: 18, weight: .medium)
     $0.textColor = .label
     $0.textAlignment = .center
-  }
-
-  private let backButton = UIButton(type: .system).then {
-    $0.setImage(.xMarker, for: .normal)
-    $0.tintColor = .black
+    $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
   private let doneButton = UIButton(type: .system).then {
@@ -37,9 +39,24 @@ class WriteViewController: UIViewController {
     $0.isEnabled = true // 비활성화 예정
   }
 
+  private let titleTextField = UITextField().then {
+    $0.borderStyle = .roundedRect
+    $0.placeholder = "제목을 입력해 주세요"
+    $0.borderStyle = .none
+    $0.font = .pretendard(size: 20, weight: .semibold)
+    $0.layer.borderWidth = 0
+  }
+
+  private let dividerView = UIView().then {
+    $0.backgroundColor = .lightGray
+  }
+
+  private let textField = AttributedString()
+
   init() {
     super.init(nibName: nil, bundle: nil)
-//    modalTransitionStyle = .crossDissolve
+    modalPresentationStyle = .fullScreen
+    modalTransitionStyle = .crossDissolve
   }
 
   required init?(coder: NSCoder) {
@@ -50,13 +67,47 @@ class WriteViewController: UIViewController {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
 
-    let backBarButton = UIBarButtonItem(customView: backButton)
-    let doneBarButton = UIBarButtonItem(customView: doneButton)
-    navigationItem.titleView = titleLabel
-    navigationItem.leftBarButtonItem = backBarButton
-    navigationItem.rightBarButtonItem = doneBarButton
-
+    setUIConstraints()
     bind()
+  }
+
+  // UI 설정
+  private func setUIConstraints() {
+    [headerView, backButton, titleLabel, doneButton, titleTextField, dividerView].forEach { view.addSubview($0) }
+
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(58)
+    }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
+    doneButton.snp.makeConstraints {
+      $0.trailing.equalToSuperview().inset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
+    titleLabel.snp.makeConstraints {
+      $0.centerX.equalTo(headerView.snp.centerX)
+      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
+      $0.trailing.lessThanOrEqualTo(doneButton.snp.leading).offset(-20)
+    }
+
+    titleTextField.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom).offset(24)
+      $0.leading.trailing.equalToSuperview().inset(20)
+    }
+
+    dividerView.snp.makeConstraints {
+      $0.top.equalTo(titleTextField.snp.bottom).offset(16)
+      $0.leading.trailing.equalTo(titleTextField)
+      $0.height.equalTo(1)
+    }
   }
 
   private func bind() {
