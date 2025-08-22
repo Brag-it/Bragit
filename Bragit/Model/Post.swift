@@ -42,6 +42,32 @@ struct Post: Identifiable, Codable, Hashable {
     let count: Int
   }
 
+  init(
+    id: UUID = UUID(),
+    title: String,
+    thumbnailImage: String? = nil,
+    author: Author?,
+    date: Date = Date(),
+    tags: [Tag] = [],
+    content: String,
+    like: Int = 0,
+    reports: Int = 0,
+    commentCount: Int = 0,
+    description: String = ""
+  ) {
+    self.id = id
+    self.title = title
+    self.thumbnailImage = thumbnailImage
+    self.author = author
+    self.date = date
+    self.tags = tags
+    self.content = content
+    self.like = like
+    self.reports = reports
+    self.commentCount = commentCount
+    self.description = description
+  }
+
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     id = try container.decode(UUID.self, forKey: .id)
