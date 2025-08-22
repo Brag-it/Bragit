@@ -61,6 +61,7 @@ identifier_name:
     - id                         # 일반적으로 자주 쓰임
     - x                          # 좌표, 수학적 계산 등에 자주 사용
     - y
+    - to
 
 # 들여쓰기 스타일 설정
 indentation_width:
