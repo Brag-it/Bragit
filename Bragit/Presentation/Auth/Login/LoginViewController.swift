@@ -15,15 +15,17 @@ import Then
 import UIKit
 
 final class LoginViewController: UIViewController, View {
-  var disposeBag = DisposeBag()
+  let loginFont = UIFont.pretendard(size: 14, weight: .medium)
+  let signUpFont = UIFont.pretendard(size: 13, weight: .medium)
   private var currentNonce: String?
+  var disposeBag = DisposeBag()
 
   // MARK: UI
   // 버튼은 어차피 나중에 api로 제공되니 임시로 넣은 것
   let googleButton = UIButton(type: .system).then {
     $0.layer.cornerRadius = 12
     $0.backgroundColor = .white
-    $0.setTitle("Google로 로그인􀀲", for: .normal)
+    $0.setTitle("Google로 로그인(아직)", for: .normal)
   }
 
   let kakaoButton = UIButton(type: .system).then {
@@ -37,14 +39,20 @@ final class LoginViewController: UIViewController, View {
   }
 
   let mailButton = UIButton(type: .system).then {
+    var config = UIButton.Configuration.gray()
+    config.title = "이메일로 로그인(미구현)"
+    $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
+    config.image = .mail
+    config.imagePlacement = .leading
+    config.imagePadding = 5
+    $0.configuration = config
     $0.layer.cornerRadius = 12
     $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
-    $0.setTitle("이메일로 로그인􀀲", for: .normal)
   }
 
   let signUpButton = UIButton(type: .system).then {
-    $0.layer.cornerRadius = 12
     $0.setTitle("회원 가입하기", for: .normal)
+    $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
   }
 
   // MARK: viewDidLoad
@@ -63,7 +71,7 @@ final class LoginViewController: UIViewController, View {
   private func setupLayout() {
     view.backgroundColor = .systemBackground
 
-//    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
+    //    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
     let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, mailButton]).then {
       $0.axis = .vertical
       $0.spacing = 10
@@ -73,6 +81,8 @@ final class LoginViewController: UIViewController, View {
 
     view.addSubview(stack)
     view.addSubview(signUpButton)
+    mailButton.titleLabel?.font = loginFont
+    signUpButton.titleLabel?.font = signUpFont
 
     [appleButton, googleButton, kakaoButton, mailButton].forEach {
       $0.snp.makeConstraints {
@@ -125,9 +135,9 @@ final class LoginViewController: UIViewController, View {
 
     reactor.state.compactMap(\.errorMessage)
       .observe(on: MainScheduler.instance)
-      .subscribe(onNext: { [weak self] msg in
+      .subscribe { [weak self] msg in
         self?.alert(msg)
-      })
+      }
       .disposed(by: disposeBag)
 
     reactor.state.compactMap(\.route)
@@ -149,9 +159,7 @@ final class LoginViewController: UIViewController, View {
 // MARK: Apple UI
 extension LoginViewController:
   ASAuthorizationControllerDelegate,
-  ASAuthorizationControllerPresentationContextProviding
-{
-
+  ASAuthorizationControllerPresentationContextProviding {
   private func startAppleFlow() {
     let nonce = randomNonce()
     currentNonce = nonce
@@ -198,7 +206,7 @@ extension LoginViewController:
 extension LoginViewController {
   // nonce: Number Used Once
   // Sign in with Apple에서 권장(nonce 생성 및 해시 적용)
-  
+
   // nonce 생성(32자 랜덤 문자열 생성)
   fileprivate func randomNonce(length: Int = 32) -> String {
     precondition(length > 0)
