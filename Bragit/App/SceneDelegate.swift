@@ -81,6 +81,13 @@ extension SceneDelegate {
     appearance.configureWithOpaqueBackground()
     appearance.backgroundColor = .systemBackground
     appearance.shadowColor = .clear
+
+    let fontAttributes: [NSAttributedString.Key: Any] = [
+      .font: UIFont.pretendard(size: 12, weight: .medium)
+    ]
+    appearance.stackedLayoutAppearance.normal.titleTextAttributes = fontAttributes
+    appearance.stackedLayoutAppearance.selected.titleTextAttributes = fontAttributes
+
     tabBarController.tabBar.standardAppearance = appearance
     tabBarController.tabBar.scrollEdgeAppearance = tabBarController.tabBar.standardAppearance
 
