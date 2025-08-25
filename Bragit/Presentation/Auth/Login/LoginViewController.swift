@@ -17,7 +17,7 @@ import UIKit
 final class LoginViewController: UIViewController, View {
   let loginFont = UIFont.pretendard(size: 14, weight: .medium)
   let signUpFont = UIFont.pretendard(size: 13, weight: .medium)
-  private var currentNonce: String?
+  //  private var currentNonce: String?
   var disposeBag = DisposeBag()
   private let reactor = LoginReactor()
 
@@ -63,7 +63,7 @@ final class LoginViewController: UIViewController, View {
     //    title = "로그인"
     view.backgroundColor = .systemBackground
 
-    if reactor == nil { reactor = LoginReactor() }
+    //    if reactor == nil { reactor = LoginReactor() }
 
     setupLayout()
   }
@@ -105,34 +105,19 @@ final class LoginViewController: UIViewController, View {
   // MARK: Reactor Binding
   func bind(reactor: LoginReactor) {
     appleButton.rx.controlEvent(.touchUpInside)
-      .subscribe { [weak self] _ in
-        self?.startAppleFlow()
-      }.disposed(by: disposeBag)
+      .subscribe(with: reactor) { reactor, _ in
+        reactor.action.onNext(.tapAppleButton)
+      }
+      .disposed(by: disposeBag)
 
     // state -> ui
-    reactor.state.map(\.isLoading)
+    reactor.state.compactMap(\.appleHashsedNonce)
       .distinctUntilChanged()
       .observe(on: MainScheduler.instance)
-      .subscribe { [weak self] event in
-        if case .next(let loading) = event {
-          self?.view.isUserInteractionEnabled = !loading
-          //          self?.navigationItem.prompt = loading ? "로그인 중입니다." : nil
-        }
-      }.disposed(by: disposeBag)
-
-    //    reactor.state.compactMap(\.errorMessage)
-    //      .observe(on: MainScheduler.instance)
-    //      .subscribe { [weak self] event in
-    //        if case .next(let msg) = event {
-    //          let alertController = UIAlertController(
-    //            title: "오류",
-    //            message: msg,
-    //            preferredStyle: .alert
-    //          )
-    //          alertController.addAction(.init(title: "확인", style: .default))
-    //          self?.present(alertController, animated: true)
-    //        }
-    //      }.disposed(by: disposeBag)
+      .subscribe { [weak self] hashed in
+        self?.startAppleFlow(hashedNonce: hashed)
+      }
+      .disposed(by: disposeBag)
 
     reactor.state.compactMap(\.errorMessage)
       .observe(on: MainScheduler.instance)
@@ -153,7 +138,8 @@ final class LoginViewController: UIViewController, View {
             self?.navigationController?.setViewControllers([viewController], animated: true)
           }
         }
-      }.disposed(by: disposeBag)
+      }
+      .disposed(by: disposeBag)
   }
 }
 
@@ -161,13 +147,14 @@ final class LoginViewController: UIViewController, View {
 extension LoginViewController:
   ASAuthorizationControllerDelegate,
   ASAuthorizationControllerPresentationContextProviding {
-  private func startAppleFlow() {
-    let nonce = randomNonce()
-    currentNonce = nonce
-
+  //  private func startAppleFlow() {
+  //    let nonce = randomNonce()
+  //    currentNonce = nonce
+  private func startAppleFlow(hashedNonce: String) {
     let request = ASAuthorizationAppleIDProvider().createRequest()
     request.requestedScopes = [.fullName, .email]
-    request.nonce = sha256(nonce)
+    //    request.nonce = sha256(nonce)
+    request.nonce = hashedNonce
 
     let controller = ASAuthorizationController(authorizationRequests: [request])
     controller.delegate = self
@@ -187,8 +174,9 @@ extension LoginViewController:
       let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
       let tokenData = credential.identityToken,
       let idToken = String(data: tokenData, encoding: .utf8),
-      let nonce = currentNonce,
-      let reactor
+      //      let nonce = currentNonce,
+      let reactor,
+      let nonce = reactor.currentState.appleNonce
     else {
       alert("Apple 자격이 유효하지 않습니다.")
       return
@@ -209,30 +197,30 @@ extension LoginViewController {
   // Sign in with Apple에서 권장(nonce 생성 및 해시 적용)
 
   // nonce 생성(32자 랜덤 문자열 생성)
-  fileprivate func randomNonce(length: Int = 32) -> String {
-    precondition(length > 0)
-    let charSet: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
-    var result = ""
-    var remaining = length
-
-    while remaining > 0 {
-      var random: UInt8 = 0
-      let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
-      if status != errSecSuccess { fatalError("Unable to generate nonce.") }
-      if random < charSet.count {
-        result.append(charSet[Int(random % UInt8(charSet.count))])
-        remaining -= 1
-      }
-    }
-    return result
-  }
-
-  // nonce -> 해시 변환
-  fileprivate func sha256(_ input: String) -> String {
-    let inputData = Data(input.utf8)
-    let hashed = SHA256.hash(data: inputData)
-    return hashed.compactMap { String(format: "%02x", $0) }.joined()
-  }
+  //  fileprivate func randomNonce(length: Int = 32) -> String {
+  //    precondition(length > 0)
+  //    let charSet: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+  //    var result = ""
+  //    var remaining = length
+  //
+  //    while remaining > 0 {
+  //      var random: UInt8 = 0
+  //      let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+  //      if status != errSecSuccess { fatalError("Unable to generate nonce.") }
+  //      if random < charSet.count {
+  //        result.append(charSet[Int(random % UInt8(charSet.count))])
+  //        remaining -= 1
+  //      }
+  //    }
+  //    return result
+  //  }
+  //
+  //  // nonce -> 해시 변환
+  //  fileprivate func sha256(_ input: String) -> String {
+  //    let inputData = Data(input.utf8)
+  //    let hashed = SHA256.hash(data: inputData)
+  //    return hashed.compactMap { String(format: "%02x", $0) }.joined()
+  //  }
 
   fileprivate func alert(_ message: String) {
     let alertController = UIAlertController(title: "Notice", message: message, preferredStyle: .alert)
