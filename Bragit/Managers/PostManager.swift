@@ -30,6 +30,7 @@ class PostManager: PostManagerProtocol {
       .from("Post")
       .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
       .range(from: from, to: to)
+      .order("date", ascending: false)
       .execute()
       .value
 

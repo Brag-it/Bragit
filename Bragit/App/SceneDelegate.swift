@@ -15,12 +15,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     _ scene: UIScene,
     willConnectTo session: UISceneSession,
     options connectionOptions: UIScene.ConnectionOptions) {
-      guard let windowScene = (scene as? UIWindowScene) else { return }
+    guard let windowScene = (scene as? UIWindowScene) else { return }
 
-      window = UIWindow(windowScene: windowScene)
-      window?.rootViewController = makeTabBarController()
-      window?.makeKeyAndVisible()
-    }
+    window = UIWindow(windowScene: windowScene)
+    window?.rootViewController = makeTabBarController()
+    window?.makeKeyAndVisible()
+
+    // TODO: 로그인한 유저 UUID 등록하기
+    // example
+    // nowUser의 set은 UserDefaults를 사용해야함
+    UserDefaults.standard.set("e2f38754-f46b-4e3d-9347-b1ce68dc57ba", forKey: LocalStorageCase.nowUser.rawValue)
+
+    setBlockUsers()
+  }
 
   func sceneDidDisconnect(_ scene: UIScene) {
   }
@@ -40,7 +47,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 extension SceneDelegate {
   func makeTabBarController() -> UITabBarController {
-    let homeVC = HomeViewController()
+    let homeVC = HomeViewController(reactor: HomeReactor())
     let favoriteVC = FavoriteViewController()
     let writeVC = WriteViewController()
     let myPageVC = MyPageViewController()
@@ -93,6 +100,17 @@ extension SceneDelegate {
     tabBarController.tabBar.scrollEdgeAppearance = tabBarController.tabBar.standardAppearance
 
     return tabBarController
+  }
+
+  func setBlockUsers() {
+    let blockManager = BlockManager()
+    Task {
+      do {
+        @LocalStorage(location: .blockUser) var user = try await blockManager.fetchMyBlockUsers()
+      } catch {
+        print(error)
+      }
+    }
   }
 }
 

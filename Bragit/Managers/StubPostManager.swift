@@ -15,6 +15,7 @@ class StubPostManager: PostManagerProtocol {
   static let samplePosts: [Post] = [
     Post(
       title: "SwiftUI 마스터하기: 선언적 UI의 모든 것",
+      thumbnailImage: "https://picsum.photos/200/300",
       author: Author(id: UUID().uuidString, nickname: "SwiftUI-Pro", profile: nil),
       tags: [
         Tag(id: UUID().uuidString, tag: "iOS", count: 25),
@@ -29,9 +30,21 @@ class StubPostManager: PostManagerProtocol {
       description: "SwiftUI의 핵심 개념을 파헤쳐봅시다."
     ),
     Post(
-      title: "React Hooks 완벽 정복",
+      title: "React Hooks는 함수형 컴포넌트의 기능, React Hooks 완벽 정복 React Hooks 완벽 정복React Hooks 완벽 정복",
       author: Author(id: UUID().uuidString, nickname: "React-Master", profile: nil),
       tags: [
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Weㄴㄴㄴㄴㄴㄴㄴㅇㅇㅇㅇㅇㅇㅇㄴㄴㄴ", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
+        Tag(id: UUID().uuidString, tag: "Web", count: 30),
         Tag(id: UUID().uuidString, tag: "Web", count: 30),
         Tag(id: UUID().uuidString, tag: "React", count: 22)],
       content: """
@@ -40,11 +53,15 @@ class StubPostManager: PostManagerProtocol {
         """,
       like: 76,
       commentCount: 15,
-      description: "함수형 컴포넌트에서 React의 모든 기능을 사용하는 방법."
+      description: """
+        useState, useEffect, useContext 등 React Hooks는 함수형 컴포넌트의 기능을 극대화합니다.
+        클래스형 컴포넌트 없이도 상태 관리와 생명주기 로직을 어떻게 다룰 수 있는지 예제와 함께 설명합니다.
+        """
     ),
     Post(
       title: "Node.js와 Express로 만드는 RESTful API",
-      author: Author(id: UUID().uuidString, nickname: "Backend-Guru", profile: nil),
+      thumbnailImage: "https://picsum.photos/200/300",
+      author: nil,
       tags: [
         Tag(id: UUID().uuidString, tag: "Web", count: 30),
         Tag(id: UUID().uuidString, tag: "NodeJS", count: 15)],
