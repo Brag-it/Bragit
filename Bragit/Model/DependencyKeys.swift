@@ -43,4 +43,3 @@ extension DependencyValues {
     set { self[SupabaseDependencyKey.self] = newValue }
   }
 }
-

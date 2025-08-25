@@ -100,7 +100,6 @@ final class AlertView: UIView {
     buttonStackView.addArrangedSubview(leftButton)
     buttonStackView.addArrangedSubview(rightButton)
 
-
     dimmedView.snp.makeConstraints {
       $0.edges.equalToSuperview()
     }
