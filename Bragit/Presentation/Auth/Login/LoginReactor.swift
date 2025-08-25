@@ -9,6 +9,7 @@
 // 2. Supabase 교환(AuthService) -> 세션(uid/email)
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 
+import Dependencies
 import Foundation
 import ReactorKit
 import RxSwift
@@ -41,11 +42,15 @@ final class LoginReactor: Reactor {
 
   let initialState = State()
 
+  @Dependency(\.authClient) private var authClient
+
+  init() {}
+
   // Supabase 의존성 (현재 코드와 동일한 생성값을 기본 주입)
-  private let supabase: SupabaseClient
-  init(supabase: SupabaseClient = AuthClient.shared) {
-    self.supabase = supabase
-  }
+  //  private let supabase: SupabaseClient
+  //  init(supabase: SupabaseClient = AuthClient.shared) {
+  //    self.supabase = supabase
+  //  }
   //
 
   func mutate(action: Action) -> Observable<Mutation> {
@@ -58,7 +63,7 @@ final class LoginReactor: Reactor {
         .just(.setLoading(true)),
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
-        .just(.setLoading(false))
+        .just(.setLoading(false)),
       ])
     }
   }
@@ -79,13 +84,7 @@ final class LoginReactor: Reactor {
       guard let self else { return Disposables.create() }
       Task {
         do {
-          _ = try await self.supabase.auth.signInWithIdToken(
-            credentials: OpenIDConnectCredentials(
-              provider: .apple,
-              idToken: idToken,
-              nonce: nonce
-            )
-          )
+          try await self.authClient.signInWithApple(idToken, nonce)
           observer.onNext(.setError(nil))
           observer.onNext(.setRoute(.signInIsComplete))
           observer.onCompleted()

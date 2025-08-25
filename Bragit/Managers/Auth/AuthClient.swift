@@ -5,36 +5,68 @@
 //  Created by luca on 8/21/25.
 //
 
+import Dependencies
 import Foundation
 import Supabase
 
-enum Config {
-  static var supabaseURL: URL {
-    guard
-      let raw = Bundle.main.object(forInfoDictionaryKey: "Supabase URL") as? String
-    else {
-      fatalError("Info.plist: Supabase URL have a problem.")
-    }
-    let urlString = raw.hasPrefix("http") ? raw : "https://\(raw)"
-    guard let url = URL(string: urlString) else {
-      fatalError("Supabase URL: \(urlString)")
-    }
-    return url
-  }
+struct AuthClient {
+  var signInWithApple: (_ idToken: String, _ nonce: String) async throws -> Void
+}
 
-  static var supabaseKey: String {
-    guard let key = Bundle.main.object(forInfoDictionaryKey: "Supabase api") as? String, !key.isEmpty else {
-      fatalError("Info.plist: Supabase api have a problem.")
+extension AuthClient {
+  static func live() -> Self {
+    .init { idToken, nonce in
+      @Dependency(\.supabase) var supabase
+      _ = try await supabase.auth
+        .signInWithIdToken(
+          credentials: OpenIDConnectCredentials(
+            provider: .apple,
+            idToken: idToken,
+            nonce: nonce
+          )
+        )
     }
-    return key
   }
 }
 
-enum AuthClient {
-  static let shared: SupabaseClient = {
-    SupabaseClient(
-      supabaseURL: Config.supabaseURL,
-      supabaseKey: Config.supabaseKey
-    )
-  }()
+extension AuthClient: DependencyKey {
+  static let liveValue: AuthClient = .live()
 }
+
+extension DependencyValues {
+  var authClient: AuthClient {
+    get { self[AuthClient.self] }
+    set { self[AuthClient.self] = newValue }
+  }
+}
+
+//enum Config {
+//  static var supabaseURL: URL {
+//    guard
+//      let raw = Bundle.main.object(forInfoDictionaryKey: "Supabase URL") as? String
+//    else {
+//      fatalError("Info.plist: Supabase URL have a problem.")
+//    }
+//    let urlString = raw.hasPrefix("http") ? raw : "https://\(raw)"
+//    guard let url = URL(string: urlString) else {
+//      fatalError("Supabase URL: \(urlString)")
+//    }
+//    return url
+//  }
+//
+//  static var supabaseKey: String {
+//    guard let key = Bundle.main.object(forInfoDictionaryKey: "Supabase api") as? String, !key.isEmpty else {
+//      fatalError("Info.plist: Supabase api have a problem.")
+//    }
+//    return key
+//  }
+//}
+//
+//enum AuthClient {
+//  static let shared: SupabaseClient = {
+//    SupabaseClient(
+//      supabaseURL: Config.supabaseURL,
+//      supabaseKey: Config.supabaseKey
+//    )
+//  }()
+//}

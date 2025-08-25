@@ -1,3 +1,7 @@
+import RxCocoa
+import RxSwift
+import SnapKit
+import Then
 //
 //  Alert.swift
 //  Bragit
@@ -5,11 +9,6 @@
 //  Created by 이태윤 on 8/22/25.
 //
 import UIKit
-
-import SnapKit
-import Then
-import RxSwift
-import RxCocoa
 
 final class AlertView: UIView {
 
@@ -100,7 +99,6 @@ final class AlertView: UIView {
     buttonStackView.addArrangedSubview(leftButton)
     buttonStackView.addArrangedSubview(rightButton)
 
-
     dimmedView.snp.makeConstraints {
       $0.edges.equalToSuperview()
     }
@@ -154,16 +152,16 @@ final class AlertView: UIView {
 extension AlertView {
   // 원하는 스타일
   enum AlertStyle {
-    case tempSaveDraft                    //임시저장
-    case deletePost                       // 게시글 삭제
-    case reportPost                       // 게시글 신고
-    case deleteComment                    // 댓글 삭제
-    case reportComment                    // 댓글 신고
-    case blockUser(nickname: String)      // 유저 차단
-    case reportUser(nickname: String)     // 유저 신고
-    case reportApp                        // 앱에 대한 신고
-    case logOut                           // 로그아웃
-    case deleteAcount                     // 회원탈퇴
+    case tempSaveDraft  //임시저장
+    case deletePost  // 게시글 삭제
+    case reportPost  // 게시글 신고
+    case deleteComment  // 댓글 삭제
+    case reportComment  // 댓글 신고
+    case blockUser(nickname: String)  // 유저 차단
+    case reportUser(nickname: String)  // 유저 신고
+    case reportApp  // 앱에 대한 신고
+    case logOut  // 로그아웃
+    case deleteAcount  // 회원탈퇴
   }
 
   static func makeAlert(style: AlertStyle) -> AlertView {

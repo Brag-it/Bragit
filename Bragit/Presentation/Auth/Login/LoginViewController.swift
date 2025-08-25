@@ -19,6 +19,7 @@ final class LoginViewController: UIViewController, View {
   let signUpFont = UIFont.pretendard(size: 13, weight: .medium)
   private var currentNonce: String?
   var disposeBag = DisposeBag()
+  private let reactor = LoginReactor()
 
   // MARK: UI
   // 버튼은 어차피 나중에 api로 제공되니 임시로 넣은 것
@@ -159,7 +160,8 @@ final class LoginViewController: UIViewController, View {
 // MARK: Apple UI
 extension LoginViewController:
   ASAuthorizationControllerDelegate,
-  ASAuthorizationControllerPresentationContextProviding {
+  ASAuthorizationControllerPresentationContextProviding
+{
   private func startAppleFlow() {
     let nonce = randomNonce()
     currentNonce = nonce

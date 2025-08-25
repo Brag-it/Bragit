@@ -5,9 +5,8 @@
 //  Created by seongjun cho on 8/22/25.
 //
 
-import Foundation
-
 import Dependencies
+import Foundation
 import Supabase
 
 enum PostDependencyKey: DependencyKey {
@@ -43,4 +42,3 @@ extension DependencyValues {
     set { self[SupabaseDependencyKey.self] = newValue }
   }
 }
-
