@@ -7,9 +7,16 @@
 
 import UIKit
 
+import RxFlow
+import RxSwift
+
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
   var window: UIWindow?
+
+  private let coordinator = FlowCoordinator() // 중앙 코디네이터
+  private let disposeBag = DisposeBag()
+  private let appStepper = AppStepper()
 
   func scene(
     _ scene: UIScene,
@@ -18,8 +25,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       guard let windowScene = (scene as? UIWindowScene) else { return }
 
       window = UIWindow(windowScene: windowScene)
-      window?.rootViewController = makeTabBarController()
-      window?.makeKeyAndVisible()
+      // AppFlow와 AppStepper를 연결하여 라우팅 시작
+      let appFlow = AppFlow(window: window)
+      coordinator.coordinate(flow: appFlow, with: appStepper)
     }
 
   func sceneDidDisconnect(_ scene: UIScene) {
