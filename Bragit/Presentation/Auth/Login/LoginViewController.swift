@@ -160,8 +160,7 @@ final class LoginViewController: UIViewController, View {
 // MARK: Apple UI
 extension LoginViewController:
   ASAuthorizationControllerDelegate,
-  ASAuthorizationControllerPresentationContextProviding
-{
+  ASAuthorizationControllerPresentationContextProviding {
   private func startAppleFlow() {
     let nonce = randomNonce()
     currentNonce = nonce

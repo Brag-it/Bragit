@@ -63,7 +63,7 @@ final class LoginReactor: Reactor {
         .just(.setLoading(true)),
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
-        .just(.setLoading(false)),
+        .just(.setLoading(false))
       ])
     }
   }
