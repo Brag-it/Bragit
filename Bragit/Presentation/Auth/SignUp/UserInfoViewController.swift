@@ -13,7 +13,8 @@ import UIKit
 
 class UserInfoViewController: UIViewController {
   let descFont = UIFont.pretendard(size: 20, weight: .semibold)
-  let textFont = UIFont.pretendard(size: 13, weight: .medium)
+  let textFont = UIFont.pretendard(size: 14, weight: .regular)
+  let labelFont = UIFont.pretendard(size: 13, weight: .medium)
 
   private let initialMail: String?
 
@@ -118,10 +119,14 @@ class UserInfoViewController: UIViewController {
     title = "회원가입"
 
     // 소셜 로그인이면 메일 입력
-    if let initialMail {
+    let prefill = initialMail ?? KeychainMailStore.load()
+    if let initialMail = prefill {
       mailTextField.text = initialMail
       [mailTextField, pwTextField, rePwTextField].forEach {
         $0.isEnabled = false
+      }
+      [pwTextField, rePwTextField].forEach {
+        $0.placeholder = "social User"
       }
     }
 
@@ -139,6 +144,10 @@ class UserInfoViewController: UIViewController {
       rePwLabel, rePwCheckLabel,
       nicknameLabel, nicknameCheckLabel
     ].forEach {
+      $0.font = labelFont
+    }
+
+    [mailTextField, pwTextField, rePwTextField].forEach {
       $0.font = textFont
     }
 
@@ -167,20 +176,20 @@ class UserInfoViewController: UIViewController {
       $0.top.equalTo(view.safeAreaLayoutGuide).offset(32)
       $0.leading.equalToSuperview().inset(20)
     }
-    
+
     mailTextField.snp.makeConstraints {
       $0.height.equalTo(52)
     }
-    
+
     mailStack.snp.makeConstraints {
       $0.top.equalTo(descriptionLabel.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
-    
+
     pwTextField.snp.makeConstraints {
       $0.height.equalTo(52)
     }
-    
+
     pwStack.snp.makeConstraints {
       $0.top.equalTo(mailStack.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
@@ -189,7 +198,7 @@ class UserInfoViewController: UIViewController {
     rePwTextField.snp.makeConstraints {
       $0.height.equalTo(52)
     }
-    
+
     rePwStack.snp.makeConstraints {
       $0.top.equalTo(pwStack.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
@@ -198,7 +207,7 @@ class UserInfoViewController: UIViewController {
     nicknameTextField.snp.makeConstraints {
       $0.height.equalTo(52)
     }
-    
+
     nicknameStack.snp.makeConstraints {
       $0.top.equalTo(rePwStack.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)

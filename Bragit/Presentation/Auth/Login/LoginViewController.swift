@@ -183,6 +183,7 @@ extension LoginViewController:
     }
     //    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce))
     let mail = credential.email
+    if let mail { KeychainMailStore.save(mail) }
     reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce, mail: mail))
   }
 
