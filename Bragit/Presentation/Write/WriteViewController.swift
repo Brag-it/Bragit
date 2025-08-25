@@ -51,7 +51,17 @@ class WriteViewController: UIViewController {
     $0.backgroundColor = .lightGray
   }
 
-  private let textField = AttributedString()
+  private let textField = UITextView().then {
+    $0.font = .pretendard(size: 16)
+    $0.backgroundColor = .systemBackground
+    $0.isScrollEnabled = true                           // 스크롤 가능 여부
+    $0.showsVerticalScrollIndicator = false             // 수직 스크롤 바
+    $0.keyboardDismissMode = .onDrag                    // 드래그 시 키보드 내려가기
+    $0.autocorrectionType = .no                         // 자동 오타 수정 끄기
+    $0.smartDashesType = .no                            // 스마트 대시 끄기
+    $0.smartQuotesType = .no                            // 스마트 인용 부호 끄기
+    $0.textDragInteraction?.isEnabled = true            // 드래그 앤 드롭 기능 활성화
+  }
 
   init() {
     super.init(nibName: nil, bundle: nil)
@@ -73,7 +83,8 @@ class WriteViewController: UIViewController {
 
   // UI 설정
   private func setUIConstraints() {
-    [headerView, backButton, titleLabel, doneButton, titleTextField, dividerView].forEach { view.addSubview($0) }
+    [headerView, backButton, titleLabel, doneButton, titleTextField, dividerView, textField]
+      .forEach { view.addSubview($0) }
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
@@ -107,6 +118,12 @@ class WriteViewController: UIViewController {
       $0.top.equalTo(titleTextField.snp.bottom).offset(16)
       $0.leading.trailing.equalTo(titleTextField)
       $0.height.equalTo(1)
+    }
+
+    textField.snp.makeConstraints {
+      $0.top.equalTo(dividerView.snp.bottom)
+      $0.leading.trailing.equalTo(titleTextField)
+      $0.bottom.equalTo(view.safeAreaLayoutGuide)
     }
   }
 
