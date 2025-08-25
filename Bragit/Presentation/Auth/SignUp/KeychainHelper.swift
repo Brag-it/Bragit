@@ -15,15 +15,14 @@ enum KeychainHelper {
     forKey key: String,
     service: String = Bundle.main.bundleIdentifier ?? "default.service"
   )
-    -> Bool
-  {
+    -> Bool {
     guard let data = value.data(using: .utf8) else { return false }
 
     SecItemDelete(
       [
         kSecClass: kSecClassGenericPassword,
         kSecAttrService: service,
-        kSecAttrAccount: key,
+        kSecAttrAccount: key
       ] as CFDictionary
     )
 
@@ -32,7 +31,7 @@ enum KeychainHelper {
       kSecAttrService: service,
       kSecAttrAccount: key,
       kSecValueData: data,
-      kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
+      kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock
     ]
     return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
   }
@@ -43,7 +42,7 @@ enum KeychainHelper {
       kSecAttrService: service,
       kSecAttrAccount: key,
       kSecReturnData: true,
-      kSecMatchLimit: kSecMatchLimitOne,
+      kSecMatchLimit: kSecMatchLimitOne
     ]
     var item: CFTypeRef?
     let status = SecItemCopyMatching(query as CFDictionary, &item)
@@ -56,7 +55,7 @@ enum KeychainHelper {
     let query: [CFString: Any] = [
       kSecClass: kSecClassGenericPassword,
       kSecAttrService: service,
-      kSecAttrAccount: key,
+      kSecAttrAccount: key
     ]
     return SecItemDelete(query as CFDictionary) == errSecSuccess
   }
