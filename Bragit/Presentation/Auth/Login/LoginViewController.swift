@@ -147,9 +147,6 @@ final class LoginViewController: UIViewController, View {
 extension LoginViewController:
   ASAuthorizationControllerDelegate,
   ASAuthorizationControllerPresentationContextProviding {
-  //  private func startAppleFlow() {
-  //    let nonce = randomNonce()
-  //    currentNonce = nonce
   private func startAppleFlow(hashedNonce: String) {
     let request = ASAuthorizationAppleIDProvider().createRequest()
     request.requestedScopes = [.fullName, .email]
@@ -193,36 +190,7 @@ extension LoginViewController:
 }
 
 extension LoginViewController {
-  // nonce: Number Used Once
-  // Sign in with Apple에서 권장(nonce 생성 및 해시 적용)
-
-  // nonce 생성(32자 랜덤 문자열 생성)
-  //  fileprivate func randomNonce(length: Int = 32) -> String {
-  //    precondition(length > 0)
-  //    let charSet: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
-  //    var result = ""
-  //    var remaining = length
-  //
-  //    while remaining > 0 {
-  //      var random: UInt8 = 0
-  //      let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
-  //      if status != errSecSuccess { fatalError("Unable to generate nonce.") }
-  //      if random < charSet.count {
-  //        result.append(charSet[Int(random % UInt8(charSet.count))])
-  //        remaining -= 1
-  //      }
-  //    }
-  //    return result
-  //  }
-  //
-  //  // nonce -> 해시 변환
-  //  fileprivate func sha256(_ input: String) -> String {
-  //    let inputData = Data(input.utf8)
-  //    let hashed = SHA256.hash(data: inputData)
-  //    return hashed.compactMap { String(format: "%02x", $0) }.joined()
-  //  }
-
-  fileprivate func alert(_ message: String) {
+  private func alert(_ message: String) {
     let alertController = UIAlertController(title: "Notice", message: message, preferredStyle: .alert)
     alertController.addAction(.init(title: "OK", style: .default))
     present(alertController, animated: true)

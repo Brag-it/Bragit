@@ -51,13 +51,6 @@ final class LoginReactor: Reactor {
 
   init() {}
 
-  // Supabase 의존성 (현재 코드와 동일한 생성값을 기본 주입)
-  //  private let supabase: SupabaseClient
-  //  init(supabase: SupabaseClient = AuthClient.shared) {
-  //    self.supabase = supabase
-  //  }
-  //
-
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     //
