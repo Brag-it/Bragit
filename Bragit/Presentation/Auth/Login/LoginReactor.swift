@@ -10,8 +10,9 @@
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 
 import CryptoKit
-import Dependencies
 import Foundation
+
+import Dependencies
 import ReactorKit
 import RxSwift
 import Supabase
@@ -62,7 +63,7 @@ final class LoginReactor: Reactor {
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil))
+        .just(.setNonce(raw: nil, hashed: nil)),
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
