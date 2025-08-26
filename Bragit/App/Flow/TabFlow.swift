@@ -9,7 +9,7 @@ import UIKit
 import RxFlow
 
 // 탭바 네비게이션 전담
-final class TabFlow: Flow {
+final class TabFlow: NSObject, Flow {
 
   var root: Presentable {
     return self.rootViewController
@@ -21,7 +21,10 @@ final class TabFlow: Flow {
   private let writeFeedFlow = WriteFeedFlow()
   private let myPageFlow = MyPageFlow()
 
-  init() {}
+  override init() {
+    super.init()
+    rootViewController.delegate = self
+  }
 
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
@@ -74,5 +77,15 @@ final class TabFlow: Flow {
       .contribute(withNextPresentable: writeFeedFlow, withNextStepper: OneStepper(withSingleStep: AppStep.writeFeed)),
       .contribute(withNextPresentable: myPageFlow, withNextStepper: OneStepper(withSingleStep: AppStep.myPage))
     ])
+  }
+}
+
+extension TabFlow: UITabBarControllerDelegate {
+  func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+    guard let index = tabBarController.viewControllers?.firstIndex(where: { $0 == viewController }), index == 2 else {
+      return true
+    }
+    tabBarController.selectedViewController?.present(WriteViewController(reactor: WriteReactor()), animated: true)
+    return false
   }
 }
