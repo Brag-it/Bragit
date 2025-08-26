@@ -17,12 +17,10 @@ class MyPageReactor: Reactor, Stepper {
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
-
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
-
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -52,4 +50,3 @@ class MyPageReactor: Reactor, Stepper {
     return state.observe(on: MainScheduler.instance)
   }
 }
-

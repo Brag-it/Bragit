@@ -127,10 +127,9 @@ class WriteViewController: UIViewController, View {
 
   func bind(reactor: WriteReactor) {
     alert.leftTap
-      .subscribe(with: reactor) { reactor, _ in
-        reactor.action.onNext(.tapDismiss)
-    }
-    .disposed(by: disposeBag)
+      .map { WriteReactor.Action.tapDismiss } // 왼쪽 버튼 눌리면 tapDismiss 액션으로 변환
+      .bind(to: reactor.action)               // Reactor에 전달
+      .disposed(by: disposeBag)
 
     alert.rightTap
       .bind { print("오른쪽 버튼 누름") }

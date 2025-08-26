@@ -16,6 +16,9 @@ final class WriteFeedFlow: Flow {
     switch step {
     case .writeFeed:
       return showWriteRoot()
+    case .dismiss:
+      nav.dismiss(animated: true)
+      return .none
     default:
       return .none
     }

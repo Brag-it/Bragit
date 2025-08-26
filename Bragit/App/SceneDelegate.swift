@@ -24,16 +24,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       guard let windowScene = (scene as? UIWindowScene) else { return }
 
       window = UIWindow(windowScene: windowScene)
-      let window = UIWindow(windowScene: windowScene)
-      self.window = window
 
       // 네비게이션 로그
       coordinator.rx.didNavigate
-        .subscribe(onNext: { flow, step in
+        .subscribe { flow, step in
           print("didNavigate → flow: \(flow), step: \(step)")
-        })
+        }
         .disposed(by: disposeBag)
 
+      guard let window = window else { return }
       let appFlow = AppFlow(window: window)
       let appStepper = AppStepper()
       coordinator.coordinate(flow: appFlow, with: appStepper)
