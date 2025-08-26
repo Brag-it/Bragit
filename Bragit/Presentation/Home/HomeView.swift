@@ -25,14 +25,8 @@ final class HomeView: UIView {
     $0.image = UIImage(systemName: "crown.fill")
   }
 
-  private lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
+  let feedView = FeedView()
 
-  lazy var collectionView = UICollectionView(
-    frame: .zero,
-    collectionViewLayout: makeCollectionViewLayout()).then {
-      $0.showsVerticalScrollIndicator = false
-      $0.backgroundColor = .white
-    }
   override init(frame: CGRect) {
     super.init(frame: frame)
 
@@ -47,7 +41,7 @@ final class HomeView: UIView {
     addSubview(headerView)
     headerView.addSubview(logoImageView)
     headerView.addSubview(searchButton)
-    addSubview(collectionView)
+    addSubview(feedView)
 
     headerView.snp.makeConstraints {
       $0.top.leading.trailing.equalTo(safeAreaLayoutGuide)
@@ -64,60 +58,9 @@ final class HomeView: UIView {
       $0.trailing.equalToSuperview().inset(20)
     }
 
-    collectionView.snp.makeConstraints {
+    feedView.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom)
       $0.leading.trailing.bottom.equalTo(safeAreaLayoutGuide)
     }
   }
-
-  private func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-    return UICollectionViewCompositionalLayout { (_, _) -> NSCollectionLayoutSection? in
-
-      let item = NSCollectionLayoutItem(
-        layoutSize: .init(
-          widthDimension: .fractionalWidth(1.0),
-          heightDimension: .estimated(200)))
-
-      let group = NSCollectionLayoutGroup.vertical(
-        layoutSize: .init(
-          widthDimension: .fractionalWidth(1.0),
-          heightDimension: .estimated(200)),
-        subitems: [item])
-
-      let section = NSCollectionLayoutSection(group: group)
-
-      return section
-    }
-  }
-
-  func dataApply(data: [Post]) {
-    var snapshot = NSDiffableDataSourceSnapshot<Int, Post>()
-
-    snapshot.appendSections([0])
-    snapshot.appendItems(data, toSection: 0)
-
-    dataSource.apply(snapshot, animatingDifferences: true)
-  }
-
-  private func makeCollectionViewDataSource(
-    _ collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, Post> {
-
-      // 셀 설정
-      let cellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in
-        cell.configure(data: item)
-      }
-
-      // 아이템별 데이터 소스 등록
-      let dataSource = UICollectionViewDiffableDataSource<Int, Post>(
-        collectionView: collectionView) { collectionView, indexPath, item in
-          return collectionView
-            .dequeueConfiguredReusableCell(
-              using: cellRegistration,
-              for: indexPath,
-              item: item
-            )
-        }
-
-      return dataSource
-    }
 }

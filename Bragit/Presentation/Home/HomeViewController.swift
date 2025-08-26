@@ -53,11 +53,13 @@ class HomeViewController: UIViewController, View {
         }
 
         // 차단한 유저 제외
-        homeView?.dataApply(data: posts.filter { blockUsers!.firstIndex(of: $0.author?.id.rawValue ?? "") == nil })
+        homeView?.feedView.dataApply(data: posts.filter {
+          blockUsers!.firstIndex(of: $0.author?.id.rawValue ?? "") == nil
+        })
       }
       .disposed(by: disposeBag)
 
-    homeView.collectionView.rx.reachedBottom()
+    homeView.feedView.collectionView.rx.reachedBottom()
       .observe(on: MainScheduler.asyncInstance)
       .map { .loadNextPosts }
       .throttle(.seconds(1), latest: false, scheduler: MainScheduler.instance)
