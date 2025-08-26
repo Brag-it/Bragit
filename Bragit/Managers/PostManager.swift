@@ -14,9 +14,12 @@ import Dependencies
 protocol PostManagerProtocol {
   func fetchMainFeedData(from: Int, to: Int) async throws -> [Post]
   func searchFeed(tagID: String) async throws -> [Post]
+  func searchFeed(tagIDs: [String], from: Int, to: Int) async throws -> [Post]
   func searchPosts(searchText: String) async throws -> [Post]
   func searchTags(searchText: String) async throws -> [Tag]
   func rxFetchMainFeedData(from: Int, to: Int) -> Observable<[Post]>
+  func rxSearchFeed(tagIDs: [String], from: Int, to: Int) -> Observable<[Post]>
+  func rxSearchFollowUserPost(followIds: [String], from: Int, to: Int) -> Observable<[Post]>
 }
 
 class PostManager: PostManagerProtocol {
@@ -71,6 +74,73 @@ class PostManager: PostManagerProtocol {
       .value
 
     return posts
+  }
+
+  // 태그 id들로 게시글 가져오기
+  func searchFeed(tagIDs: [String], from: Int, to: Int) async throws -> [Post] {
+    let posts: [Post] = try await client
+      .from("Post")
+      .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(id, nickname, profile)")
+      .in("post_tags.tag_id", values: tagIDs)
+      .order("date", ascending: false)
+      .execute()
+      .value
+
+    return posts
+  }
+
+  func rxSearchFeed(tagIDs: [String], from: Int, to: Int) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let posts = try await self.searchFeed(
+            tagIDs: tagIDs,
+            from: from,
+            to: to
+          )
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
+          print(error)
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
+  // 팔로우한 유저의 게시글 가져오기
+  func rxSearchFollowUserPost(followIds: [String], from: Int, to: Int) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let posts: [Post] = try await self.client
+            .from("Post")
+            .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(id, nickname, profile)")
+            .in("author_id", values: followIds)
+            .order("date", ascending: false)
+            .execute()
+            .value
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
   }
 
   // 태그 검색
