@@ -54,7 +54,7 @@ final class AppFlow: Flow {
     // home 탭 플로우로 넘김
     return .one(flowContributor: .contribute(
       withNextPresentable: flow,
-      withNextStepper: OneStepper(withSingleStep: step)
+      withNextStepper: CompositeStepper(steppers: [OneStepper(withSingleStep: step), flow] )
     ))
   }
 }

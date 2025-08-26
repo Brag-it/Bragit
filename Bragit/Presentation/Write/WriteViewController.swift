@@ -67,8 +67,6 @@ class WriteViewController: UIViewController {
   init(reactor: WriteReactor) {
     self.reactor = reactor
     super.init(nibName: nil, bundle: nil)
-    modalPresentationStyle = .fullScreen
-    modalTransitionStyle = .crossDissolve
   }
 
   required init?(coder: NSCoder) {
@@ -78,7 +76,7 @@ class WriteViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
-
+    self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
     bind()
   }

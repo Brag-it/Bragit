@@ -7,9 +7,10 @@
 import UIKit
 
 import RxFlow
+import RxRelay
 
 // 탭바 네비게이션 전담
-final class TabFlow: NSObject, Flow {
+final class TabFlow: NSObject, Flow, Stepper {
 
   var root: Presentable {
     return self.rootViewController
@@ -20,6 +21,7 @@ final class TabFlow: NSObject, Flow {
   private let favoriteFlow = FavoriteFlow()
   private let writeFeedFlow = WriteFeedFlow()
   private let myPageFlow = MyPageFlow()
+  let steps = PublishRelay<Step>()
 
   override init() {
     super.init()
@@ -28,10 +30,11 @@ final class TabFlow: NSObject, Flow {
 
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
-
     switch step {
     case .home:
       return coordinateToTabBar()
+    case .writeFeed:
+      return presentWriteFlow()
     default:
       return .none
     }
@@ -52,6 +55,7 @@ final class TabFlow: NSObject, Flow {
       myRoot.tabBarItem = myPageTabBarItem
 
       self.rootViewController.setViewControllers([homeRoot, favoriteRoot, writeRoot, myRoot], animated: true)
+      self.rootViewController.selectedIndex = 0
 
       let tabBar = self.rootViewController.tabBar
       tabBar.tintColor = .systemBlue
@@ -78,6 +82,19 @@ final class TabFlow: NSObject, Flow {
       .contribute(withNextPresentable: myPageFlow, withNextStepper: OneStepper(withSingleStep: AppStep.myPage))
     ])
   }
+
+  private func presentWriteFlow() -> FlowContributors {
+    let flow = WriteFeedFlow() // 모달로 띄울 전용 플로우
+    Flows.use(flow, when: .ready) { [weak self] root in
+      root.modalPresentationStyle = .fullScreen
+      root.modalTransitionStyle = .crossDissolve
+      self?.rootViewController.present(root, animated: true)
+    }
+    return .one(flowContributor: .contribute(
+      withNextPresentable: flow,
+      withNextStepper: OneStepper(withSingleStep: AppStep.writeFeed)
+    ))
+  }
 }
 
 extension TabFlow: UITabBarControllerDelegate {
@@ -85,7 +102,8 @@ extension TabFlow: UITabBarControllerDelegate {
     guard let index = tabBarController.viewControllers?.firstIndex(where: { $0 == viewController }), index == 2 else {
       return true
     }
-    tabBarController.selectedViewController?.present(WriteViewController(reactor: WriteReactor()), animated: true)
+    //    tabBarController.selectedViewController?.present(WriteViewController(reactor: WriteReactor()), animated: true)
+    steps.accept(AppStep.writeFeed)
     return false
   }
 }

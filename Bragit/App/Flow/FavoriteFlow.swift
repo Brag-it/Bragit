@@ -16,12 +16,19 @@ final class FavoriteFlow: Flow {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .favorite:
-      let reactor = FavoriteReactor()
-      let favoriteVC = FavoriteViewController(reactor: reactor)
-      nav.setViewControllers([favoriteVC], animated: false)
-      return .none
+      return showFavoriteRoot()
     default:
       return .none
     }
+  }
+
+  private func showFavoriteRoot() -> FlowContributors {
+    let reactor = FavoriteReactor()
+    let favoriteVC = FavoriteViewController(reactor: reactor)
+    nav.setViewControllers([favoriteVC], animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: favoriteVC,
+      withNextStepper: reactor
+    ))
   }
 }

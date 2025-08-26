@@ -16,12 +16,19 @@ final class MyPageFlow: Flow {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .myPage:
-      let reactor = MyPageReactor()
-      let mypageVC = MyPageViewController(reactor: reactor)
-      nav.setViewControllers([mypageVC], animated: true)
-      return .none
+      return showMyPageRoot()
     default:
       return .none
     }
+  }
+
+  private func showMyPageRoot() -> FlowContributors {
+    let reactor = MyPageReactor()
+    let mypageVC = MyPageViewController(reactor: reactor)
+    nav.setViewControllers([mypageVC], animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: mypageVC,
+      withNextStepper: reactor
+    ))
   }
 }

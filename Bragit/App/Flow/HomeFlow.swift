@@ -17,12 +17,19 @@ final class HomeFlow: Flow {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .home:
-      let reactor = HomeReactor()
-      let homeVC = HomeViewController(reactor: reactor)
-      nav.setViewControllers([homeVC], animated: true)
-      return .one(flowContributor: .contribute(withNextPresentable: homeVC, withNextStepper: reactor))
+      return showHomeRoot()
     default:
       return .none
     }
+  }
+
+  private func showHomeRoot() -> FlowContributors {
+    let reactor = HomeReactor()
+    let homeVC = HomeViewController(reactor: reactor)
+    nav.setViewControllers([homeVC], animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: homeVC,
+      withNextStepper: reactor
+    ))
   }
 }
