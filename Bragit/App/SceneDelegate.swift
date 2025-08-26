@@ -16,7 +16,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
   private let coordinator = FlowCoordinator() // 중앙 코디네이터
   private let disposeBag = DisposeBag()
-  private let appStepper = AppStepper()
 
   func scene(
     _ scene: UIScene,
@@ -25,8 +24,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       guard let windowScene = (scene as? UIWindowScene) else { return }
 
       window = UIWindow(windowScene: windowScene)
-      // AppFlow와 AppStepper를 연결하여 라우팅 시작
+      let window = UIWindow(windowScene: windowScene)
+      self.window = window
+
+      // 네비게이션 로그
+      coordinator.rx.didNavigate
+        .subscribe(onNext: { flow, step in
+          print("💡 didNavigate → flow: \(flow), step: \(step)")
+        })
+        .disposed(by: disposeBag)
+
       let appFlow = AppFlow(window: window)
+      let appStepper = AppStepper()
       coordinator.coordinate(flow: appFlow, with: appStepper)
     }
 

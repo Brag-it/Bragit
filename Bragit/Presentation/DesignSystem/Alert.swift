@@ -1,7 +1,3 @@
-import RxCocoa
-import RxSwift
-import SnapKit
-import Then
 //
 //  Alert.swift
 //  Bragit
@@ -9,6 +5,11 @@ import Then
 //  Created by 이태윤 on 8/22/25.
 //
 import UIKit
+
+import RxCocoa
+import RxSwift
+import SnapKit
+import Then
 
 final class AlertView: UIView {
 

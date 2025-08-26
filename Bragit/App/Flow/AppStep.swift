@@ -7,11 +7,10 @@ import RxFlow
 
 enum AppStep: Step {
   // 공통
-  case initial                         // 최초 진입
   case dismiss                         // 닫기(모달 등)
 
   // 인증/가입
-  case login                           // 로그인 화면
+  case login                           // 로그인 화면 (최초 진입)
   case signup                          // 회원가입 시작
   case signServiceConsent              // 서비스 이용 약관 동의
   case signPersonalInfoConsent         // 개인정보 수집 동의

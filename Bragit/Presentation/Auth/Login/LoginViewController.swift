@@ -20,7 +20,11 @@ final class LoginViewController: UIViewController, View {
   let signUpFont = UIFont.pretendard(size: 13, weight: .medium)
   //  private var currentNonce: String?
   var disposeBag = DisposeBag()
-  private let reactor = LoginReactor()
+
+  // MARK: - 임시 버튼
+  private let nextButton = UIButton(type: .system).then {
+    $0.setTitle("Next", for: .normal)
+  }
 
   // MARK: UI
   // 버튼은 어차피 나중에 api로 제공되니 임시로 넣은 것
@@ -57,6 +61,15 @@ final class LoginViewController: UIViewController, View {
     $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
   }
 
+  init(reactor: LoginReactor) {
+    super.init(nibName: nil, bundle: nil)
+    self.reactor = reactor
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
   // MARK: viewDidLoad
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -73,6 +86,7 @@ final class LoginViewController: UIViewController, View {
   private func setupLayout() {
     view.backgroundColor = .systemBackground
 
+    view.addSubview(nextButton)
     //    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
     let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, mailButton]).then {
       $0.axis = .vertical
@@ -86,10 +100,15 @@ final class LoginViewController: UIViewController, View {
     mailButton.titleLabel?.font = loginFont
     signUpButton.titleLabel?.font = signUpFont
 
-    [appleButton, googleButton, kakaoButton, mailButton].forEach {
+    [nextButton, appleButton, googleButton, kakaoButton, mailButton].forEach {
       $0.snp.makeConstraints {
         $0.height.equalTo(48)
       }
+    }
+
+    nextButton.snp.makeConstraints {
+      $0.bottom.equalTo(stack.snp.top).offset(-32)
+      $0.leading.trailing.equalTo(stack)
     }
 
     stack.snp.makeConstraints {
@@ -105,6 +124,12 @@ final class LoginViewController: UIViewController, View {
 
   // MARK: Reactor Binding
   func bind(reactor: LoginReactor) {
+    nextButton.rx.tap
+      .subscribe(with: reactor) { reactor, _ in
+        reactor.action.onNext(.tabNext)
+      }
+      .disposed(by: disposeBag)
+
     appleButton.rx.controlEvent(.touchUpInside)
       .subscribe(with: reactor) { reactor, _ in
         reactor.action.onNext(.tapAppleButton)
