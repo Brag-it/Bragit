@@ -6,18 +6,17 @@
 //
 import UIKit
 
-import SnapKit
-import Then
+import ReactorKit
 import RxSwift
 import RxCocoa
+import SnapKit
+import Then
 
-class WriteViewController: UIViewController {
-
-  private let reactor: WriteReactor
-  private let disposeBag = DisposeBag()
-  private let headerView = UIView()
-
+class WriteViewController: UIViewController, View {
+  var disposeBag = DisposeBag()
   private let alert = AlertView.makeAlert(style: .tempSaveDraft)
+
+  private let headerView = UIView()
 
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.xMarker, for: .normal)
@@ -65,8 +64,8 @@ class WriteViewController: UIViewController {
   }
 
   init(reactor: WriteReactor) {
-    self.reactor = reactor
     super.init(nibName: nil, bundle: nil)
+    self.reactor = reactor
   }
 
   required init?(coder: NSCoder) {
@@ -78,7 +77,6 @@ class WriteViewController: UIViewController {
     view.backgroundColor = .systemBackground
     self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
-    bind()
   }
 
   // UI 설정
@@ -127,12 +125,12 @@ class WriteViewController: UIViewController {
     }
   }
 
-  private func bind() {
+  func bind(reactor: WriteReactor) {
     alert.leftTap
-      .bind { [weak self] in
-        self?.dismiss(animated: true)
-      }
-      .disposed(by: disposeBag)
+      .subscribe(with: reactor) { reactor, _ in
+        reactor.action.onNext(.tapDismiss)
+    }
+    .disposed(by: disposeBag)
 
     alert.rightTap
       .bind { print("오른쪽 버튼 누름") }

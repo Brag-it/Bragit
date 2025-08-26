@@ -10,15 +10,12 @@ import ReactorKit
 import RxSwift
 import RxCocoa
 
-class MyPageViewController: UIViewController {
-  private let reactor: MyPageReactor
-  private let disposeBag = DisposeBag()
+class MyPageViewController: UIViewController, View {
+  var disposeBag = DisposeBag()
 
   init(reactor: MyPageReactor) {
-    self.reactor = reactor
     super.init(nibName: nil, bundle: nil)
-    modalPresentationStyle = .fullScreen
-    modalTransitionStyle = .crossDissolve
+    self.reactor = reactor
   }
 
   required init?(coder: NSCoder) {
@@ -27,5 +24,8 @@ class MyPageViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .green
+  }
+
+  func bind(reactor: MyPageReactor) {
   }
 }
