@@ -27,6 +27,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     UserDefaults.standard.set("e2f38754-f46b-4e3d-9347-b1ce68dc57ba", forKey: LocalStorageCase.nowUser.rawValue)
 
     setBlockUsers()
+    setFollowUser()
   }
 
   func sceneDidDisconnect(_ scene: UIScene) {
@@ -48,7 +49,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 extension SceneDelegate {
   func makeTabBarController() -> UITabBarController {
     let homeVC = HomeViewController(reactor: HomeReactor())
-    let favoriteVC = FavoriteViewController()
+    let favoriteVC = FavoriteViewController(reactor: FavoriteReactor())
     let writeVC = WriteViewController()
     let myPageVC = MyPageViewController()
 
@@ -107,6 +108,17 @@ extension SceneDelegate {
     Task {
       do {
         @LocalStorage(location: .blockUser) var user = try await blockManager.fetchMyBlockUsers()
+      } catch {
+        print(error)
+      }
+    }
+  }
+
+  func setFollowUser() {
+    let userManager = UserManager()
+    Task {
+      do {
+        @LocalStorage(location: .followUser) var user = try await userManager.fetchFollowUsers()
       } catch {
         print(error)
       }
