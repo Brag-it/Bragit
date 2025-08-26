@@ -9,10 +9,9 @@ import RxSwift
 import RxFlow
 import RxRelay
 
-class WriteReactor: Reactor, Step {
+class WriteReactor: Reactor, Stepper {
   var initialState: State
   let steps = PublishRelay<Step>()
-
   private let disposeBag = DisposeBag()
 
   // 사용자 액션 정의 (사용자의 의도)

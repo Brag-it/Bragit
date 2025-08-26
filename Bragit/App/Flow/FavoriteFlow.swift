@@ -16,7 +16,8 @@ final class FavoriteFlow: Flow {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .favorite:
-      let favoriteVC = FavoriteViewController()
+      let reactor = FavoriteReactor()
+      let favoriteVC = FavoriteViewController(reactor: reactor)
       nav.setViewControllers([favoriteVC], animated: false)
       return .none
     default:

@@ -9,7 +9,7 @@ import RxSwift
 import RxFlow
 import RxRelay
 
-class MyPageReactor: Reactor, Step {
+class MyPageReactor: Reactor, Stepper {
   var initialState: State
   let steps = PublishRelay<Step>()
 

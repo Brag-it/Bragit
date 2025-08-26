@@ -16,7 +16,8 @@ final class MyPageFlow: Flow {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .myPage:
-      let mypageVC = MyPageViewController()
+      let reactor = MyPageReactor()
+      let mypageVC = MyPageViewController(reactor: reactor)
       nav.setViewControllers([mypageVC], animated: true)
       return .none
     default:

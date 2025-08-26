@@ -9,7 +9,7 @@ import RxSwift
 import RxFlow
 import RxRelay
 
-class FavoriteReactor: Reactor, Step {
+class FavoriteReactor: Reactor, Stepper {
   var initialState: State
   let steps = PublishRelay<Step>()
 
