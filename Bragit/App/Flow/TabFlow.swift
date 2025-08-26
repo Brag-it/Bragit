@@ -48,7 +48,24 @@ final class TabFlow: Flow {
       writeRoot.tabBarItem = writeTabBarItem
       myRoot.tabBarItem = myPageTabBarItem
 
-      self.rootViewController.setViewControllers([homeRoot, favoriteRoot, writeRoot, myRoot], animated: false)
+      self.rootViewController.setViewControllers([homeRoot, favoriteRoot, writeRoot, myRoot], animated: true)
+
+      let tabBar = self.rootViewController.tabBar
+      tabBar.tintColor = .systemBlue
+
+      let appearance = UITabBarAppearance()
+      appearance.configureWithOpaqueBackground()
+      appearance.backgroundColor = .systemBackground
+      appearance.shadowColor = .lightGray
+
+      let fontAttributes: [NSAttributedString.Key: Any] = [
+        .font: UIFont.pretendard(size: 12, weight: .medium)
+      ]
+      appearance.stackedLayoutAppearance.normal.titleTextAttributes = fontAttributes
+      appearance.stackedLayoutAppearance.selected.titleTextAttributes = fontAttributes
+
+      tabBar.standardAppearance = appearance
+      tabBar.scrollEdgeAppearance = appearance
     }
 
     return .multiple(flowContributors: [
