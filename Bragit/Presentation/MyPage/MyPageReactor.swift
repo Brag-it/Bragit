@@ -1,15 +1,15 @@
 //
-//  WriteReactor.swift
+//  MyPageReactor.swift
 //  Bragit
 //
-//  Created by 이태윤 on 8/22/25.
+//  Created by 이태윤 on 8/26/25.
 //
 import ReactorKit
 import RxSwift
 import RxFlow
 import RxRelay
 
-class WriteReactor: Reactor, Step {
+class MyPageReactor: Reactor, Step {
   var initialState: State
   let steps = PublishRelay<Step>()
 
@@ -52,3 +52,4 @@ class WriteReactor: Reactor, Step {
     return state.observe(on: MainScheduler.instance)
   }
 }
+
