@@ -9,4 +9,5 @@ enum LocalStorageCase: String {
   case blockUser = "blockUser"
   case nowUser = "nowUser"
   case favoriteTags = "favoriteTags"
+  case followUser = "followUser"
 }

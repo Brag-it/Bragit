@@ -11,6 +11,18 @@ import Supabase
 import RxSwift
 
 class StubPostManager: PostManagerProtocol {
+  func rxSearchFollowUserPost(followIds: [String], from: Int, to: Int) -> RxSwift.Observable<[Post]> {
+    return .just(Self.samplePosts)
+  }
+
+  func searchFeed(tagIDs: [String], from: Int, to: Int) async throws -> [Post] {
+    return Self.samplePosts
+  }
+
+  func rxSearchFeed(tagIDs: [String], from: Int, to: Int) -> RxSwift.Observable<[Post]> {
+    return .just(Self.samplePosts)
+  }
+
   // 모든 함수에서 일관된 데이터를 사용하기 위한 정적 샘플 데이터입니다.
   static let samplePosts: [Post] = [
     Post(

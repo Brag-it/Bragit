@@ -72,4 +72,15 @@ extension SceneDelegate {
       }
     }
   }
+
+  func setFollowUser() {
+    let userManager = UserManager()
+    Task {
+      do {
+        @LocalStorage(location: .followUser) var user = try await userManager.fetchFollowUsers()
+      } catch {
+        print(error)
+      }
+    }
+  }
 }
