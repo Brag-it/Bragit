@@ -28,6 +28,7 @@ disabled_rules:
   - redundant_string_enum_value   # enum 중복 rawValue 허용
   - empty_enum_arguments          # 빈 enum 파라미터 허용
   - let_var_whitespace            # let/var 선언 간 공백 규칙 비활성화
+  - closure_parameter_position    # 클로져 파라마터는 옆에 사용 해제
 
 # 기본 비활성화된 룰 중, 유용한 것만 선택적으로 활성화
 opt_in_rules:

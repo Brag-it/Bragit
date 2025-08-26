@@ -7,28 +7,43 @@
 
 import UIKit
 
+import RxFlow
+import RxSwift
+
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
   var window: UIWindow?
+
+  private let coordinator = FlowCoordinator() // 중앙 코디네이터
+  private let disposeBag = DisposeBag()
 
   func scene(
     _ scene: UIScene,
     willConnectTo session: UISceneSession,
     options connectionOptions: UIScene.ConnectionOptions) {
-    guard let windowScene = (scene as? UIWindowScene) else { return }
+      guard let windowScene = (scene as? UIWindowScene) else { return }
 
-    window = UIWindow(windowScene: windowScene)
-    window?.rootViewController = makeTabBarController()
-    window?.makeKeyAndVisible()
+      window = UIWindow(windowScene: windowScene)
 
-    // TODO: 로그인한 유저 UUID 등록하기
-    // example
-    // nowUser의 set은 UserDefaults를 사용해야함
-    UserDefaults.standard.set("e2f38754-f46b-4e3d-9347-b1ce68dc57ba", forKey: LocalStorageCase.nowUser.rawValue)
+      // 네비게이션 로그
+      coordinator.rx.didNavigate
+        .subscribe { flow, step in
+          print("didNavigate → flow: \(flow), step: \(step)")
+        }
+        .disposed(by: disposeBag)
 
-    setBlockUsers()
-    setFollowUser()
-  }
+      guard let window = window else { return }
+      let appFlow = AppFlow(window: window)
+      let appStepper = AppStepper()
+      coordinator.coordinate(flow: appFlow, with: appStepper)
+
+      // TODO: 로그인한 유저 UUID 등록하기
+      // example
+      // nowUser의 set은 UserDefaults를 사용해야함
+      UserDefaults.standard.set("e2f38754-f46b-4e3d-9347-b1ce68dc57ba", forKey: LocalStorageCase.nowUser.rawValue)
+
+      setBlockUsers()
+    }
 
   func sceneDidDisconnect(_ scene: UIScene) {
   }
@@ -49,7 +64,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 extension SceneDelegate {
   func makeTabBarController() -> UITabBarController {
     let homeVC = HomeViewController(reactor: HomeReactor())
-    let favoriteVC = FavoriteViewController(reactor: FavoriteReactor())
+    let favoriteVC = FavoriteViewController()
     let writeVC = WriteViewController()
     let myPageVC = MyPageViewController()
 
@@ -123,15 +138,5 @@ extension SceneDelegate {
         print(error)
       }
     }
-  }
-}
-
-extension SceneDelegate: UITabBarControllerDelegate {
-  func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
-    guard let index = tabBarController.viewControllers?.firstIndex(where: { $0 == viewController }), index == 2 else {
-      return true
-    }
-    tabBarController.selectedViewController?.present(WriteViewController(), animated: true)
-    return false
   }
 }
