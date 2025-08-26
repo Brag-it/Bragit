@@ -30,7 +30,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       // 네비게이션 로그
       coordinator.rx.didNavigate
         .subscribe(onNext: { flow, step in
-          print("💡 didNavigate → flow: \(flow), step: \(step)")
+          print("didNavigate → flow: \(flow), step: \(step)")
         })
         .disposed(by: disposeBag)
 

@@ -17,9 +17,10 @@ final class HomeFlow: Flow {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .home:
-      let homeVC = UIViewController()
+      let reactor = HomeReactor()
+      let homeVC = HomeViewController(reactor: reactor)
       nav.setViewControllers([homeVC], animated: true)
-      return .none
+      return .one(flowContributor: .contribute(withNextPresentable: homeVC, withNextStepper: reactor))
     default:
       return .none
     }

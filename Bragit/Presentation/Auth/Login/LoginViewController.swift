@@ -152,20 +152,20 @@ final class LoginViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    reactor.state.compactMap(\.route)
-      .distinctUntilChanged()
-      .observe(on: MainScheduler.instance)
-      .subscribe { [weak self] event in
-        if case .next(let route) = event {
-          switch route {
-          case .signInIsComplete:
-            let viewController = UIViewController()
-            viewController.title = "메인"
-            self?.navigationController?.setViewControllers([viewController], animated: true)
-          }
-        }
-      }
-      .disposed(by: disposeBag)
+//    reactor.state.compactMap(\.route)
+//      .distinctUntilChanged()
+//      .observe(on: MainScheduler.instance)
+//      .subscribe { [weak self] event in
+//        if case .next(let route) = event {
+//          switch route {
+//          case .signInIsComplete:
+//            let viewController = UIViewController()
+//            viewController.title = "메인"
+//            self?.navigationController?.setViewControllers([viewController], animated: true)
+//          }
+//        }
+//      }
+//      .disposed(by: disposeBag)
   }
 }
 

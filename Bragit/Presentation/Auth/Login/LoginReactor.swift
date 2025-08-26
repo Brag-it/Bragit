@@ -74,7 +74,7 @@ final class LoginReactor: Reactor, Stepper {
       let hashed = Self.sha256(raw)
       return .just(.setNonce(raw: raw, hashed: hashed))
     case .tabNext:
-      steps.accept(AppStep.home)  // “탭바(홈)”으로 가라는 신호만 보낸다
+      steps.accept(AppStep.home)
       return .empty()
     }
   }

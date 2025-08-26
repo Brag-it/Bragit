@@ -18,6 +18,8 @@ final class LoginFlow: Flow {
     switch step {
     case .login:
       return showLogin()
+    case .home:
+      return .end(forwardToParentFlowWithStep: AppStep.home)
     default:
       return .none
     }
@@ -25,7 +27,7 @@ final class LoginFlow: Flow {
 
   private func showLogin() -> FlowContributors {
     let reactor = LoginReactor()
-    let loginVC = LoginViewController(reactor: LoginReactor())
+    let loginVC = LoginViewController(reactor: reactor)
     nav.setViewControllers([loginVC], animated: true)
 
     // 로그인 성공 시 reactor가 .home Step을 방출

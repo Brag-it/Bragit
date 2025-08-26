@@ -13,6 +13,7 @@ import RxCocoa
 
 class WriteViewController: UIViewController {
 
+  private let reactor: WriteReactor
   private let disposeBag = DisposeBag()
   private let headerView = UIView()
 
@@ -63,7 +64,8 @@ class WriteViewController: UIViewController {
     $0.textDragInteraction?.isEnabled = true            // 드래그 앤 드롭 기능 활성화
   }
 
-  init() {
+  init(reactor: WriteReactor) {
+    self.reactor = reactor
     super.init(nibName: nil, bundle: nil)
     modalPresentationStyle = .fullScreen
     modalTransitionStyle = .crossDissolve

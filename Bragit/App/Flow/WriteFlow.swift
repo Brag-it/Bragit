@@ -15,9 +15,10 @@ final class WriteFeedFlow: Flow {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .writeFeed:
-      let writeVC = UIViewController()
+      let reactor = WriteReactor()
+      let writeVC = WriteViewController(reactor: reactor)
       nav.setViewControllers([writeVC], animated: true)
-      return .none
+      return .one(flowContributor: .contribute(withNextPresentable: writeVC, withNextStepper: reactor))
     default:
       return .none
     }
