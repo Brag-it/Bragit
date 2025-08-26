@@ -8,12 +8,15 @@
 import Foundation
 
 import ReactorKit
+import RxFlow
+import RxRelay
 import Then
 import Dependencies
 
-class HomeReactor: Reactor {
+class HomeReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.postManager) var postManager
+  let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
 
   enum Action {

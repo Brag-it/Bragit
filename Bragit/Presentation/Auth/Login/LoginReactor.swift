@@ -14,14 +14,18 @@ import Foundation
 
 import Dependencies
 import ReactorKit
+import RxFlow
+import RxRelay
 import RxSwift
 import Supabase
 
-final class LoginReactor: Reactor {
+final class LoginReactor: Reactor, Stepper {
+
   // View -> Reactor
   enum Action {
     case tapApple(idToken: String, nonce: String)
     case tapAppleButton
+    case tabNext
   }
 
   // 내부 상태 변경
@@ -47,14 +51,14 @@ final class LoginReactor: Reactor {
   }
 
   let initialState = State()
-
+  let steps = PublishRelay<Step>()
   @Dependency(\.authClient) private var authClient
 
   init() {}
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
-    //
+      //
     case .tapApple(let idToken, let nonce):
       //    case .tapApple(idToken, nonce):
       //
@@ -63,12 +67,15 @@ final class LoginReactor: Reactor {
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil)),
+        .just(.setNonce(raw: nil, hashed: nil))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
       let hashed = Self.sha256(raw)
       return .just(.setNonce(raw: raw, hashed: hashed))
+    case .tabNext:
+      steps.accept(AppStep.home)
+      return .empty()
     }
   }
 

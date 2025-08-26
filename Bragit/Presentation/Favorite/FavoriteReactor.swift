@@ -1,22 +1,22 @@
 //
-//  WriteReactor.swift
+//  FavoriteReactor.swift
 //  Bragit
 //
-//  Created by 이태윤 on 8/22/25.
+//  Created by 이태윤 on 8/26/25.
 //
 import ReactorKit
 import RxSwift
 import RxFlow
 import RxRelay
 
-class WriteReactor: Reactor, Stepper {
+class FavoriteReactor: Reactor, Stepper {
   var initialState: State
   let steps = PublishRelay<Step>()
+
   private let disposeBag = DisposeBag()
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
-    case tapDismiss // 탭 닫기
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -35,9 +35,6 @@ class WriteReactor: Reactor, Stepper {
   // 사용자 입력 → 상태 변화 신호로 변환
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
-    case .tapDismiss:
-      steps.accept(AppStep.dismiss)
-      return .empty()
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈

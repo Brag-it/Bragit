@@ -6,17 +6,17 @@
 //
 import UIKit
 
-import SnapKit
-import Then
+import ReactorKit
 import RxSwift
 import RxCocoa
+import SnapKit
+import Then
 
-class WriteViewController: UIViewController {
-
-  private let disposeBag = DisposeBag()
-  private let headerView = UIView()
-
+class WriteViewController: UIViewController, View {
+  var disposeBag = DisposeBag()
   private let alert = AlertView.makeAlert(style: .tempSaveDraft)
+
+  private let headerView = UIView()
 
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.xMarker, for: .normal)
@@ -63,10 +63,9 @@ class WriteViewController: UIViewController {
     $0.textDragInteraction?.isEnabled = true            // 드래그 앤 드롭 기능 활성화
   }
 
-  init() {
+  init(reactor: WriteReactor) {
     super.init(nibName: nil, bundle: nil)
-    modalPresentationStyle = .fullScreen
-    modalTransitionStyle = .crossDissolve
+    self.reactor = reactor
   }
 
   required init?(coder: NSCoder) {
@@ -76,9 +75,8 @@ class WriteViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
-
+    self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
-    bind()
   }
 
   // UI 설정
@@ -127,11 +125,10 @@ class WriteViewController: UIViewController {
     }
   }
 
-  private func bind() {
+  func bind(reactor: WriteReactor) {
     alert.leftTap
-      .bind { [weak self] in
-        self?.dismiss(animated: true)
-      }
+      .map { WriteReactor.Action.tapDismiss } // 왼쪽 버튼 눌리면 tapDismiss 액션으로 변환
+      .bind(to: reactor.action)               // Reactor에 전달
       .disposed(by: disposeBag)
 
     alert.rightTap
