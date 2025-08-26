@@ -45,7 +45,6 @@
 		E70E4EB02E55D60E00CE935E /* Exceptions for "Bragit" folder in "Bragit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Resources/Config.xcconfig,
 				Resources/Info.plist,
 			);
 			target = E70E4E872E55D60D00CE935E /* Bragit */;
@@ -375,8 +374,6 @@
 		};
 		E70E4EB42E55D60E00CE935E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = E70E4E8A2E55D60D00CE935E /* Bragit */;
-			baseConfigurationReferenceRelativePath = Resources/Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
