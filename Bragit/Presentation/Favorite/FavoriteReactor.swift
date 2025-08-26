@@ -8,15 +8,19 @@
 import Foundation
 
 import ReactorKit
+import RxSwift
+import RxFlow
+import RxRelay
 import Then
 import Dependencies
 
-class FavoriteReactor: Reactor {
+class FavoriteReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.postManager) var postManager
   private let disposeBag = DisposeBag()
   @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
   @LocalStorage(location: .followUser) var followUser: [String]?
+  let steps = PublishRelay<Step>()
 
   enum PostType: Int {
     case tag = 0
