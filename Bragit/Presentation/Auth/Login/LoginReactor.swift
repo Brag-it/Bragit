@@ -9,9 +9,9 @@
 // 2. Supabase 교환(AuthService) -> 세션(uid/email)
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 
-import CryptoKit
 import Foundation
 
+import CryptoKit
 import Dependencies
 import ReactorKit
 import RxFlow
@@ -23,9 +23,9 @@ final class LoginReactor: Reactor, Stepper {
 
   // View -> Reactor
   enum Action {
-    case tapApple(idToken: String, nonce: String)
+    case tapApple(idToken: String, nonce: String, mail: String?)
     case tapAppleButton
-    case tabNext
+    case tapSignUp
   }
 
   // 내부 상태 변경
@@ -47,7 +47,7 @@ final class LoginReactor: Reactor, Stepper {
 
   // 화면 전환 의도 (지금은 로그인 성공만 표현)
   enum Route: Equatable {
-    case signInIsComplete
+    case goUserInfo(mail: String?)
   }
 
   let initialState = State()
@@ -58,8 +58,7 @@ final class LoginReactor: Reactor, Stepper {
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
-      //
-    case .tapApple(let idToken, let nonce):
+    case .tapApple(let idToken, let nonce, let mail):
       //    case .tapApple(idToken, nonce):
       //
       return Observable.concat([
@@ -67,15 +66,15 @@ final class LoginReactor: Reactor, Stepper {
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil))
+        .just(.setNonce(raw: nil, hashed: nil)),
+        .just(.setRoute(.goUserInfo(mail: mail)))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
       let hashed = Self.sha256(raw)
       return .just(.setNonce(raw: raw, hashed: hashed))
-    case .tabNext:
-      steps.accept(AppStep.home)
-      return .empty()
+    case .tapSignUp:
+      return .just(.setRoute(.goUserInfo(mail: nil)))
     }
   }
 
@@ -124,7 +123,6 @@ final class LoginReactor: Reactor, Stepper {
         do {
           try await self.authClient.signInWithApple(idToken, nonce)
           observer.onNext(.setError(nil))
-          observer.onNext(.setRoute(.signInIsComplete))
           observer.onCompleted()
         } catch {
           observer.onNext(.setError(error.localizedDescription))
