@@ -51,25 +51,7 @@ class WriteViewController: UIViewController, View {
     $0.backgroundColor = .lightGray
   }
 
-  // 텍스트의 시각적 스타일과 레이아웃을 담당하는 TextKit2의 핵심 렌더링 매니저
-  private let layoutManger = NSTextLayoutManager()
-  // 텍스트 데이터를 저장하는 객체
-  private let contentStorage = NSTextStorage()
-  // 텍스트가 배치될 위치와 영역을 정의하는 컨테이너
-  private let textContainer = NSTextContainer()
-
-  private let textField = UITextView(frame: .zero, textContainer: nil).then {
-    $0.font = .pretendard(size: 16)
-    $0.backgroundColor = .systemBackground
-    $0.isEditable = true
-    $0.isScrollEnabled = true                           // 스크롤 가능 여부
-    $0.showsVerticalScrollIndicator = false             // 수직 스크롤 바
-    $0.keyboardDismissMode = .onDrag                    // 드래그 시 키보드 내려가기
-    $0.autocorrectionType = .no                         // 자동 오타 수정 끄기
-    $0.smartDashesType = .no                            // 스마트 대시 끄기
-    $0.smartQuotesType = .no                            // 스마트 인용 부호 끄기
-    $0.textDragInteraction?.isEnabled = true            // 드래그 앤 드롭 기능 활성화
-  }
+  private let textField = MarkdownEditorView()
 
   init(reactor: WriteReactor) {
     super.init(nibName: nil, bundle: nil)
