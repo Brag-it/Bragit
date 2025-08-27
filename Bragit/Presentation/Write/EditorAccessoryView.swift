@@ -1,0 +1,72 @@
+//
+//  EditorAccessoryView.swift
+//  Bragit
+//
+//  Created by 이태윤 on 8/27/27.
+//
+import UIKit
+
+import SnapKit
+import Then
+import RxSwift
+import RxCocoa
+
+final class EditorAccessoryView: UIView {
+  // 볼드체 적용 버튼
+  private let boldButton = UIButton(type: .system).then {
+    $0.setImage(UIImage(systemName: "bold"), for: .normal)
+    $0.tintColor = .label
+  }
+
+  // 이미지 삽입 버튼
+  private let imageButton = UIButton(type: .system).then {
+    $0.setImage(UIImage(systemName: "photo"), for: .normal)
+    $0.tintColor = .label
+  }
+
+  // 버튼 수평 스택 뷰
+  private let stackView = UIStackView().then {
+    $0.axis = .horizontal
+    $0.spacing = 16
+    $0.distribution = .fillEqually
+  }
+  public var boldButtonTap: Observable<Void> {
+    return boldButton.rx.tap.asObservable()
+  }
+
+  public var imageButtonTap: Observable<Void> {
+    return imageButton.rx.tap.asObservable()
+  }
+
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    setupView()
+    setupLayout()
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  private func setupView() {
+    backgroundColor = .systemGray5
+    layer.borderColor = UIColor.systemGray3.cgColor
+    layer.borderWidth = 1.0
+
+    [boldButton, imageButton].forEach(stackView.addArrangedSubview)
+  }
+
+  private func setupLayout() {
+    addSubview(stackView)
+
+    stackView.snp.makeConstraints {
+      $0.top.bottom.equalTo(self.safeAreaLayoutGuide).inset(8)
+      $0.leading.equalTo(self.safeAreaLayoutGuide).offset(16)
+      $0.trailing.lessThanOrEqualTo(self.safeAreaLayoutGuide).offset(-16)
+    }
+
+    self.snp.makeConstraints {
+      $0.height.equalTo(44)
+    }
+  }
+}
