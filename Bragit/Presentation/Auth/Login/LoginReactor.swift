@@ -51,17 +51,17 @@ final class LoginReactor: Reactor, Stepper {
     case goUserInfo(mail: String?)
   }
 
-  let initialState = State()
+  var initialState = State()
   let steps = PublishRelay<Step>()
   @Dependency(\.authClient) private var authClient
 
-  init() {}
+  init() {
+    self.initialState = State()
+  }
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .tapApple(let idToken, let nonce, let mail):
-      //    case .tapApple(idToken, nonce):
-      //
       return Observable.concat([
         .just(.setLoading(true)),
         signInWithApple(idToken: idToken, nonce: nonce)
@@ -93,6 +93,10 @@ final class LoginReactor: Reactor, Stepper {
       state.appleHashsedNonce = hashed
     }
     return state
+  }
+
+  func transform(state: Observable<State>) -> Observable<State> {
+    state.observe(on: MainScheduler.instance)
   }
 
   private static func randomNonce(length: Int = 32) -> String {
