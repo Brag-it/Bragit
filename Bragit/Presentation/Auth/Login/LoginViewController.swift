@@ -126,7 +126,7 @@ final class LoginViewController: UIViewController, View {
   func bind(reactor: LoginReactor) {
     nextButton.rx.tap
       .subscribe(with: reactor) { reactor, _ in
-        reactor.action.onNext(.tapSignUp)
+        reactor.action.onNext(.tapNext)
       }
       .disposed(by: disposeBag)
 

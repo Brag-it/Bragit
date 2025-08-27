@@ -26,6 +26,7 @@ final class LoginReactor: Reactor, Stepper {
     case tapApple(idToken: String, nonce: String, mail: String?)
     case tapAppleButton
     case tapSignUp
+    case tapNext
   }
 
   // 내부 상태 변경
@@ -75,6 +76,9 @@ final class LoginReactor: Reactor, Stepper {
       return .just(.setNonce(raw: raw, hashed: hashed))
     case .tapSignUp:
       return .just(.setRoute(.goUserInfo(mail: nil)))
+    case .tapNext:
+      steps.accept(AppStep.home)
+      return .empty()
     }
   }
 
