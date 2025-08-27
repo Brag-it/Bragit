@@ -42,7 +42,7 @@ extension DependencyValues {
     get { self[SupabaseDependencyKey.self] }
     set { self[SupabaseDependencyKey.self] = newValue }
   }
-  
+
   var authClient: AuthClient {
     get { self[AuthClient.self] }
     set { self[AuthClient.self] = newValue }

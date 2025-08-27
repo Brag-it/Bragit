@@ -14,10 +14,13 @@ import Foundation
 import CryptoKit
 import Dependencies
 import ReactorKit
+import RxFlow
+import RxRelay
 import RxSwift
 import Supabase
 
-final class LoginReactor: Reactor {
+final class LoginReactor: Reactor, Stepper {
+
   // View -> Reactor
   enum Action {
     case tapApple(idToken: String, nonce: String, mail: String?)
@@ -48,14 +51,13 @@ final class LoginReactor: Reactor {
   }
 
   let initialState = State()
-
+  let steps = PublishRelay<Step>()
   @Dependency(\.authClient) private var authClient
 
   init() {}
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
-    //
     case .tapApple(let idToken, let nonce, let mail):
       //    case .tapApple(idToken, nonce):
       //
