@@ -17,6 +17,7 @@ class WriteReactor: Reactor, Stepper {
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
     case tapDismiss // 탭 닫기
+    case tapDone    // 완료 버튼
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -38,7 +39,11 @@ class WriteReactor: Reactor, Stepper {
     case .tapDismiss:
       steps.accept(AppStep.dismiss)
       return .empty()
+    case .tapDone:
+      steps.accept(AppStep.preview(draftId: <#T##String?#>))
+      return .empty()
     }
+
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영

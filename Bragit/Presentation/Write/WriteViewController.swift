@@ -145,5 +145,10 @@ class WriteViewController: UIViewController, View {
       .map { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
       .bind(to: doneButton.rx.isEnabled)
       .disposed(by: disposeBag)
+
+    doneButton.rx.tap
+      .map { WriteReactor.Action.tapDone }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
