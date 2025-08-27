@@ -20,6 +20,8 @@ final class MarkdownEditorView: UIView {
   let textContainer = NSTextContainer()
   private let disposeBag = DisposeBag()
 
+  private let accessoryView = MarkdownAccessoryView()
+
   lazy var textView = UITextView(frame: .zero, textContainer: self.textContainer).then {
     $0.font = .pretendard(size: 16)
     $0.backgroundColor = .systemBackground
@@ -31,12 +33,15 @@ final class MarkdownEditorView: UIView {
     $0.smartDashesType = .no
     $0.smartQuotesType = .no
     $0.textDragInteraction?.isEnabled = true
+    $0.inputAccessoryView = accessoryView
   }
 
   override init(frame: CGRect) {
     super.init(frame: frame)
     setupTextKit2()
     setupLayout()
+    textView.delegate = self
+    setupMarkdownButtons()
     setupTextBinding()
   }
 
@@ -57,6 +62,32 @@ final class MarkdownEditorView: UIView {
     }
   }
 
+  private func setupMarkdownButtons() {
+    accessoryView.boldButton.rx.tap
+      .bind { [weak self] in
+        self?.wrapSelectedText(prefix: "**", suffix: "**")
+      }
+      .disposed(by: disposeBag)
+
+    accessoryView.italicButton.rx.tap
+      .bind { [weak self] in
+        self?.wrapSelectedText(prefix: "_", suffix: "_")
+      }
+      .disposed(by: disposeBag)
+
+    accessoryView.headerButton.rx.tap
+      .bind { [weak self] in
+        self?.insertAtLineStart(prefix: "# ")
+      }
+      .disposed(by: disposeBag)
+
+    accessoryView.bulletButton.rx.tap
+      .bind { [weak self] in
+        self?.insertAtLineStart(prefix: "- ")
+      }
+      .disposed(by: disposeBag)
+  }
+
   private func setupTextBinding() {
     textView.rx.text.orEmpty
       .distinctUntilChanged()
@@ -65,6 +96,61 @@ final class MarkdownEditorView: UIView {
         self?.applyMarkdownStyle()
       }
       .disposed(by: disposeBag)
+  }
+
+  // 선택된 텍스트를 마크다운 문법으로 감싸는 함수
+  private func wrapSelectedText(prefix: String, suffix: String) {
+    guard let textRange = textView.selectedTextRange else { return }
+
+    if let selectedRange = textView.selectedTextRange, selectedRange.isEmpty {
+      // No text selected, insert prefix + suffix and move cursor in between
+      let cursorPosition = textView.offset(from: textView.beginningOfDocument, to: selectedRange.start)
+      let insertionText = "\(prefix)\(suffix)"
+      if let range = textView.selectedRange as NSRange? {
+        let nsText = textView.text as NSString
+        textView.text = nsText.replacingCharacters(in: range, with: insertionText)
+        textView.selectedRange = NSRange(location: cursorPosition + prefix.count, length: 0)
+      }
+    } else {
+      // Wrap the selected text
+      let selectedText = textView.text(in: textRange) ?? ""
+      let wrapped = "\(prefix)\(selectedText)\(suffix)"
+      textView.replace(textRange, withText: wrapped)
+    }
+
+    // 입력 후 스타일 재적용
+    applyMarkdownStyle()
+  }
+
+  // 현재 줄 앞에 prefix 삽입 (ex. "# ", "- ")
+  private func insertAtLineStart(prefix: String) {
+    guard let text = textView.text else { return }
+
+    let nsText = text as NSString
+    let selectedRange = textView.selectedRange
+
+    // selectedRange 를 String.Index 기반 범위로 변환
+    if let rangeStart = text.index(text.startIndex, offsetBy: selectedRange.location, limitedBy: text.endIndex) {
+      // 현재 커서가 있는 줄의 Range 구함
+      let lineRange = text.lineRange(for: rangeStart..<rangeStart)
+      let nsLineRange = NSRange(lineRange, in: text)
+
+      let lineText = nsText.substring(with: nsLineRange)
+
+      // 이미 prefix가 있으면 삽입하지 않음
+      guard !lineText.hasPrefix(prefix) else { return }
+
+      let newLine = prefix + lineText
+      let updatedText = nsText.replacingCharacters(in: nsLineRange, with: newLine)
+
+      textView.text = updatedText
+
+      // 커서 위치를 적절히 옮김
+      let newCursorLocation = selectedRange.location + prefix.count
+      textView.selectedRange = NSRange(location: newCursorLocation, length: 0)
+
+      applyMarkdownStyle()
+    }
   }
 
   private func applyMarkdownStyle() {
@@ -133,5 +219,27 @@ final class MarkdownEditorView: UIView {
     let selectedRange = textView.selectedRange
     textView.attributedText = attributed
     textView.selectedRange = selectedRange
+  }
+}
+
+extension MarkdownEditorView: UITextViewDelegate {
+  func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+    guard text == "\n" else { return true }
+    let cursorLocation = range.location
+    let fullText = textView.text as NSString
+    // 커서 뒤에 있는 텍스트 (줄바꿈 전 기준)
+    let afterCursor = fullText.substring(from: cursorLocation)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if afterCursor.isEmpty {
+      // 뒤에 글이 없음 → 줄바꿈 허용
+      return true
+    } else {
+      // 뒤에 글이 있음 → 줄바꿈 막고 커서만 이동
+      DispatchQueue.main.async {
+        let end = textView.endOfDocument
+        textView.selectedTextRange = textView.textRange(from: end, to: end)
+      }
+      return false
+    }
   }
 }
