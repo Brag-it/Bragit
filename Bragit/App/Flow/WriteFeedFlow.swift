@@ -19,6 +19,8 @@ final class WriteFeedFlow: Flow {
     case .dismiss:
       nav.dismiss(animated: true)
       return .none
+    case .preview(let draft):
+      return showPreview(draft: draft)
     default:
       return .none
     }
@@ -30,6 +32,18 @@ final class WriteFeedFlow: Flow {
     nav.setViewControllers([writeVC], animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: writeVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showPreview(draft: PostDraft) -> FlowContributors {
+    let reactor = PreviewReactor(draft: draft)
+    let previewVC = PreviewViewController(reactor: reactor)
+
+    nav.pushViewController(previewVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: previewVC,
       withNextStepper: reactor
     ))
   }

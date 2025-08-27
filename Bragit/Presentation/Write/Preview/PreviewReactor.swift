@@ -11,6 +11,7 @@ import RxRelay
 
 class PreviewReactor: Reactor, Stepper {
   var initialState: State
+  let draft: PostDraft
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
 
@@ -24,10 +25,11 @@ class PreviewReactor: Reactor, Stepper {
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
-  }
+      }
 
-  init() {
+  init(draft: PostDraft) {
     self.initialState = State()
+    self.draft = draft
   }
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의

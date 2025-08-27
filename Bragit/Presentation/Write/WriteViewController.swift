@@ -15,6 +15,7 @@ import Then
 class WriteViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let alert = AlertView.makeAlert(style: .tempSaveDraft)
+  private let alertTitle = AlertView.makeAlert(style: .)
 
   private let headerView = UIView()
 
@@ -141,9 +142,19 @@ class WriteViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    //    textField.rx.text.orEmpty
+    //      .map { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    //      .bind(to: doneButton.rx.isEnabled)
+    //      .disposed(by: disposeBag)
+
+    titleTextField.rx.text.orEmpty
+      .map { WriteReactor.Action.updateTitle($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     textField.rx.text.orEmpty
-      .map { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-      .bind(to: doneButton.rx.isEnabled)
+      .map { WriteReactor.Action.updateContent($0) }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     doneButton.rx.tap

@@ -81,6 +81,9 @@ final class AlertView: UIView {
     if let rightColor = rightButtonColor {
       rightButton.setTitleColor(rightColor, for: .normal)
     }
+    if leftButtonTitle == nil && rightButtonTitle != nil {
+      leftButton.isHidden = true
+    }
     bind()
   }
 
@@ -95,10 +98,14 @@ final class AlertView: UIView {
 
     containerView.addSubview(titleLabel)
     containerView.addSubview(messageLabel)
-    containerView.addSubview(buttonStackView)
 
-    buttonStackView.addArrangedSubview(leftButton)
-    buttonStackView.addArrangedSubview(rightButton)
+    if leftButton.title(for: .normal) == nil {
+      containerView.addSubview(rightButton)
+    } else {
+      containerView.addSubview(buttonStackView)
+      buttonStackView.addArrangedSubview(leftButton)
+      buttonStackView.addArrangedSubview(rightButton)
+    }
 
     dimmedView.snp.makeConstraints {
       $0.edges.equalToSuperview()
@@ -119,10 +126,19 @@ final class AlertView: UIView {
       $0.leading.trailing.equalToSuperview().inset(24)
     }
 
-    buttonStackView.snp.makeConstraints {
-      $0.top.equalTo(messageLabel.snp.bottom).offset(10)
-      $0.leading.trailing.bottom.equalToSuperview()
-      $0.height.equalTo(48)
+    if leftButton.title(for: .normal) == nil {
+      rightButton.snp.makeConstraints {
+        $0.top.equalTo(messageLabel.snp.bottom).offset(20)
+        $0.leading.trailing.equalToSuperview().inset(24)
+        $0.height.equalTo(48)
+        $0.bottom.equalToSuperview().inset(10)
+      }
+    } else {
+      buttonStackView.snp.makeConstraints {
+        $0.top.equalTo(messageLabel.snp.bottom).offset(10)
+        $0.leading.trailing.bottom.equalToSuperview()
+        $0.height.equalTo(48)
+      }
     }
   }
 
@@ -154,6 +170,7 @@ extension AlertView {
   // 원하는 스타일
   enum AlertStyle {
     case tempSaveDraft  //임시저장
+    case isEmptyPost  // 게시글 제목또는 내용이 비어있을때
     case deletePost  // 게시글 삭제
     case reportPost  // 게시글 신고
     case deleteComment  // 댓글 삭제
@@ -173,6 +190,14 @@ extension AlertView {
         message: "지금 나가면 저장하지 않은 글은 삭제돼요.",
         leftButtonTitle: "나가기",
         rightButtonTitle: "임시저장",
+        leftButtonColor: .gray,
+        rightButtonColor: .black
+      )
+    case .isEmptyPost:
+      return AlertView(
+        title: "확인해주세요!",
+        message: "게시글의 내용이나 제목이 비어있어요.",
+        rightButtonTitle: "확인",
         leftButtonColor: .gray,
         rightButtonColor: .black
       )

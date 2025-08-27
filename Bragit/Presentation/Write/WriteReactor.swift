@@ -18,14 +18,23 @@ class WriteReactor: Reactor, Stepper {
   enum Action {
     case tapDismiss // 탭 닫기
     case tapDone    // 완료 버튼
+    case updateTitle(String)
+    case updateContent(String)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
+    case setTitle(String)
+    case setContent(String)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
+    var title: String = ""            // 제목
+    var content: String = ""          // 내용
+    var thumbnailImage: String?       // 썸네일 (임베딩 했을 경우)
+    var description: String?          // 미리보기 글 (임베딩 했을 경우)
+
   }
 
   init() {
@@ -40,8 +49,18 @@ class WriteReactor: Reactor, Stepper {
       steps.accept(AppStep.dismiss)
       return .empty()
     case .tapDone:
-      steps.accept(AppStep.preview(draftId: <#T##String?#>))
+      let draft = PostDraft(
+        title: currentState.title,
+        content: currentState.content,
+        thumbnailImage: currentState.thumbnailImage,
+        description: currentState.description
+      )
+      steps.accept(AppStep.preview(draft: draft))
       return .empty()
+    case .updateTitle(let title):
+      return .just(.setTitle(title))
+    case .updateContent(let content):
+      return .just(.setContent(content))
     }
 
   }
@@ -50,6 +69,10 @@ class WriteReactor: Reactor, Stepper {
   func reduce(state: State, mutation: Mutation) -> State {
     var newState = state
     switch mutation {
+    case .setTitle(let title):
+      newState.title = title
+    case .setContent(let content):
+      newState.content = content
     }
     return newState
   }
