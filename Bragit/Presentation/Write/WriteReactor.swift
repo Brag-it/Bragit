@@ -17,17 +17,14 @@ class WriteReactor: Reactor, Stepper {
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
     case tapDismiss // 탭 닫기
-    case textChanged(String) // 완료버튼 활성화
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
-    case setDoneButtonEnabled(Bool)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
-    var isDoneButtonEnabled: Bool = false
   }
 
   init() {
@@ -41,10 +38,6 @@ class WriteReactor: Reactor, Stepper {
     case .tapDismiss:
       steps.accept(AppStep.dismiss)
       return .empty()
-    case .textChanged(let text):
-      // 공백 제거 후 내용 유무 판단
-      let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-      return .just(.setDoneButtonEnabled(!trimmed.isEmpty)) // 텍스트 작성을 했으면 true 안했으면 false
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -52,8 +45,6 @@ class WriteReactor: Reactor, Stepper {
   func reduce(state: State, mutation: Mutation) -> State {
     var newState = state
     switch mutation {
-    case .setDoneButtonEnabled(let isEnabled):
-      newState.isDoneButtonEnabled = isEnabled
     }
     return newState
   }

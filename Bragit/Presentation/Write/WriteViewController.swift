@@ -142,13 +142,7 @@ class WriteViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     textField.rx.text.orEmpty
-      .map { WriteReactor.Action.textChanged($0) }
-      .bind(to: reactor.action)
-      .disposed(by: disposeBag)
-
-    reactor.state
-      .map { $0.isDoneButtonEnabled }
-      .distinctUntilChanged()
+      .map { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
       .bind(to: doneButton.rx.isEnabled)
       .disposed(by: disposeBag)
   }
