@@ -36,7 +36,6 @@ class WriteViewController: UIViewController, View {
     $0.setTitleColor(.black, for: .normal)
     $0.setTitleColor(.systemGray, for: .disabled)
     $0.titleLabel?.font = .pretendard(size: 14)
-    $0.isEnabled = true // 비활성화 예정
   }
 
   private let titleTextField = UITextField().then {
@@ -140,6 +139,17 @@ class WriteViewController: UIViewController, View {
         guard let self else { return }
         alert.show(in: view)
       }
+      .disposed(by: disposeBag)
+
+    textField.rx.text.orEmpty
+      .map { WriteReactor.Action.textChanged($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map { $0.isDoneButtonEnabled }
+      .distinctUntilChanged()
+      .bind(to: doneButton.rx.isEnabled)
       .disposed(by: disposeBag)
   }
 }
