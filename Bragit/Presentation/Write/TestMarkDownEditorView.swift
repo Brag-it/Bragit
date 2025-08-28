@@ -1,5 +1,5 @@
 //
-//  TestMarkDownEditorView.swift
+//  MarkDownEditorView.swift
 //  Bragit
 //
 //  Created by 이태윤 on 8/27/27.
@@ -11,7 +11,7 @@ import Then
 import RxSwift
 import RxCocoa
 
-final class TestMarkDownEditorView: UIView {
+final class MarkDownEditorView: UIView {
   private let accessoryView = EditorAccessoryView()
 
   private lazy var textView = UITextView().then {
