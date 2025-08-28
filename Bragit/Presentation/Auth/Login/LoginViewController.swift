@@ -126,7 +126,7 @@ final class LoginViewController: UIViewController, View {
   func bind(reactor: LoginReactor) {
     nextButton.rx.tap
       .subscribe(with: reactor) { reactor, _ in
-        reactor.action.onNext(.tabNext)
+        reactor.action.onNext(.tapNext)
       }
       .disposed(by: disposeBag)
 
@@ -135,6 +135,11 @@ final class LoginViewController: UIViewController, View {
         reactor.action.onNext(.tapAppleButton)
       }
       .disposed(by: disposeBag)
+
+    signUpButton.rx.controlEvent(.touchUpInside)
+      .subscribe(with: reactor) { reactor, _ in
+        reactor.action.onNext(.tapSignUp)
+      }.disposed(by: disposeBag)
 
     // state -> ui
     reactor.state.compactMap(\.appleHashsedNonce)
@@ -155,14 +160,11 @@ final class LoginViewController: UIViewController, View {
     reactor.state.compactMap(\.route)
       .distinctUntilChanged()
       .observe(on: MainScheduler.instance)
-      .subscribe { [weak self] event in
-        if case .next(let route) = event {
-          switch route {
-          case .signInIsComplete:
-            let viewController = UIViewController()
-            viewController.title = "메인"
-            self?.navigationController?.setViewControllers([viewController], animated: true)
-          }
+      .subscribe { [weak self] route in
+        switch route {
+        case .goUserInfo(let mail):
+          let viewController = UserInfoViewController(initialMail: mail)
+          self?.navigationController?.pushViewController(viewController, animated: true)
         }
       }
       .disposed(by: disposeBag)
@@ -204,7 +206,10 @@ extension LoginViewController:
       alert("Apple 자격이 유효하지 않습니다.")
       return
     }
-    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce))
+    //    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce))
+    let mail = credential.email
+    if let mail { KeychainMailStore.save(mail) }
+    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce, mail: mail))
   }
 
   func authorizationController(
