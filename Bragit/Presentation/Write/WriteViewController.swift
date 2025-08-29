@@ -15,7 +15,7 @@ import Then
 class WriteViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let alert = AlertView.makeAlert(style: .tempSaveDraft)
-  private let alertTitle = AlertView.makeAlert(style: .)
+  private let alertTitle = AlertView.makeAlert(style: .isEmptyPost)
 
   private let headerView = UIView()
 
