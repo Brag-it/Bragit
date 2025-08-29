@@ -29,6 +29,7 @@ class PreviewViewController: UIViewController, View {
     view.backgroundColor = .systemBackground
     self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
+    print("넘어온 데이터 : \(String(describing: self.reactor?.draft))")
   }
 
   // UI 설정

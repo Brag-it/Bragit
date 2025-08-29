@@ -5,6 +5,7 @@
 //  Created by 이태윤 on 8/20/25.
 //
 import UIKit
+import PhotosUI
 
 import ReactorKit
 import RxSwift
@@ -14,8 +15,8 @@ import Then
 
 class WriteViewController: UIViewController, View {
   var disposeBag = DisposeBag()
-  private let alert = AlertView.makeAlert(style: .tempSaveDraft)
-  private let alertTitle = AlertView.makeAlert(style: .isEmptyPost)
+  private let backAlert = AlertView.makeAlert(style: .tempSaveDraft)
+  private let isEmptyAlert = AlertView.makeAlert(style: .isEmptyPost)
 
   private let headerView = UIView()
 
@@ -26,7 +27,7 @@ class WriteViewController: UIViewController, View {
 
   private let titleLabel = UILabel().then {
     $0.text = "글쓰기"
-    $0.font = .pretendard(size: 18, weight: .medium)
+    $0.font = UIFont.systemFont(ofSize: 16)
     $0.textColor = .label
     $0.textAlignment = .center
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -40,28 +41,16 @@ class WriteViewController: UIViewController, View {
   }
 
   private let titleTextField = UITextField().then {
-    $0.borderStyle = .roundedRect
     $0.placeholder = "제목을 입력해 주세요"
     $0.borderStyle = .none
     $0.font = .pretendard(size: 20, weight: .semibold)
-    $0.layer.borderWidth = 0
   }
 
   private let dividerView = UIView().then {
     $0.backgroundColor = .lightGray
   }
 
-  private let textField = UITextView().then {
-    $0.font = .pretendard(size: 16)
-    $0.backgroundColor = .systemBackground
-    $0.isScrollEnabled = true                           // 스크롤 가능 여부
-    $0.showsVerticalScrollIndicator = false             // 수직 스크롤 바
-    $0.keyboardDismissMode = .onDrag                    // 드래그 시 키보드 내려가기
-    $0.autocorrectionType = .no                         // 자동 오타 수정 끄기
-    $0.smartDashesType = .no                            // 스마트 대시 끄기
-    $0.smartQuotesType = .no                            // 스마트 인용 부호 끄기
-    $0.textDragInteraction?.isEnabled = true            // 드래그 앤 드롭 기능 활성화
-  }
+  private let editorView = EditorView()
 
   init(reactor: WriteReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -81,7 +70,7 @@ class WriteViewController: UIViewController, View {
 
   // UI 설정
   private func setUIConstraints() {
-    [headerView, backButton, titleLabel, doneButton, titleTextField, dividerView, textField]
+    [headerView, backButton, titleLabel, doneButton, titleTextField, dividerView, editorView]
       .forEach { view.addSubview($0) }
 
     headerView.snp.makeConstraints {
@@ -118,7 +107,7 @@ class WriteViewController: UIViewController, View {
       $0.height.equalTo(1)
     }
 
-    textField.snp.makeConstraints {
+    editorView.snp.makeConstraints {
       $0.top.equalTo(dividerView.snp.bottom).offset(16)
       $0.leading.trailing.equalTo(titleTextField)
       $0.bottom.equalTo(view.safeAreaLayoutGuide)
@@ -126,40 +115,116 @@ class WriteViewController: UIViewController, View {
   }
 
   func bind(reactor: WriteReactor) {
-    alert.leftTap
-      .map { WriteReactor.Action.tapDismiss } // 왼쪽 버튼 눌리면 tapDismiss 액션으로 변환
+    backAlert.leftTap
+      .map { Reactor.Action.tapDismiss } // 왼쪽 버튼 눌리면 tapDismiss 액션으로 변환
       .bind(to: reactor.action)               // Reactor에 전달
       .disposed(by: disposeBag)
 
-    alert.rightTap
+    backAlert.rightTap
       .bind { print("오른쪽 버튼 누름") }
       .disposed(by: disposeBag)
 
     backButton.rx.tap
       .bind { [weak self] in
         guard let self else { return }
-        alert.show(in: view)
+        view.endEditing(true) // 키보드 레이아웃 내리기
+        backAlert.show(in: self.view)
       }
       .disposed(by: disposeBag)
 
-    //    textField.rx.text.orEmpty
-    //      .map { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    //      .bind(to: doneButton.rx.isEnabled)
-    //      .disposed(by: disposeBag)
+    // 완료 버튼 탭
+    doneButton.rx.tap
+      .bind { [weak self] in
+        guard let self else { return }
+
+        let isTitleEmpty = titleTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        let isContentEmpty = editorView.textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        if isTitleEmpty || isContentEmpty {
+          view.endEditing(true)
+          isEmptyAlert.show(in: self.view)
+        } else {
+          view.endEditing(true)
+          reactor.action.onNext(.tapDone)
+        }
+      }
+      .disposed(by: disposeBag)
+
+    editorView.accessoryView.boldButton.rx.tap
+      .map { Reactor.Action.boldTapped }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    editorView.accessoryView.underlineButton.rx.tap
+      .map { Reactor.Action.underlineTapped }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    editorView.accessoryView.strikethroughButton.rx.tap
+      .map { Reactor.Action.strikethroughTapped }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    editorView.accessoryView.imageButton.rx.tap
+      .bind { [weak self] in
+        guard let self else { return }
+        presentImagePicker()
+      }
+      .disposed(by: disposeBag)
 
     titleTextField.rx.text.orEmpty
-      .map { WriteReactor.Action.updateTitle($0) }
+      .distinctUntilChanged()
+      .map { Reactor.Action.updateTitle($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    textField.rx.text.orEmpty
-      .map { WriteReactor.Action.updateContent($0) }
+    editorView.textView.rx.attributedText
+      .compactMap { $0 }
+      .distinctUntilChanged()
+      .map { Reactor.Action.updateContent($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    doneButton.rx.tap
-      .map { WriteReactor.Action.tapDone }
-      .bind(to: reactor.action)
+    reactor.state
+      .bind { [weak self] state in
+        guard let self else { return }
+        editorView.applyBold(state.isBoldActive)
+        editorView.applyUnderline(state.isUnderlineActive)
+        editorView.applyStrikethrough(state.isStrikethroughActive)
+        editorView.accessoryView.boldButton.tintColor = state.isBoldActive ? .systemBlue : .grayScaleBack
+        editorView.accessoryView.underlineButton.tintColor = state.isUnderlineActive ? .systemBlue : .grayScaleBack
+        editorView.accessoryView.strikethroughButton.tintColor = state.isStrikethroughActive ?
+          .systemBlue : .grayScaleBack
+      }
       .disposed(by: disposeBag)
+  }
+
+  func presentImagePicker() {
+    var config = PHPickerConfiguration()
+    config.selectionLimit = 1
+    config.filter = .images                    // 이미지 타입만
+    let picker = PHPickerViewController(configuration: config)
+    picker.delegate = self                     // 결과 콜백 받기
+
+    present(picker, animated: true)
+  }
+}
+
+extension WriteViewController: PHPickerViewControllerDelegate {
+  func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    dismiss(animated: true)
+
+    guard let itemProvider = results.first?.itemProvider, itemProvider.canLoadObject(ofClass: UIImage.self) else {
+      return
+    }
+
+    // 비동기로 UIImage 불러오기
+    itemProvider.loadObject(ofClass: UIImage.self) { [weak self] (obj, error) in
+      guard let self, let image = obj as? UIImage, error == nil else { return }
+      DispatchQueue.main.async {
+        // 커서 위치에 이미지 삽입
+        self.editorView.insertImage(image: image)
+      }
+    }
   }
 }

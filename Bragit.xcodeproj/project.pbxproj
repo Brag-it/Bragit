@@ -22,6 +22,7 @@
 		E70E4F852E55DAC700CE935E /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F842E55DAC700CE935E /* Dependencies */; };
 		E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F872E55DAEE00CE935E /* LookinServer */; };
 		E70E4F8B2E55DB0A00CE935E /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F8A2E55DB0A00CE935E /* SwiftSoup */; };
+		E75DA8FA2E616AD700C324D3 /* RichTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = E75DA8F92E616AD700C324D3 /* RichTextKit */; };
 		E7A7368B2E55DCD100E0B9F1 /* Moya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368A2E55DCD100E0B9F1 /* Moya */; };
 		E7A7368D2E55DCD100E0B9F1 /* RxMoya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368C2E55DCD100E0B9F1 /* RxMoya */; };
 /* End PBXBuildFile section */
@@ -87,6 +88,7 @@
 				E70E4F852E55DAC700CE935E /* Dependencies in Frameworks */,
 				E7A7368D2E55DCD100E0B9F1 /* RxMoya in Frameworks */,
 				E70E4F762E55D9CC00CE935E /* RxSwift in Frameworks */,
+				E75DA8FA2E616AD700C324D3 /* RichTextKit in Frameworks */,
 				E70E4F6B2E55D99E00CE935E /* Auth in Frameworks */,
 				E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */,
 				E70E4F8B2E55DB0A00CE935E /* SwiftSoup in Frameworks */,
@@ -159,6 +161,7 @@
 				E70E4F8A2E55DB0A00CE935E /* SwiftSoup */,
 				E7A7368A2E55DCD100E0B9F1 /* Moya */,
 				E7A7368C2E55DCD100E0B9F1 /* RxMoya */,
+				E75DA8F92E616AD700C324D3 /* RichTextKit */,
 			);
 			productName = Bragit;
 			productReference = E70E4E882E55D60D00CE935E /* Bragit.app */;
@@ -228,6 +231,7 @@
 				E70E4F862E55DAEE00CE935E /* XCRemoteSwiftPackageReference "LookinServer" */,
 				E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */,
+				E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E70E4E892E55D60D00CE935E /* Products */;
@@ -659,6 +663,14 @@
 				minimumVersion = 2.10.3;
 			};
 		};
+		E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/danielsaidi/RichTextKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
 		E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Moya/Moya";
@@ -744,6 +756,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
+		};
+		E75DA8F92E616AD700C324D3 /* RichTextKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */;
+			productName = RichTextKit;
 		};
 		E7A7368A2E55DCD100E0B9F1 /* Moya */ = {
 			isa = XCSwiftPackageProductDependency;

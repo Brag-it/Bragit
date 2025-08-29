@@ -4,6 +4,8 @@
 //
 //  Created by 이태윤 on 8/22/25.
 //
+import UIKit
+
 import ReactorKit
 import RxSwift
 import RxFlow
@@ -19,22 +21,28 @@ class WriteReactor: Reactor, Stepper {
     case tapDismiss // 탭 닫기
     case tapDone    // 완료 버튼
     case updateTitle(String)
-    case updateContent(String)
+    case updateContent(NSAttributedString)
+    case boldTapped
+    case underlineTapped
+    case strikethroughTapped
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
     case setTitle(String)
-    case setContent(String)
+    case setContent(NSAttributedString)
+    case setBoldActive(Bool)
+    case setUnderlineActive(Bool)
+    case setStrikethroughActive(Bool)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
-    var title: String = ""            // 제목
-    var content: String = ""          // 내용
-    var thumbnailImage: String?       // 썸네일 (임베딩 했을 경우)
-    var description: String?          // 미리보기 글 (임베딩 했을 경우)
-
+    var title: String = ""                                    // 제목
+    var content: NSAttributedString = NSAttributedString("")  // 내용
+    var isBoldActive = false
+    var isUnderlineActive = false
+    var isStrikethroughActive = false
   }
 
   init() {
@@ -52,15 +60,23 @@ class WriteReactor: Reactor, Stepper {
       let draft = PostDraft(
         title: currentState.title,
         content: currentState.content,
-        thumbnailImage: currentState.thumbnailImage,
-        description: currentState.description
       )
       steps.accept(AppStep.preview(draft: draft))
       return .empty()
     case .updateTitle(let title):
       return .just(.setTitle(title))
+
     case .updateContent(let content):
       return .just(.setContent(content))
+
+    case .boldTapped:
+      return .just(.setBoldActive(!currentState.isBoldActive))
+
+    case .underlineTapped:
+      return .just(.setUnderlineActive(!currentState.isUnderlineActive))
+
+    case .strikethroughTapped:
+      return .just(.setStrikethroughActive(!currentState.isStrikethroughActive))
     }
 
   }
@@ -73,6 +89,12 @@ class WriteReactor: Reactor, Stepper {
       newState.title = title
     case .setContent(let content):
       newState.content = content
+    case .setBoldActive(let isActive):
+      newState.isBoldActive = isActive
+    case .setUnderlineActive(let isActive):
+      newState.isUnderlineActive = isActive
+    case .setStrikethroughActive(let isActive):
+      newState.isStrikethroughActive = isActive
     }
     return newState
   }
