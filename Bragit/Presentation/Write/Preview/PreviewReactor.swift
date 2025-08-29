@@ -25,7 +25,7 @@ class PreviewReactor: Reactor, Stepper {
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
-      }
+  }
 
   init(draft: PostDraft) {
     self.initialState = State()

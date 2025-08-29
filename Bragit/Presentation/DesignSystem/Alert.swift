@@ -182,6 +182,7 @@ extension AlertView {
     case deleteAcount  // 회원탈퇴
   }
 
+  // swiftlint:disable cyclomatic_complexity
   static func makeAlert(style: AlertStyle) -> AlertView {
     switch style {
     case .tempSaveDraft:
@@ -284,4 +285,5 @@ extension AlertView {
       )
     }
   }
+  // swiftlint:enable cyclomatic_complexity
 }
