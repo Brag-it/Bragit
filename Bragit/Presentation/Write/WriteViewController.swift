@@ -126,6 +126,7 @@ class WriteViewController: UIViewController, View {
     backButton.rx.tap
       .bind { [weak self] in
         guard let self else { return }
+        view.endEditing(true) // 키보드 레이아웃 내리기
         self.alert.show(in: self.view)
       }
       .disposed(by: disposeBag)
@@ -174,7 +175,7 @@ class WriteViewController: UIViewController, View {
 
   func presentImagePicker() {
     var config = PHPickerConfiguration()
-    config.selectionLimit = 3
+    config.selectionLimit = 1
     config.filter = .images                    // 이미지 타입만
     let picker = PHPickerViewController(configuration: config)
     picker.delegate = self                     // 결과 콜백 받기
