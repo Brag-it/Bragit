@@ -1,5 +1,5 @@
 //
-//  MarkDownEditorView.swift
+//  EditorView.swift
 //  Bragit
 //
 //  Created by 이태윤 on 8/27/27.
@@ -10,11 +10,12 @@ import SnapKit
 import Then
 import RxSwift
 import RxCocoa
+import RichTextKit
 
-final class MarkDownEditorView: UIView {
+final class EditorView: UIView {
   let accessoryView = EditorAccessoryView()
 
-  lazy var textView = UITextView().then {
+  lazy var textView = RichTextView().then {
     $0.font = .systemFont(ofSize: 16) // 현재 프리텐다드의 이탤릭 폰트가 없어 일단 systemFont적용
     $0.backgroundColor = .systemBackground
     $0.isEditable = true
