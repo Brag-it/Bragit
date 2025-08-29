@@ -13,13 +13,25 @@ import RxCocoa
 
 final class EditorAccessoryView: UIView {
   // 볼드체 적용 버튼
-  private let boldButton = UIButton(type: .system).then {
+  let boldButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "bold"), for: .normal)
     $0.tintColor = .label
   }
 
+  // 밑줄 적용 버튼
+  let underlineButton = UIButton(type: .system).then {
+    $0.setImage(UIImage(systemName: "underline"), for: .normal)
+    $0.tintColor = .label
+  }
+
+  // 취소선 적용 버튼
+  let strikethroughButton = UIButton(type: .system).then {
+    $0.setImage(UIImage(systemName: "strikethrough"), for: .normal)
+    $0.tintColor = .label
+  }
+
   // 이미지 삽입 버튼
-  private let imageButton = UIButton(type: .system).then {
+  let imageButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "photo"), for: .normal)
     $0.tintColor = .label
   }
@@ -29,13 +41,6 @@ final class EditorAccessoryView: UIView {
     $0.axis = .horizontal
     $0.spacing = 16
     $0.distribution = .fillEqually
-  }
-  public var boldButtonTap: Observable<Void> {
-    return boldButton.rx.tap.asObservable()
-  }
-
-  public var imageButtonTap: Observable<Void> {
-    return imageButton.rx.tap.asObservable()
   }
 
   override init(frame: CGRect) {
@@ -53,7 +58,9 @@ final class EditorAccessoryView: UIView {
     layer.borderColor = UIColor.systemGray3.cgColor
     layer.borderWidth = 1.0
 
-    [boldButton, imageButton].forEach(stackView.addArrangedSubview)
+    [boldButton, underlineButton, strikethroughButton, imageButton].forEach {
+      stackView.addArrangedSubview($0)
+    }
   }
 
   private func setupLayout() {

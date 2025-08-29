@@ -26,7 +26,7 @@ class WriteViewController: UIViewController, View {
 
   private let titleLabel = UILabel().then {
     $0.text = "글쓰기"
-    $0.font = .pretendard(size: 18, weight: .medium)
+    $0.font = UIFont.systemFont(ofSize: 16)
     $0.textColor = .label
     $0.textAlignment = .center
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -49,7 +49,7 @@ class WriteViewController: UIViewController, View {
     $0.backgroundColor = .lightGray
   }
 
-  private let editorView = TestMarkDownEditorView()
+  private let editorView = MarkDownEditorView()
 
   init(reactor: WriteReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -136,102 +136,123 @@ class WriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // 제목 텍스트 변경
-    titleTextField.rx.text.orEmpty
-      .map { Reactor.Action.titleDidChange($0) }
+    editorView.accessoryView.boldButton.rx.tap
+      .map { Reactor.Action.boldTapped }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // 에디터 내용 변경
-    editorView.coreTextView.rx.didChange
-      .withLatestFrom(editorView.coreTextView.rx.attributedText)
-      .map { Reactor.Action.contentDidChange($0 ?? NSAttributedString(string: "")) }
+    editorView.accessoryView.underlineButton.rx.tap
+      .map { Reactor.Action.underlineTapped }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // 볼드 버튼 탭
-    editorView.boldButtonTap
-      .map { Reactor.Action.boldButtonTapped }
+    editorView.accessoryView.strikethroughButton.rx.tap
+      .map { Reactor.Action.strikethroughTapped }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // 이미지 버튼 탭
-    editorView.imageButtonTap
-      .map { Reactor.Action.imageButtonTapped }
-      .bind(to: reactor.action)
-      .disposed(by: disposeBag)
-
-    // 완료 버튼 활성화 여부
-    reactor.state.map { $0.canPost }
-      .distinctUntilChanged()
-      .bind(to: doneButton.rx.isEnabled)
-      .disposed(by: disposeBag)
-
-    // 이미지 피커 표시: shouldShowImagePicker가 true가 되는 순간만 감지하여 실행
-    reactor.state.map { $0.shouldShowImagePicker }
-      .distinctUntilChanged()
-      .filter { $0 == true }
+    editorView.accessoryView.imageButton.rx.tap
       .bind { [weak self] _ in
-        self?.presentImagePicker()
+        guard let self else { return }
+        presentImagePicker()
       }
       .disposed(by: disposeBag)
 
-    // 볼드 속성 토글: shouldToggleBold가 true가 되는 순간만 감지하여 실행
-    reactor.state.map { $0.shouldToggleBold }
+    // 볼드체
+    reactor.state
+      .map { $0.isBoldActive }
       .distinctUntilChanged()
-      .filter { $0 == true }
-      .bind { [weak self] _ in
-        self?.toggleBold()
+      .bind { [weak self] isActive in
+        guard let self else { return }
+        var attrs = self.editorView.textView.typingAttributes
+        guard let font = attrs[.font] as? UIFont else { return }
+        let newfontDescriptor = if isActive {
+          font.fontDescriptor.withSymbolicTraits(
+            font.fontDescriptor.symbolicTraits.union(.traitBold)
+          )
+        } else {
+          font.fontDescriptor.withSymbolicTraits(
+            font.fontDescriptor.symbolicTraits.subtracting(.traitBold)
+          )
+        }
+        if let descriptor = newfontDescriptor {
+          attrs[.font] = UIFont(descriptor: descriptor, size: font.pointSize)
+          self.editorView.textView.typingAttributes = attrs
+        } else {
+          attrs[.font] = UIFont.systemFont(ofSize: font.pointSize, weight: .bold )
+        }
+        self.editorView.textView.typingAttributes = attrs
       }
       .disposed(by: disposeBag)
 
-    // 이미지 삽입: imageToInsert에 값이 들어오는 순간만 감지하여 실행
-    reactor.state.compactMap { $0.imageToInsert }
+    // 밑줄
+    reactor.state
+      .map { $0.isUnderlineActive }
       .distinctUntilChanged()
-      .bind { [weak self] image in
-        self?.editorView.insertImage(image: image)
+      .bind { [weak self] isActive in
+        guard let self else { return }
+        var attrs = self.editorView.textView.typingAttributes
+        if isActive {
+          attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
+        } else {
+          attrs.removeValue(forKey: .underlineStyle)
+        }
+        self.editorView.textView.typingAttributes = attrs
+      }
+      .disposed(by: disposeBag)
+
+    // 취소선
+    reactor.state
+      .map { $0.isStrikethroughActive }
+      .distinctUntilChanged()
+      .bind { [weak self] isActive in
+        guard let self else { return }
+        var attrs = self.editorView.textView.typingAttributes
+        if isActive {
+          attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
+        } else {
+          attrs.removeValue(forKey: .strikethroughStyle)
+        }
+        self.editorView.textView.typingAttributes = attrs
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .bind { [weak self] state in
+        guard let self else { return }
+        editorView.accessoryView.boldButton.tintColor = state.isBoldActive ? .systemBlue : .grayScaleBack
+        editorView.accessoryView.underlineButton.tintColor = state.isUnderlineActive ? .systemBlue : .grayScaleBack
+        editorView.accessoryView.strikethroughButton.tintColor = state.isStrikethroughActive ?
+          .systemBlue : .grayScaleBack
       }
       .disposed(by: disposeBag)
   }
 
-  // MARK: - Private Methods
-
-  // 볼드 토글 로직: ViewController가 에디터의 현재 상태를 보고 어떤 메서드를 호출할지 결정합니다.
-  private func toggleBold() {
-    let selectedRange = editorView.coreTextView.selectedRange
-    if selectedRange.length == 0 {
-      editorView.toggleTypingAttribute(fontTrait: .traitBold)
-    } else {
-      editorView.toggleSelectionAttribute(fontTrait: .traitBold)
-    }
-  }
-
-  // 이미지 피커를 띄웁니다.
-  private func presentImagePicker() {
+  func presentImagePicker() {
     var config = PHPickerConfiguration()
-    config.selectionLimit = 1 // 한 번에 하나의 이미지만 선택
-    config.filter = .images // 이미지만 선택하도록 필터링
+    config.selectionLimit = 3
+    config.filter = .images                    // 이미지 타입만
     let picker = PHPickerViewController(configuration: config)
-    picker.delegate = self
+    picker.delegate = self                     // 결과 콜백 받기
+
     present(picker, animated: true)
   }
 }
 
-// MARK: - PHPickerViewControllerDelegate
 extension WriteViewController: PHPickerViewControllerDelegate {
-  // 이미지 선택이 완료되었을 때 호출되는 델리게이트 메서드입니다.
   func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-    // 피커를 닫습니다.
-    picker.dismiss(animated: true)
+    dismiss(animated: true)
 
-    // 사용자가 선택한 이미지가 있는지 확인합니다.
-    guard let result = results.first else { return }
-    // 선택된 이미지 데이터를 로드합니다.
-    result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] (image, error) in
-      guard let self = self, let image = image as? UIImage else { return }
-      // 로드가 완료되면, 메인 스레드에서 Reactor에 imageDidPick 액션을 전달합니다.
+    guard let itemProvider = results.first?.itemProvider, itemProvider.canLoadObject(ofClass: UIImage.self) else {
+      return
+    }
+
+    // 비동기로 UIImage 불러오기
+    itemProvider.loadObject(ofClass: UIImage.self) { [weak self] (obj, error) in
+      guard let self, let image = obj as? UIImage, error == nil else { return }
       DispatchQueue.main.async {
-        self.reactor?.action.onNext(.imageDidPick(image))
+        // 커서 위치에 이미지 삽입
+        self.editorView.insertImage(image: image)
       }
     }
   }

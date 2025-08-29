@@ -12,10 +12,10 @@ import RxSwift
 import RxCocoa
 
 final class MarkDownEditorView: UIView {
-  private let accessoryView = EditorAccessoryView()
+  let accessoryView = EditorAccessoryView()
 
-  private lazy var textView = UITextView().then {
-    $0.font = .pretendard(size: 16)
+  lazy var textView = UITextView().then {
+    $0.font = .systemFont(ofSize: 16) // 현재 프리텐다드의 이탤릭 폰트가 없어 일단 systemFont적용
     $0.backgroundColor = .systemBackground
     $0.isEditable = true
     $0.isScrollEnabled = true
@@ -26,19 +26,6 @@ final class MarkDownEditorView: UIView {
     $0.smartQuotesType = .no
     $0.textDragInteraction?.isEnabled = true
     $0.inputAccessoryView = accessoryView
-  }
-
-  public var boldButtonTap: Observable<Void> {
-    return accessoryView.boldButtonTap
-  }
-
-  public var imageButtonTap: Observable<Void> {
-    return accessoryView.imageButtonTap
-  }
-
-  // textView의 rx 속성에 접근하기 위해 public으로 선언
-  public var coreTextView: UITextView {
-    return self.textView
   }
 
   override init(frame: CGRect) {
@@ -57,44 +44,8 @@ final class MarkDownEditorView: UIView {
     }
   }
 
-  // 앞으로 입력될 텍스트의 속성을 토글(적용/해제)
-  public func toggleTypingAttribute(fontTrait: UIFontDescriptor.SymbolicTraits) {
-    var currentAttributes = textView.typingAttributes
-    let currentFont = currentAttributes[.font] as? UIFont ?? textView.font ?? .systemFont(ofSize: 16)
-    let newFont = currentFont.toggled(trait: fontTrait)
-    currentAttributes[.font] = newFont
-    textView.typingAttributes = currentAttributes
-  }
-
-  // 선택된 영역의 텍스트 속성을 토글(적용/해제)
-  public func toggleSelectionAttribute(fontTrait: UIFontDescriptor.SymbolicTraits) {
-    let range = textView.selectedRange
-    guard range.length > 0 else { return } // 선택된 영역이 있을 때만 실행합니다.
-    let textStorage = textView.textStorage
-    var isAlreadyApplied = true
-    textStorage.enumerateAttribute(.font, in: range) { (font, _, stop) in
-      guard let font = font as? UIFont else {
-        isAlreadyApplied = false
-        stop.pointee = true
-        return
-      }
-      if !font.fontDescriptor.symbolicTraits.contains(fontTrait) {
-        isAlreadyApplied = false
-        stop.pointee = true
-      }
-    }
-
-    textStorage.beginEditing()
-    textStorage.enumerateAttribute(.font, in: range) { (font, subrange, _) in
-      let currentFont = font as? UIFont ?? textView.font ?? .systemFont(ofSize: 16)
-      let newFont = isAlreadyApplied ? currentFont.removed(trait: fontTrait) : currentFont.toggled(trait: fontTrait)
-      textStorage.addAttribute(.font, value: newFont, range: subrange)
-    }
-    textStorage.endEditing()
-  }
-
-  public func insertImage(image: UIImage) {
-    // 이미지 첨부(Attachment) 객체를 생성합니다.
+  func insertImage(image: UIImage) {
+    // 이미지 첨부(Attachment) 객체를 생성
     let attachment = NSTextAttachment()
     attachment.image = image
 
@@ -117,37 +68,5 @@ final class MarkDownEditorView: UIView {
     let newPosition = textView.selectedRange.location + 1
     textView.selectedRange = NSRange(location: newPosition, length: 0)
     textStorage.insert(NSAttributedString(string: "\n"), at: newPosition)
-  }
-}
-
-// UIFont의 특정 특성(trait)을 쉽게 추가하거나 제거하기 위한 헬퍼
-extension UIFont {
-  // 주어진 특성을 현재 폰트에 토글(있으면 제거, 없으면 추가)하는 새 폰트를 반환
-  func toggled(trait: UIFontDescriptor.SymbolicTraits) -> UIFont {
-    let descriptor = fontDescriptor
-    var traits = descriptor.symbolicTraits
-
-    if traits.contains(trait) {
-      traits.remove(trait)
-    } else {
-      traits.insert(trait)
-    }
-
-    guard let newDescriptor = descriptor.withSymbolicTraits(traits) else {
-      return self
-    }
-    // size 0은 기존 폰트 크기를 그대로 사용하라는 의미
-    return UIFont(descriptor: newDescriptor, size: 0)
-  }
-
-  // 주어진 특성을 현재 폰트에서 제거하는 새 폰트를 반환
-  func removed(trait: UIFontDescriptor.SymbolicTraits) -> UIFont {
-    let descriptor = fontDescriptor
-    var traits = descriptor.symbolicTraits
-    traits.remove(trait)
-    guard let newDescriptor = descriptor.withSymbolicTraits(traits) else {
-      return self
-    }
-    return UIFont(descriptor: newDescriptor, size: 0)
   }
 }
