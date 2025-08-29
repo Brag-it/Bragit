@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SnapKit
 
 class ImageUploadViewController: UIViewController {
   // MARK: UI
@@ -23,6 +24,14 @@ class ImageUploadViewController: UIViewController {
   }
 
   private func setupLayout() {
-    //
+    [nextButton].forEach {
+      view.addSubview($0)
+    }
+
+    nextButton.snp.makeConstraints {
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(24)
+      $0.height.equalTo(52)
+    }
   }
 }
