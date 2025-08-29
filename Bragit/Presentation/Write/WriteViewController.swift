@@ -49,7 +49,7 @@ class WriteViewController: UIViewController, View {
     $0.backgroundColor = .lightGray
   }
 
-  private let editorView = MarkDownEditorView()
+  private let editorView = EditorView()
 
   init(reactor: WriteReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -152,74 +152,18 @@ class WriteViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     editorView.accessoryView.imageButton.rx.tap
-      .bind { [weak self] _ in
+      .bind { [weak self] in
         guard let self else { return }
         presentImagePicker()
-      }
-      .disposed(by: disposeBag)
-
-    // 볼드체
-    reactor.state
-      .map { $0.isBoldActive }
-      .distinctUntilChanged()
-      .bind { [weak self] isActive in
-        guard let self else { return }
-        var attrs = self.editorView.textView.typingAttributes
-        guard let font = attrs[.font] as? UIFont else { return }
-        let newfontDescriptor = if isActive {
-          font.fontDescriptor.withSymbolicTraits(
-            font.fontDescriptor.symbolicTraits.union(.traitBold)
-          )
-        } else {
-          font.fontDescriptor.withSymbolicTraits(
-            font.fontDescriptor.symbolicTraits.subtracting(.traitBold)
-          )
-        }
-        if let descriptor = newfontDescriptor {
-          attrs[.font] = UIFont(descriptor: descriptor, size: font.pointSize)
-          self.editorView.textView.typingAttributes = attrs
-        } else {
-          attrs[.font] = UIFont.systemFont(ofSize: font.pointSize, weight: .bold )
-        }
-        editorView.textView.typingAttributes = attrs
-      }
-      .disposed(by: disposeBag)
-
-    // 밑줄
-    reactor.state
-      .map { $0.isUnderlineActive }
-      .distinctUntilChanged()
-      .bind { [weak self] isActive in
-        guard let self else { return }
-        var attrs = self.editorView.textView.typingAttributes
-        if isActive {
-          attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
-        } else {
-          attrs.removeValue(forKey: .underlineStyle)
-        }
-        editorView.textView.typingAttributes = attrs
-      }
-      .disposed(by: disposeBag)
-
-    // 취소선
-    reactor.state
-      .map { $0.isStrikethroughActive }
-      .distinctUntilChanged()
-      .bind { [weak self] isActive in
-        guard let self else { return }
-        var attrs = self.editorView.textView.typingAttributes
-        if isActive {
-          attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
-        } else {
-          attrs.removeValue(forKey: .strikethroughStyle)
-        }
-        editorView.textView.typingAttributes = attrs
       }
       .disposed(by: disposeBag)
 
     reactor.state
       .bind { [weak self] state in
         guard let self else { return }
+        editorView.applyBold(state.isBoldActive)
+        editorView.applyUnderline(state.isUnderlineActive)
+        editorView.applyStrikethrough(state.isStrikethroughActive)
         editorView.accessoryView.boldButton.tintColor = state.isBoldActive ? .systemBlue : .grayScaleBack
         editorView.accessoryView.underlineButton.tintColor = state.isUnderlineActive ? .systemBlue : .grayScaleBack
         editorView.accessoryView.strikethroughButton.tintColor = state.isStrikethroughActive ?

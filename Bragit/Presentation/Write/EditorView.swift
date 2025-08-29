@@ -45,6 +45,25 @@ final class EditorView: UIView {
     }
   }
 
+  func applyBold(_ isOn: Bool) {
+    setStyle(.bold, enabled: isOn) // 라이브러리 스타일 토글 사용
+  }
+
+  func applyUnderline(_ isOn: Bool) {
+    setStyle(.underlined, enabled: isOn)
+  }
+
+  func applyStrikethrough(_ isOn: Bool) {
+    setStyle(.strikethrough, enabled: isOn)
+  }
+
+  private func setStyle(_ style: RichTextStyle, enabled: Bool) {
+    let has = textView.hasRichTextStyle(style) // 현재 스타일 적용 여부 확인
+    if has != enabled {
+      textView.toggleRichTextStyle(style) // 필요할 때만 토글
+    }
+  }
+
   func insertImage(image: UIImage) {
     // 이미지 첨부(Attachment) 객체를 생성
     let attachment = NSTextAttachment()
@@ -53,21 +72,24 @@ final class EditorView: UIView {
     // 이미지의 크기를 에디터의 폭에 맞게 조절
     let screenWidth = self.bounds.width
     let padding: CGFloat = 16 // 에디터의 좌우 여백을 고려
-    let imageWidth = screenWidth - padding
-    let aspectRatio = image.size.height / image.size.width
+    let imageWidth = max(0, screenWidth - padding)
+    let aspectRatio = image.size.height / max(image.size.width, 1) // 0 나누기 방지
     let imageHeight = imageWidth * aspectRatio
     attachment.bounds = CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight)
 
     // Attachment를 NSAttributedString으로 변환
-    let imageAttributedString = NSAttributedString(attachment: attachment)
-
+    let imageAttr = NSAttributedString(attachment: attachment)
     // 현재 커서 위치에 이미지 AttributedString을 삽입
     let textStorage = textView.textStorage
-    textStorage.insert(imageAttributedString, at: textView.selectedRange.location)
 
+    let insertLocation = min(textView.selectedRange.location, textStorage.length)
+    textStorage.beginEditing()
+    textStorage.insert(imageAttr, at: insertLocation)
     // 이미지 삽입 후 커서를 이미지 다음으로 이동시키고, 줄바꿈을 추가하여 이미지 바로 뒤에 텍스트가 붙지 않도록
-    let newPosition = textView.selectedRange.location + 1
-    textView.selectedRange = NSRange(location: newPosition, length: 0)
-    textStorage.insert(NSAttributedString(string: "\n"), at: newPosition)
+    textStorage.insert(NSAttributedString(string: "\n"), at: insertLocation + 1)
+    textStorage.endEditing()
+
+    // 커서를 줄바꿈 뒤로 이동
+    textView.selectedRange = NSRange(location: insertLocation + 2, length: 0)
   }
 }
