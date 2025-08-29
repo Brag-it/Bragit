@@ -289,7 +289,8 @@ final class UserInfoViewController: UIViewController {
       nickname: formView.nicknameTextField.text ?? "",
       isAppleLogin: isAppleLogin
     )
-    let nextVC = TermsViewController(userInfo: info)
+    let reactor = TermsReactor(userInfo: info)
+    let nextVC = TermsViewController(userInfo: info, reactor: reactor)
     navigationController?.pushViewController(nextVC, animated: true)
   }
 

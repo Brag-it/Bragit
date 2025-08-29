@@ -9,10 +9,9 @@
 // 2. Supabase 교환(AuthService) -> 세션(uid/email)
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 
-import Foundation
-
 import CryptoKit
 import Dependencies
+import Foundation
 import ReactorKit
 import RxFlow
 import RxRelay
@@ -54,6 +53,7 @@ final class LoginReactor: Reactor, Stepper {
   var initialState = State()
   let steps = PublishRelay<Step>()
   @Dependency(\.authClient) private var authClient
+  @Dependency(\.supabase) private var supabase
 
   init() {
     self.initialState = State()
@@ -66,9 +66,12 @@ final class LoginReactor: Reactor, Stepper {
         .just(.setLoading(true)),
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
+        // new line
+        checkUserRegistrationAndRoute(mail: mail),
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil)),
-        .just(.setRoute(.goUserInfo(mail: mail)))
+        .just(.setNonce(raw: nil, hashed: nil))
+        // removed line
+        //        .just(.setRoute(.goUserInfo(mail: mail)))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
@@ -97,6 +100,41 @@ final class LoginReactor: Reactor, Stepper {
 
   func transform(state: Observable<State>) -> Observable<State> {
     state.observe(on: MainScheduler.instance)
+  }
+
+  private func checkUserRegistrationAndRoute(mail: String?) -> Observable<Mutation> {
+    Observable<Mutation>.create { [weak self] observer in
+      guard let self else { return Disposables.create() }
+      Task { [weak self] in
+        guard let self else {
+          observer.onCompleted()
+          return
+        }
+        do {
+          let session = try await self.supabase.auth.session
+          let userId = session.user.id
+
+          let users: [UserInfo] = try await self.supabase
+            .from("User_Info")
+            .select()
+            .eq("id", value: userId)
+            .execute()
+            .value
+
+          if users.first != nil {
+            await MainActor.run { self.steps.accept(AppStep.home) }
+            observer.onCompleted()
+          } else {
+            observer.onNext(.setRoute(.goUserInfo(mail: mail)))
+            observer.onCompleted()
+          }
+        } catch {
+          observer.onNext(.setError("가입 여부 확인 실패: \(error.localizedDescription)"))
+          observer.onCompleted()
+        }
+      }
+      return Disposables.create()
+    }
   }
 
   private static func randomNonce(length: Int = 32) -> String {

@@ -14,13 +14,18 @@ import Supabase
 import Then
 import UIKit
 
-final class TermsViewController: UIViewController {
+final class TermsViewController: UIViewController, View {
+  typealias Reactor = TermsReactor
+
   private let userInfo: UserRegistrationInfo
   @Dependency(\.supabase) private var supabase
 
   private var serviceAccepted = false
   private var privacyAccepted = false
   private var marketingAccepted = false
+
+  var disposeBag = DisposeBag()
+  var reactor: TermsReactor?
 
   // MARK: UI
   let descriptionLabel = UILabel().then {
@@ -111,8 +116,9 @@ final class TermsViewController: UIViewController {
     $0.isEnabled = false
   }
 
-  init(userInfo: UserRegistrationInfo) {
+  init(userInfo: UserRegistrationInfo, reactor: TermsReactor) {
     self.userInfo = userInfo
+    self.reactor = reactor
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -129,9 +135,22 @@ final class TermsViewController: UIViewController {
     updateAllAcceptCheckboxImage()
     updateNextButtonState()
   }
+}
 
-  // MARK: LAYOUT
-  private func setupLayout() {
+// MARK: - ReactorKit View binding
+extension TermsViewController {
+  func bind(reactor: TermsReactor) {
+    nextButton.rx.tap
+      .subscribe(with: reactor) { reactor, _ in
+        reactor.action.onNext(.tapNext)
+      }
+      .disposed(by: disposeBag)
+  }
+}
+
+// MARK: - Layout & UI setup
+private extension TermsViewController {
+  func setupLayout() {
     // TODO: Font Setting
     // all accept stack
     [allAcceptCheckbox, allAcceptLabel].forEach { allAcceptStack.addArrangedSubview($0) }
@@ -153,7 +172,7 @@ final class TermsViewController: UIViewController {
       serviceAcceptStack,
       privacyAcceptStack,
       marketingAcceptStack,
-      nextButton,
+      nextButton
     ].forEach {
       view.addSubview($0)
     }
@@ -208,7 +227,7 @@ final class TermsViewController: UIViewController {
     }
   }
 
-  private func setupActions() {
+  func setupActions() {
     allAcceptCheckbox.addTarget(self, action: #selector(didTapAllAccept), for: .touchUpInside)
     serviceAcceptCheckbox.addTarget(self, action: #selector(didTapService), for: .touchUpInside)
     privacyAcceptCheckbox.addTarget(self, action: #selector(didTapPrivacy), for: .touchUpInside)
@@ -216,7 +235,7 @@ final class TermsViewController: UIViewController {
     nextButton.addTarget(self, action: #selector(didTapNext), for: .touchUpInside)
   }
 
-  private func applyInitialUI() {
+  func applyInitialUI() {
     setCheckboxImage(allAcceptCheckbox, checked: false)
     setCheckboxImage(serviceAcceptCheckbox, checked: false)
     setCheckboxImage(privacyAcceptCheckbox, checked: false)
@@ -227,25 +246,28 @@ final class TermsViewController: UIViewController {
     }
   }
 
-  private func setCheckboxImage(_ button: UIButton, checked: Bool) {
+  func setCheckboxImage(_ button: UIButton, checked: Bool) {
     let name = checked ? "checkmark.square.fill" : "square.fill"
     button.setImage(UIImage(systemName: name), for: .normal)
   }
 
-  private func updateAllAcceptCheckboxImage() {
+  func updateAllAcceptCheckboxImage() {
     let allOn = serviceAccepted && privacyAccepted && marketingAccepted
     let allOff = !serviceAccepted && !privacyAccepted && !marketingAccepted
     let imageName: String = allOn ? "checkmark.square.fill" : (allOff ? "square.fill" : "minus.square.fill")
     allAcceptCheckbox.setImage(UIImage(systemName: imageName), for: .normal)
   }
 
-  private func updateNextButtonState() {
+  func updateNextButtonState() {
     let enabled = serviceAccepted && privacyAccepted
     nextButton.isEnabled = enabled
     nextButton.backgroundColor = enabled ? .orange : .gray
   }
+}
 
-  @objc private func didTapAllAccept() {
+// MARK: - Actions
+private extension TermsViewController {
+  @objc func didTapAllAccept() {
     let shouldCheckAll = !(serviceAccepted && privacyAccepted && marketingAccepted)
     serviceAccepted = shouldCheckAll
     privacyAccepted = shouldCheckAll
@@ -258,33 +280,36 @@ final class TermsViewController: UIViewController {
     updateNextButtonState()
   }
 
-  @objc private func didTapService() {
+  @objc func didTapService() {
     serviceAccepted.toggle()
     setCheckboxImage(serviceAcceptCheckbox, checked: serviceAccepted)
     updateAllAcceptCheckboxImage()
     updateNextButtonState()
   }
 
-  @objc private func didTapPrivacy() {
+  @objc func didTapPrivacy() {
     privacyAccepted.toggle()
     setCheckboxImage(privacyAcceptCheckbox, checked: privacyAccepted)
     updateAllAcceptCheckboxImage()
     updateNextButtonState()
   }
 
-  @objc private func didTapMarketing() {
+  @objc func didTapMarketing() {
     marketingAccepted.toggle()
     setCheckboxImage(marketingAcceptCheckbox, checked: marketingAccepted)
     updateAllAcceptCheckboxImage()
     updateNextButtonState()
   }
 
-  @objc private func didTapNext() {
+  @objc func didTapNext() {
     guard serviceAccepted && privacyAccepted else { return }
     Task { await registerOnSupabase() }
   }
+}
 
-  private func makeUserInfo(id: UUID, provider: String) -> UserInfo {
+// MARK: - Supabase & Helpers
+private extension TermsViewController {
+  func makeUserInfo(id: UUID, provider: String) -> UserInfo {
     UserInfo(
       id: id,
       nickname: userInfo.nickname,
@@ -295,22 +320,22 @@ final class TermsViewController: UIViewController {
     )
   }
 
-  private func providerString() -> String {
+  func providerString() -> String {
     return userInfo.isAppleLogin ? "apple" : "mail"
   }
 
-  private func alert(_ message: String) {
+  func alert(_ message: String) {
     let alertController = UIAlertController(title: "Notice", message: message, preferredStyle: .alert)
     alertController.addAction(.init(title: "OK", style: .default))
     present(alertController, animated: true)
   }
 
-  private func showLoding(_ show: Bool) {
+  func showLoding(_ show: Bool) {
     nextButton.isEnabled = !show
     nextButton.alpha = show ? 0.6 : 1.0
   }
 
-  private func insertUserInfoRow(userId: UUID, provider: String) async throws {
+  func insertUserInfoRow(userId: UUID, provider: String) async throws {
     let info = makeUserInfo(id: userId, provider: provider)
     _ = try await supabase
       .from("User_Info")
@@ -318,7 +343,7 @@ final class TermsViewController: UIViewController {
       .execute()
   }
 
-  private func registerOnSupabase() async {
+  func registerOnSupabase() async {
     do {
       showLoding(true)
       let provider = providerString()
@@ -368,4 +393,3 @@ struct UserRegistrationInfo {
   let nickname: String
   let isAppleLogin: Bool
 }
-
