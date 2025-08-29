@@ -110,7 +110,7 @@ class WriteViewController: UIViewController, View {
     editorView.snp.makeConstraints {
       $0.top.equalTo(dividerView.snp.bottom).offset(16)
       $0.leading.trailing.equalTo(titleTextField)
-      $0.bottom.equalTo(view.safeAreaLayoutGuide)
+      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
     }
   }
 
