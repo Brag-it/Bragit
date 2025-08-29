@@ -181,7 +181,7 @@ class WriteViewController: UIViewController, View {
         } else {
           attrs[.font] = UIFont.systemFont(ofSize: font.pointSize, weight: .bold )
         }
-        self.editorView.textView.typingAttributes = attrs
+        editorView.textView.typingAttributes = attrs
       }
       .disposed(by: disposeBag)
 
@@ -197,7 +197,7 @@ class WriteViewController: UIViewController, View {
         } else {
           attrs.removeValue(forKey: .underlineStyle)
         }
-        self.editorView.textView.typingAttributes = attrs
+        editorView.textView.typingAttributes = attrs
       }
       .disposed(by: disposeBag)
 
@@ -213,7 +213,7 @@ class WriteViewController: UIViewController, View {
         } else {
           attrs.removeValue(forKey: .strikethroughStyle)
         }
-        self.editorView.textView.typingAttributes = attrs
+        editorView.textView.typingAttributes = attrs
       }
       .disposed(by: disposeBag)
 
