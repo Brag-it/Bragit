@@ -51,4 +51,3 @@ class PreviewReactor: Reactor, Stepper {
     return state.observe(on: MainScheduler.instance)
   }
 }
-
