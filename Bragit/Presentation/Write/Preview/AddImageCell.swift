@@ -12,8 +12,8 @@ final class AddImageCell: UICollectionViewCell {
   static let identifier: String = "AddImageCell"
 
   private let plusImageView = UIImageView().then {
-    $0.image = UIImage(systemName: "plus")
-    $0.tintColor = .gray
+    $0.image = .camera
+    $0.tintColor = .grayScale700
     $0.contentMode = .center
   }
 
