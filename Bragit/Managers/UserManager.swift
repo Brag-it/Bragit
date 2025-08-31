@@ -18,6 +18,8 @@ protocol UserManagerProtocol {
   func rxfetchUsersBy(ids: [String]) -> Observable<[User]>
   func followUser(id: String) async throws
   func unfollowUser(id: String) async throws
+  func rxFollowUser(id: String) -> Completable
+  func rxUnfollowUser(id: String) -> Completable
 }
 
 class UserManager: UserManagerProtocol {
@@ -121,6 +123,27 @@ class UserManager: UserManagerProtocol {
       .execute()
   }
 
+  func rxFollowUser(id: String) -> Completable {
+    Completable.create { [weak self] observer in
+      guard let self = self else {
+        observer(.completed)
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          try await self.followUser(id: id)
+          observer(.completed)
+        } catch {
+          print(error)
+          observer(.error(error))
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
   // 언팔로우 하기
   func unfollowUser(id: String) async throws {
     guard userId != nil else {
@@ -134,5 +157,26 @@ class UserManager: UserManagerProtocol {
       .delete()
       .match(["user_id": userId!, "follow_id": id])
       .execute()
+  }
+
+  func rxUnfollowUser(id: String) -> Completable {
+    Completable.create { [weak self] observer in
+      guard let self = self else {
+        observer(.completed)
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          try await self.unfollowUser(id: id)
+          observer(.completed)
+        } catch {
+          print(error)
+          observer(.error(error))
+        }
+      }
+
+      return Disposables.create()
+    }
   }
 }
