@@ -9,8 +9,11 @@ import UIKit
 
 import Then
 import SnapKit
+import RxRelay
 
 class FeedView: UIView {
+
+  let followDidTap = PublishRelay<Post>()
 
   lazy var collectionView = UICollectionView(
     frame: .zero,
@@ -63,12 +66,24 @@ class FeedView: UIView {
     dataSource.apply(snapshot, animatingDifferences: true)
   }
 
+  func reconfigurePosts(_ posts: [Post]) {
+    var snapshot = dataSource.snapshot()
+    let itemsToReconfigure = posts
+    snapshot.reconfigureItems(itemsToReconfigure)
+    dataSource.apply(snapshot, animatingDifferences: false)
+  }
+
   private func makeCollectionViewDataSource(
     _ collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, Post> {
 
       // 셀 설정
-      let cellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in
+      let cellRegistration = UICollectionView.CellRegistration<PostCell, Post> { [weak self] cell, _, item in
+        guard let self = self else { return }
         cell.configure(data: item)
+
+        cell.followDidTap
+          .bind(to: self.followDidTap)
+          .disposed(by: cell.reusableDisposeBag)
       }
 
       // 아이템별 데이터 소스 등록
