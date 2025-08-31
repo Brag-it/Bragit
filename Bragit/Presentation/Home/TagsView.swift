@@ -75,9 +75,10 @@ final class TagsView: UIView {
     var currentY: CGFloat = 0
     var lineHeight: CGFloat = 0
     let maxHeight: CGFloat = 75.0
+    @LocalStorage(location: LocalStorageCase.favoriteTags) var favoriteTags: [Tag]?
 
     for tag in tags {
-      let tagButton = makeTagButton(tag: tag)
+      let tagButton = makeTagButton(tag: tag, favoriteTags: favoriteTags)
       let buttonSize = tagButton.intrinsicContentSize
       let buttonWidth = buttonSize.width
       let buttonHeight = buttonSize.height
@@ -110,22 +111,23 @@ final class TagsView: UIView {
     setNeedsLayout()
   }
 
-  private func makeTagButton(tag: Tag) -> UIButton {
+  private func makeTagButton(tag: Tag, favoriteTags: [Tag]?) -> UIButton {
     let tagButton = UIButton().then {
       var configuration = UIButton.Configuration.filled()
-      @LocalStorage(location: LocalStorageCase.favoriteTags) var favoriteTags: [Tag]?
 
       configuration.title = tag.tag
       configuration.attributedTitle?.font = .pretendard(size: 14)
-      configuration.baseForegroundColor = .black
-      configuration.baseBackgroundColor = UIColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1)
+      configuration.baseForegroundColor = .grayScale600
+      configuration.baseBackgroundColor = .white
       configuration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
       configuration.cornerStyle = .capsule
       configuration.titleLineBreakMode = .byTruncatingTail
-
-      if favoriteTags != nil && favoriteTags?.firstIndex(of: tag) != nil {
-        configuration.baseForegroundColor = .white
-        configuration.baseBackgroundColor = UIColor(red: 0.64, green: 0.64, blue: 0.64, alpha: 1)
+      configuration.background.strokeColor = .grayScale100
+      configuration.background.strokeWidth = 1.0
+      let tagIDs = favoriteTags.map { $0.map(\.id) }
+      if favoriteTags != nil && tagIDs?.firstIndex(of: tag.id) != nil {
+        configuration.background.strokeColor = .grayScale700
+        configuration.baseForegroundColor = .grayScale700
       }
 
       $0.configuration = configuration
