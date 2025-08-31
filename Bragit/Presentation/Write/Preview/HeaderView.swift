@@ -12,8 +12,8 @@ final class HeaderView: UICollectionReusableView {
   static let identifier = "HeaderView"
 
   private let titleLabel = UILabel().then {
-    $0.font = .boldSystemFont(ofSize: 28)
-    $0.textColor = .label
+    $0.font = .pretendard(size: 13, weight: .medium)
+    $0.textColor = .grayScale600
   }
 
   override init(frame: CGRect) {
