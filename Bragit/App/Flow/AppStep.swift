@@ -7,7 +7,8 @@ import RxFlow
 
 enum AppStep: Step {
   // 공통
-  case dismiss                         // 닫기(모달 등)
+  case dismiss                         // 닫기(present)
+  case pop                             // 닫기(push)
 
   // 인증/가입
   case login                           // 로그인 화면 (최초 진입)

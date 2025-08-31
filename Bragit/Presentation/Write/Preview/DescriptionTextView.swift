@@ -16,6 +16,7 @@ final class DescriptionTextView: UITextView {
     didSet {
       placeholderLabel.text = placeholder
       setNeedsLayout()
+      updatePlaceholderVisibility()
     }
   }
 
@@ -44,6 +45,7 @@ final class DescriptionTextView: UITextView {
     placeholderLabel.numberOfLines = 0
     placeholderLabel.isUserInteractionEnabled = false
     addSubview(placeholderLabel)
+    updatePlaceholderVisibility()
   }
 
   private func setupPlaceholder() {
@@ -69,6 +71,7 @@ final class DescriptionTextView: UITextView {
     if placeholderLabel.frame.height > maxHeight {
       placeholderLabel.frame.size.height = maxHeight
     }
+    updatePlaceholderVisibility()
   }
 
   private func updatePlaceholderVisibility() {

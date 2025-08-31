@@ -21,6 +21,9 @@ final class WriteFeedFlow: Flow {
       return .none
     case .preview(let draft):
       return showPreview(draft: draft)
+    case .pop:
+      nav.popViewController(animated: true)
+      return .none
     default:
       return .none
     }

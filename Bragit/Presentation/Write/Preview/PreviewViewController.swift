@@ -20,6 +20,14 @@ final class PreviewViewController: UIViewController, View {
     $0.tintColor = .grayScale900
   }
 
+  private let doneButton = UIButton(type: .system).then {
+    $0.setTitle("확인", for: .normal)
+    $0.setTitleColor(.grayScale900, for: .normal)
+    $0.titleLabel?.font = .pretendard(size: 16, weight: .medium)
+    $0.backgroundColor = .primary400
+    $0.layer.cornerRadius = 12
+  }
+
   private let titleLabel = UILabel().then {
     $0.text = "글쓰기"
     $0.font = .pretendard(size: 16)
@@ -39,18 +47,18 @@ final class PreviewViewController: UIViewController, View {
     $0.backgroundColor = .grayScale100
   }
 
+  private let thumbnailTitle = UILabel().then {
+    $0.text = "대표 이미지(썸네일)"
+    $0.font = .pretendard(size: 13, weight: .medium)
+    $0.textColor = .grayScale600
+  }
+
   private lazy var dataSource = setupDataSource(self.thumbnailCollectionView)
 
   private lazy var thumbnailCollectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout()).then {
     $0.backgroundColor = .white
     $0.showsVerticalScrollIndicator = false
-    $0.register(
-      HeaderView.self,
-      forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
-      withReuseIdentifier: HeaderView.identifier
-    )
-    $0.register(AddImageCell.self, forCellWithReuseIdentifier: AddImageCell.identifier)
-    $0.register(ThumbnailCell.self, forCellWithReuseIdentifier: ThumbnailCell.identifier)
+    $0.isScrollEnabled = false
   }
 
   private let decriptionTitle = UILabel().then {
@@ -95,9 +103,11 @@ final class PreviewViewController: UIViewController, View {
 
     view.addSubview(titleTextField)
     view.addSubview(dividerView)
+    view.addSubview(thumbnailTitle)
     view.addSubview(thumbnailCollectionView)
     view.addSubview(decriptionTitle)
     view.addSubview(descriptionLabel)
+    view.addSubview(doneButton)
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
@@ -126,10 +136,15 @@ final class PreviewViewController: UIViewController, View {
       $0.height.equalTo(1)
     }
 
-    thumbnailCollectionView.snp.makeConstraints {
+    thumbnailTitle.snp.makeConstraints {
       $0.top.equalTo(dividerView.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview()
-      $0.height.equalTo(175)
+      $0.leading.trailing.equalTo(titleTextField)
+    }
+
+    thumbnailCollectionView.snp.makeConstraints {
+      $0.top.equalTo(thumbnailTitle.snp.bottom).offset(8)
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.height.equalTo(193)
     }
 
     decriptionTitle.snp.makeConstraints {
@@ -142,13 +157,25 @@ final class PreviewViewController: UIViewController, View {
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(128)
     }
+
+    doneButton.snp.makeConstraints {
+      $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(24)
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.height.equalTo(52)
+    }
   }
 
   func bind(reactor: PreviewReactor) {
     backButton.rx.tap
+      .map { Reactor.Action.tapPop }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    doneButton.rx.tap
       .map { Reactor.Action.tapDismiss }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
     // 제목
     reactor.state
       .map(\.title)
@@ -181,15 +208,6 @@ final class PreviewViewController: UIViewController, View {
 
   private func createLayout() -> UICollectionViewCompositionalLayout {
     return UICollectionViewCompositionalLayout { _, _ in
-      let headerSize = NSCollectionLayoutSize(
-        widthDimension: .fractionalWidth(1.0),
-        heightDimension: .absolute(17)
-      )
-      let header = NSCollectionLayoutBoundarySupplementaryItem(
-        layoutSize: headerSize,
-        elementKind: UICollectionView.elementKindSectionHeader,
-        alignment: .top
-      )
       let itemSize = NSCollectionLayoutSize(
         widthDimension: .absolute(160),
         heightDimension: .absolute(120)
@@ -204,10 +222,8 @@ final class PreviewViewController: UIViewController, View {
         subitems: [item]
       )
       let section = NSCollectionLayoutSection(group: group)
-      section.boundarySupplementaryItems = [header]
-      section.orthogonalScrollingBehavior = .groupPagingCentered
+      section.orthogonalScrollingBehavior = .continuous
       section.interGroupSpacing = 8
-      section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 20, bottom: 24, trailing: 20)
       return section
     }
   }
@@ -251,24 +267,6 @@ final class PreviewViewController: UIViewController, View {
           item: item
         )
       }
-    }
-
-    // 헤더 뷰 설정
-    dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
-      guard kind == UICollectionView.elementKindSectionHeader else {
-        return nil
-      }
-
-      guard let headerView = collectionView.dequeueReusableSupplementaryView(
-        ofKind: kind,
-        withReuseIdentifier: HeaderView.identifier,
-        for: indexPath
-      ) as? HeaderView else {
-        fatalError("Could not dequeue header view.")
-      }
-
-      headerView.titleLabel.text = "대표 이미지(썸네일)"
-      return headerView
     }
 
     return dataSource

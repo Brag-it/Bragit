@@ -20,6 +20,7 @@ class PreviewReactor: Reactor, Stepper {
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
     case tapDismiss
+    case tapPop
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -47,6 +48,9 @@ class PreviewReactor: Reactor, Stepper {
     switch action {
     case .tapDismiss:
       steps.accept(AppStep.dismiss)
+      return .empty()
+    case .tapPop:
+      steps.accept(AppStep.pop)
       return .empty()
     }
   }
@@ -80,8 +84,10 @@ class PreviewReactor: Reactor, Stepper {
   // 요약
   static func extractDecription(from attributedString: NSAttributedString, limit: Int = 80) -> String {
     let plainText = attributedString.string
-    let trimmed = plainText.trimmingCharacters(in: .whitespacesAndNewlines)
-    let preview = String(trimmed.prefix(limit))
+    let cleanedText = plainText
+      .replacingOccurrences(of: "^\n+", with: "", options: .regularExpression) // 맨 앞 줄바꿈 제거
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let preview = String(cleanedText.prefix(limit))
     return preview
   }
 }

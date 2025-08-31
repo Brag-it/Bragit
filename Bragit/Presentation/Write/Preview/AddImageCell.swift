@@ -14,7 +14,7 @@ final class AddImageCell: UICollectionViewCell {
   private let plusImageView = UIImageView().then {
     $0.image = .camera
     $0.tintColor = .grayScale700
-    $0.contentMode = .center
+    $0.contentMode = .scaleAspectFit
   }
 
   override init(frame: CGRect) {
@@ -23,7 +23,10 @@ final class AddImageCell: UICollectionViewCell {
     contentView.layer.cornerRadius = 14
     contentView.layer.masksToBounds = true
     contentView.addSubview(plusImageView)
-    plusImageView.snp.makeConstraints { $0.directionalEdges.equalToSuperview() }
+    plusImageView.snp.makeConstraints {
+      $0.top.bottom.equalToSuperview().inset(37)
+      $0.leading.trailing.equalToSuperview().inset(55)
+    }
   }
 
   required init?(coder: NSCoder) {
