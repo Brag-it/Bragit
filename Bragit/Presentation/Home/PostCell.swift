@@ -10,6 +10,8 @@ import UIKit
 import SnapKit
 import Then
 import Kingfisher
+import RxRelay
+import RxSwift
 
 final class PostCell: UICollectionViewCell {
 
@@ -18,7 +20,7 @@ final class PostCell: UICollectionViewCell {
     $0.layer.masksToBounds = true
   }
 
-  private let usernameLabel = UILabel().then {
+  private let userNameLabel = UILabel().then {
     $0.font = .pretendard(size: 15, weight: .medium)
     $0.text = "닉네임"
     $0.numberOfLines = 1
@@ -79,10 +81,44 @@ final class PostCell: UICollectionViewCell {
     $0.tintColor = .systemGray
   }
 
+  private let followButton = UIButton().then {
+    var config = UIButton.Configuration.filled()
+    config.attributedTitle?.font = .pretendard(size: 14, weight: .medium)
+    config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+    config.baseForegroundColor = .grayScale900
+    config.title = "팔로우"
+
+    $0.setContentHuggingPriority(.required, for: .horizontal)
+    $0.configuration = config
+    $0.configurationUpdateHandler = { button in
+      switch button.state {
+      case .selected:
+        button.configuration?.baseBackgroundColor = .grayScale100
+        button.configuration?.title = "팔로잉"
+      default:
+        button.configuration?.baseBackgroundColor = .primary100
+        button.configuration?.title = "팔로우"
+        button.layer.cornerRadius = 12
+        button.layer.masksToBounds = true
+      }
+    }
+  }
+
+  let followDidTap = PublishRelay<Post>()
+  var reusableDisposeBag = DisposeBag()
+  private let permanentDisposeBag = DisposeBag()
+  private var post: Post?
+
   override init(frame: CGRect) {
     super.init(frame: frame)
 
     setUI()
+    followButton.rx.tap.bind {
+      [weak self] in
+      guard let self = self, self.post != nil else { return }
+      self.followDidTap.accept(self.post!)
+      followButton.isSelected.toggle()
+    }.disposed(by: permanentDisposeBag)
   }
 
   required init?(coder: NSCoder) {
@@ -92,11 +128,15 @@ final class PostCell: UICollectionViewCell {
   override func prepareForReuse() {
     super.prepareForReuse()
     tagsView.clearTags()
+    reusableDisposeBag = DisposeBag()
   }
 
   func configure(data: Post) {
-    usernameLabel.text = data.author?.nickname
-    profileImageView.image = UIImage(systemName: "person.circle")
+    self.post = data
+    userNameLabel.text = data.author?.nickname
+    profileImageView.kf
+      .setImage(with: URL(string: data.author?.profile ?? ""), placeholder: UIImage.profilePerson)
+
     titleLabel.text = data.title
     descriptionLabel.text = data.description
 
@@ -104,7 +144,7 @@ final class PostCell: UICollectionViewCell {
       thumbnailImageView.isHidden = true
     } else {
       thumbnailImageView.isHidden = false
-      thumbnailImageView.kf.setImage(with: URL(string: data.thumbnailImage!))
+      thumbnailImageView.kf.setImage(with: URL(string: data.thumbnailImage ?? ""))
     }
 
     tagsView.configure(with: data.tags)
@@ -112,13 +152,28 @@ final class PostCell: UICollectionViewCell {
     commentLabel.text = "\(data.commentCount)"
     favoriteLabel.text = "\(data.like)"
     dateLabel.text = data.date.timeAgoDisplay()
+
+    @LocalStorage(location: .followUser) var favoriteUsers: [String]?
+    @LocalStorage(location: .nowUser) var myId: String?
+
+    if data.author == nil || data.author?.id == myId ?? "" {
+      followButton.isHidden = true
+    } else {
+      followButton.isHidden = false
+    }
+
+    if favoriteUsers != nil && favoriteUsers!.contains(data.author!.id) {
+      followButton.isSelected = true
+    } else {
+      followButton.isSelected = false
+    }
   }
 
   private func setUI() {
     contentView.addSubview(profileImageView)
-    contentView.addSubview(usernameLabel)
-    contentView.addSubview(dateLabel)
+    contentView.addSubview(userNameLabel)
     contentView.addSubview(postStackView)
+    contentView.addSubview(followButton)
     postStackView.addArrangedSubview(thumbnailImageView)
     postStackView.addArrangedSubview(titleLabel)
     postStackView.addArrangedSubview(descriptionLabel)
@@ -128,6 +183,7 @@ final class PostCell: UICollectionViewCell {
     bottomView.addSubview(commentImageView)
     bottomView.addSubview(favoriteLabel)
     bottomView.addSubview(favoriteImageView)
+    bottomView.addSubview(dateLabel)
 
     profileImageView.snp.makeConstraints {
       $0.top.equalToSuperview().offset(16)
@@ -135,13 +191,13 @@ final class PostCell: UICollectionViewCell {
       $0.height.width.equalTo(36)
     }
 
-    usernameLabel.snp.makeConstraints {
+    userNameLabel.snp.makeConstraints {
       $0.leading.equalTo(profileImageView.snp.trailing).offset(12)
       $0.centerY.equalTo(profileImageView)
-      $0.trailing.equalTo(dateLabel.snp.leading)
+      $0.trailing.equalTo(followButton.snp.leading).inset(12)
     }
 
-    dateLabel.snp.makeConstraints {
+    followButton.snp.makeConstraints {
       $0.centerY.equalTo(profileImageView)
       $0.trailing.equalToSuperview().inset(20)
     }
@@ -177,6 +233,10 @@ final class PostCell: UICollectionViewCell {
 
     tagsView.snp.makeConstraints {
       $0.height.lessThanOrEqualTo(75)
+    }
+
+    dateLabel.snp.makeConstraints {
+      $0.top.leading.bottom.equalToSuperview()
     }
   }
 }
