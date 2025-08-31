@@ -117,7 +117,6 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
 
   func configure(postType: FavoriteReactor.PostType, selectedTag: Tag?) {
     self.postType = postType
-    print("💡 \(postType)")
 
     switch postType {
     case .emptyTag(let tags):
@@ -165,8 +164,8 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
       tagButton.configurationUpdateHandler = { button in
         switch button.state {
         case .selected:
-          button.configuration?.baseForegroundColor = .grayScale900
-          button.configuration?.baseBackgroundColor = .primary100
+          button.configuration?.baseForegroundColor = .white
+          button.configuration?.baseBackgroundColor = .grayScale900
           button.configuration?.background.strokeWidth = 0
         default:
           button.configuration?.baseForegroundColor = .grayScale600
