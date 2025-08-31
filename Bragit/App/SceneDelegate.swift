@@ -43,8 +43,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     UserDefaults.standard.set("6e0daa5c-df32-4eed-873b-bf260bae559c", forKey: LocalStorageCase.nowUser.rawValue)
     @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
     // 태그 테스트 코드
-    favoriteTags = [Tag(id: "6910eac9-eb3b-4ed0-9126-29f9dfa8ce40", tag: "test",count: 0),
-                    Tag(id: "0d84179f-3d0f-49a4-b80f-8a2fca52fc76", tag: "test2", count: 0)]
+    favoriteTags = [
+      Tag(id: "6910eac9-eb3b-4ed0-9126-29f9dfa8ce40", tag: "test", count: 0),
+      Tag(id: "0d84179f-3d0f-49a4-b80f-8a2fca52fc76", tag: "test2", count: 0)
+    ]
 
     setBlockUsers()
     setFollowUser()
@@ -85,8 +87,6 @@ extension SceneDelegate {
       do {
         @LocalStorage(location: .followUser) var user: [String]?
         user = try await userManager.fetchFollowUsers()
-        print("🌷")
-        print(user)
       } catch {
         print(error)
       }
