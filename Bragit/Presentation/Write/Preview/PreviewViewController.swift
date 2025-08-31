@@ -9,8 +9,7 @@ import UIKit
 import ReactorKit
 import RxSwift
 import RxCocoa
-import SnapKit
-import Then
+
 
 class PreviewViewController: UIViewController, View {
   var disposeBag = DisposeBag()
@@ -33,11 +32,19 @@ class PreviewViewController: UIViewController, View {
   private let titleTextField = UITextField().then {
     $0.placeholder = "제목을 입력해 주세요"
     $0.borderStyle = .none
+    $0.textColor = .grayScale900
     $0.font = .pretendard(size: 20, weight: .semibold)
   }
 
   private let dividerView = UIView().then {
-    $0.backgroundColor = .lightGray
+    $0.backgroundColor = .grayScale100
+  }
+
+  private lazy var thumbnail = UICollectionView(frame: .zero, collectionViewLayout: createLayout()).then {
+    $0.backgroundColor = .white
+    $0.register(HeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: HeaderView.identifier)
+    $0.register(AddImageCell.self, forCellWithReuseIdentifier: AddImageCell.identifier)
+    $0.register(ThumbnailCell.self, forCellWithReuseIdentifier: ThumbnailCell.identifier)
   }
 
   init(reactor: PreviewReactor) {
@@ -103,17 +110,34 @@ class PreviewViewController: UIViewController, View {
       .bind(to: titleTextField.rx.text)
       .disposed(by: disposeBag)
 
-//    // 썸네일 (이미지가 있을 경우만)
-//    reactor.state
-//      .map { $0.thumbnail }
-//      .bind(to: thumbnailImageView.rx.image)
-//      .disposed(by: disposeBag)
-//
-//    // 미리보기 텍스트
-//    reactor.state
-//      .map(\.decription)
-//      .bind(to: descriptionLabel.rx.text)
-//      .disposed(by: disposeBag)
+    //    // 썸네일 (이미지가 있을 경우만)
+    //    reactor.state
+    //      .map { $0.thumbnail }
+    //      .bind(to: thumbnailImageView.rx.image)
+    //      .disposed(by: disposeBag)
+    //
+    //    // 미리보기 텍스트
+    //    reactor.state
+    //      .map(\.decription)
+    //      .bind(to: descriptionLabel.rx.text)
+    //      .disposed(by: disposeBag)
+  }
+
+  private func createLayout() -> UICollectionViewCompositionalLayout {
+    return UICollectionViewCompositionalLayout { sectionIndex, environment in
+      let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+      let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+      let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+      let item = NSCollectionLayoutItem(layoutSize: itemSize)
+      let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .absolute(380))
+      let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+      let section = NSCollectionLayoutSection(group: group)
+      section.boundarySupplementaryItems = [header]
+      section.orthogonalScrollingBehavior = .groupPagingCentered
+      section.interGroupSpacing = 16
+      section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+      return section
+    }
   }
 }
 
