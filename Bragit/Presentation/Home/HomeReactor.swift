@@ -16,23 +16,28 @@ import Dependencies
 class HomeReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.postManager) var postManager
+  @Dependency(\.userManager) var userManager
+  @LocalStorage(location: .followUser) var followUser: [String]?
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
 
   enum Action {
     case loadPosts
     case loadNextPosts
+    case followButtonTapped(Post)
   }
 
   enum Mutation {
     case setLoading(Bool)
     case setPosts([Post])
     case appendPosts([Post])
+    case setPostsToReconfigure([Post]?)
   }
 
   struct State: Then {
     var posts: [Post] = []
     var isLoading: Bool = false
+    var postsToReconfigure: [Post]?
   }
 
   init() {
@@ -64,6 +69,34 @@ class HomeReactor: Reactor, Stepper {
           .map { .appendPosts($0) },
         .just(.setLoading(false))
       ])
+    case .followButtonTapped(let post):
+      return Observable.create { [weak self] observer in
+        guard let self = self else {
+          observer.onCompleted()
+          return Disposables.create()
+        }
+
+        Task {
+          do {
+            let authorId = post.author?.id ?? ""
+            if self.followUser?.contains(authorId) == true {
+              self.followUser = self.followUser?.filter { $0 != authorId }
+              try await self.userManager.unfollowUser(id: authorId)
+            } else {
+              self.followUser = (self.followUser ?? []) + [authorId]
+              try await self.userManager.followUser(id: authorId)
+            }
+            observer.onNext(.setPostsToReconfigure(self.currentState.posts.filter {
+              $0.author?.id == post.author?.id
+            }))
+            observer.onNext(.setPostsToReconfigure(nil))
+            observer.onCompleted()
+          } catch {
+            observer.onError(error)
+          }
+        }
+        return Disposables.create()
+      }
     }
   }
 
@@ -80,6 +113,10 @@ class HomeReactor: Reactor, Stepper {
     case .appendPosts(let posts):
       return state.with {
         $0.posts.append(contentsOf: posts)
+      }
+    case .setPostsToReconfigure(let posts):
+      return state.with {
+        $0.postsToReconfigure = posts
       }
     }
   }

@@ -34,31 +34,32 @@ class HomeViewController: UIViewController, View {
   }
 
   func bind(reactor: HomeReactor) {
-    reactor
-      .state
-      .bind { [weak homeView] item in
+    // 게시글 바인딩
+    reactor.state.map { $0.posts }
+      .distinctUntilChanged()
+      .bind { [weak homeView] posts in
         @LocalStorage(location: .blockUser) var blockUsers: [String]?
 
-        // 탈퇴한 유저 처리
-        let posts = item.posts.map { post in
+        if blockUsers == nil {
+          blockUsers = []
+        }
+
+        // 탈퇴한 유저, 차단한 유저 처리
+        let posts = posts.map { post in
           var filteredPost = post
           if filteredPost.author == nil {
             filteredPost.author = Author(id: UUID().uuidString, nickname: "탈퇴한 유저입니다.", profile: nil)
           }
           return filteredPost
-        }
-
-        guard blockUsers != nil else {
-          return
-        }
-
-        // 차단한 유저 제외
-        homeView?.feedView.dataApply(data: posts.filter {
+        }.filter {
           blockUsers!.firstIndex(of: $0.author?.id.rawValue ?? "") == nil
-        })
+        }
+
+        homeView?.feedView.dataApply(data: posts)
       }
       .disposed(by: disposeBag)
 
+    // 게시글 하단까지 내릴 시 다음 게시글 요청
     homeView.feedView.collectionView.rx.reachedBottom()
       .observe(on: MainScheduler.asyncInstance)
       .map { .loadNextPosts }
@@ -66,5 +67,19 @@ class HomeViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // 팔로우 버튼 탭
+    homeView.feedView.followDidTap
+      .map { .followButtonTapped($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 특정 포스트들 갱신
+    reactor.state.map { $0.postsToReconfigure }
+      .distinctUntilChanged()
+      .compactMap { $0 }
+      .bind { [weak self] posts in
+        self?.homeView.feedView.reconfigurePosts(posts)
+      }
+      .disposed(by: disposeBag)
   }
 }
