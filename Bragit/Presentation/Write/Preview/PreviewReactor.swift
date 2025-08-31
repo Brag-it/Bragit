@@ -19,6 +19,7 @@ class PreviewReactor: Reactor, Stepper {
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
+    case tapDismiss
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -44,6 +45,9 @@ class PreviewReactor: Reactor, Stepper {
   // 사용자 입력 → 상태 변화 신호로 변환
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .tapDismiss:
+      steps.accept(AppStep.dismiss)
+      return .empty()
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -63,11 +67,10 @@ class PreviewReactor: Reactor, Stepper {
   static func extractImages(from attributedString: NSAttributedString) -> [UIImage] {
     var images: [UIImage] = []
 
-    attributedString.enumerateAttribute(.attachment,
-                                        in: NSRange(location: 0,
-                                                    length: attributedString.length)) { value, _, _ in
-      if let attachment = value as? NSTextAttachment,
-         let image = attachment.image {
+    attributedString.enumerateAttribute(
+      .attachment, in: NSRange(location: 0, length: attributedString.length)
+    ) { value, _, _ in
+      if let attachment = value as? NSTextAttachment, let image = attachment.image {
         images.append(image)
       }
     }

@@ -19,9 +19,11 @@ final class AddImageCell: UICollectionViewCell {
 
   override init(frame: CGRect) {
     super.init(frame: frame)
+    contentView.backgroundColor = .grayScale100
     contentView.layer.cornerRadius = 14
+    contentView.layer.masksToBounds = true
     contentView.addSubview(plusImageView)
-    plusImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+    plusImageView.snp.makeConstraints { $0.directionalEdges.equalToSuperview() }
   }
 
   required init?(coder: NSCoder) {

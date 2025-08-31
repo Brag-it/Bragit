@@ -11,7 +11,7 @@ import SnapKit
 final class HeaderView: UICollectionReusableView {
   static let identifier = "HeaderView"
 
-  private let titleLabel = UILabel().then {
+  let titleLabel = UILabel().then {
     $0.font = .pretendard(size: 13, weight: .medium)
     $0.textColor = .grayScale600
   }
