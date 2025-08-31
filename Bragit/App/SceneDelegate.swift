@@ -40,7 +40,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     // TODO: 로그인한 유저 UUID 등록하기
     // example
     // nowUser의 set은 UserDefaults를 사용해야함
-    UserDefaults.standard.set("3d56b3b4-be2c-430f-a753-0abb914c5bc1", forKey: LocalStorageCase.nowUser.rawValue)
+    UserDefaults.standard.set("6e0daa5c-df32-4eed-873b-bf260bae559c", forKey: LocalStorageCase.nowUser.rawValue)
     @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
     // 태그 테스트 코드
     favoriteTags = [Tag(id: "6910eac9-eb3b-4ed0-9126-29f9dfa8ce40", tag: "test",count: 0),
