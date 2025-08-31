@@ -156,7 +156,7 @@ final class PostCell: UICollectionViewCell {
     @LocalStorage(location: .followUser) var favoriteUsers: [String]?
     @LocalStorage(location: .nowUser) var myId: String?
 
-    if data.author == nil || data.author?.id == myId ?? "" {
+    if data.author == nil || data.author?.nickname == "탈퇴한 유저입니다." || data.author?.id == myId ?? "" {
       followButton.isHidden = true
     } else {
       followButton.isHidden = false
