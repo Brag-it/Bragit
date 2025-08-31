@@ -167,8 +167,15 @@ final class FavoriteFeedView: UIView {
 
   func reconfigurePosts(_ posts: [Post]) {
     var snapshot = dataSource.snapshot()
-    let itemsToReconfigure = posts.map { FavoriteItem.post($0) }
-    snapshot.reconfigureItems(itemsToReconfigure)
-    dataSource.apply(snapshot, animatingDifferences: false)
+    let allItemsInSnapshot = snapshot.itemIdentifiers
+
+    let itemsToReconfigure = posts
+      .map { FavoriteItem.post($0) }
+      .filter { allItemsInSnapshot.contains($0) }
+
+    if !itemsToReconfigure.isEmpty {
+      snapshot.reconfigureItems(itemsToReconfigure)
+      dataSource.apply(snapshot, animatingDifferences: false)
+    }
   }
 }

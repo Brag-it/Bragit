@@ -68,9 +68,15 @@ class FeedView: UIView {
 
   func reconfigurePosts(_ posts: [Post]) {
     var snapshot = dataSource.snapshot()
+    let allItemsInSnapshot = snapshot.itemIdentifiers
+
     let itemsToReconfigure = posts
-    snapshot.reconfigureItems(itemsToReconfigure)
-    dataSource.apply(snapshot, animatingDifferences: false)
+        .filter { allItemsInSnapshot.contains($0) }
+
+    if !itemsToReconfigure.isEmpty {
+        snapshot.reconfigureItems(itemsToReconfigure)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
   }
 
   private func makeCollectionViewDataSource(
