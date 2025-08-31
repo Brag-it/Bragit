@@ -4,6 +4,8 @@
 //
 //  Created by 이태윤 on 8/27/25.
 //
+import UIKit
+
 import ReactorKit
 import RxSwift
 import RxFlow
@@ -25,11 +27,17 @@ class PreviewReactor: Reactor, Stepper {
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
+    var title: String
+    var content: NSAttributedString
+    var thumbnail: [UIImage]
+    var decription: String
   }
 
   init(draft: PostDraft) {
-    self.initialState = State()
     self.draft = draft
+    let images = PreviewReactor.extractImages(from: draft.content)
+    let decription = PreviewReactor.extractDecription(from: draft.content, limit: 80)
+    self.initialState = State(title: draft.title, content: draft.content, thumbnail: images, decription: decription)
   }
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
@@ -49,5 +57,28 @@ class PreviewReactor: Reactor, Stepper {
 
   func transform(state: Observable<State>) -> Observable<State> {
     return state.observe(on: MainScheduler.instance)
+  }
+
+  // NSAttributedString에서 이미지 뽑아 내기
+  static func extractImages(from attributedString: NSAttributedString) -> [UIImage] {
+    var images: [UIImage] = []
+
+    attributedString.enumerateAttribute(.attachment,
+                                        in: NSRange(location: 0,
+                                                    length: attributedString.length)) { value, _, _ in
+      if let attachment = value as? NSTextAttachment,
+         let image = attachment.image {
+        images.append(image)
+      }
+    }
+    return images
+  }
+
+  // 요약
+  static func extractDecription(from attributedString: NSAttributedString, limit: Int = 80) -> String {
+    let plainText = attributedString.string
+    let trimmed = plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+    let preview = String(trimmed.prefix(limit))
+    return preview
   }
 }

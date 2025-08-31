@@ -30,6 +30,16 @@ class PreviewViewController: UIViewController, View {
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
+  private let titleTextField = UITextField().then {
+    $0.placeholder = "제목을 입력해 주세요"
+    $0.borderStyle = .none
+    $0.font = .pretendard(size: 20, weight: .semibold)
+  }
+
+  private let dividerView = UIView().then {
+    $0.backgroundColor = .lightGray
+  }
+
   init(reactor: PreviewReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
@@ -55,6 +65,9 @@ class PreviewViewController: UIViewController, View {
     headerView.addSubview(backButton)
     headerView.addSubview(titleLabel)
 
+    view.addSubview(titleTextField)
+    view.addSubview(dividerView)
+
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
       $0.leading.trailing.equalToSuperview()
@@ -70,10 +83,37 @@ class PreviewViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
       $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
     }
+
+    titleTextField.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom).offset(24)
+      $0.leading.trailing.equalToSuperview().inset(20)
+    }
+
+    dividerView.snp.makeConstraints {
+      $0.top.equalTo(titleTextField.snp.bottom).offset(16)
+      $0.leading.trailing.equalTo(titleTextField)
+      $0.height.equalTo(1)
+    }
   }
 
   func bind(reactor: PreviewReactor) {
+    // 제목
+    reactor.state
+      .map(\.title)
+      .bind(to: titleTextField.rx.text)
+      .disposed(by: disposeBag)
 
+//    // 썸네일 (이미지가 있을 경우만)
+//    reactor.state
+//      .map { $0.thumbnail }
+//      .bind(to: thumbnailImageView.rx.image)
+//      .disposed(by: disposeBag)
+//
+//    // 미리보기 텍스트
+//    reactor.state
+//      .map(\.decription)
+//      .bind(to: descriptionLabel.rx.text)
+//      .disposed(by: disposeBag)
   }
 }
 
