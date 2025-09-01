@@ -140,10 +140,8 @@ class WriteViewController: UIViewController, View {
         let isContentEmpty = editorView.textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         if isTitleEmpty || isContentEmpty {
-          view.endEditing(true)
           isEmptyAlert.show(in: self.view)
         } else {
-          view.endEditing(true)
           reactor.action.onNext(.tapDone)
         }
       }

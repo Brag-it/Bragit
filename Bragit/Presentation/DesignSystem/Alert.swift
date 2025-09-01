@@ -75,6 +75,12 @@ final class AlertView: UIView {
     messageLabel.text = message
     leftButton.setTitle(leftButtonTitle, for: .normal)
     rightButton.setTitle(rightButtonTitle, for: .normal)
+    if let leftColor = leftButtonColor {
+      leftButton.setTitleColor(leftColor, for: .normal)
+    }
+    if let rightColor = rightButtonColor {
+      rightButton.setTitleColor(rightColor, for: .normal)
+    }
     if leftButtonTitle == nil && rightButtonTitle != nil {
       leftButton.isHidden = true
     }
