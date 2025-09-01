@@ -161,17 +161,6 @@ final class LoginViewController: UIViewController, View {
         self?.alert(msg)
       }
       .disposed(by: disposeBag)
-
-    reactor.state.compactMap(\.route)
-      .distinctUntilChanged()
-      .subscribe { [weak self] route in
-        switch route {
-        case .goUserInfo(let mail):
-          let viewController = UserInfoViewController(initialMail: mail)
-          self?.navigationController?.pushViewController(viewController, animated: true)
-        }
-      }
-      .disposed(by: disposeBag)
   }
 }
 
@@ -209,9 +198,9 @@ extension LoginViewController:
       alert("Apple 자격이 유효하지 않습니다.")
       return
     }
-    let rawMail = credential.email
-    if let rawMail { KeychainMailStore.save(rawMail) }
-    let mail = rawMail ?? KeychainMailStore.load()
+    let rawMail = credential.email?.trimmingCharacters(in: .whitespacesAndNewlines)
+    if let rawMail, !rawMail.isEmpty { KeychainMailStore.save(rawMail) }
+    let mail = (rawMail?.isEmpty == false) ? rawMail : KeychainMailStore.load()
     reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce, mail: mail))
   }
 
@@ -220,6 +209,21 @@ extension LoginViewController:
     didCompleteWithError error: Error
   ) {
     alert("Apple 로그인 실패: \(error.localizedDescription)")
+  }
+
+  func handleAppleCredential(
+    _ credential: ASAuthorizationAppleIDCredential,
+    reactor: LoginReactor,
+    hashedNonce: String
+  ) {
+    if let email = credential.email {
+      KeychainMailStore.save(email)
+    }
+    let initialMail = credential.email ?? KeychainMailStore.load()
+    guard let idTokenData = credential.identityToken, let idToken = String(data: idTokenData, encoding: .utf8) else {
+      return
+    }
+    reactor.action.onNext(.tapApple(idToken: idToken, nonce: hashedNonce, mail: initialMail))
   }
 }
 

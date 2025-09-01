@@ -5,27 +5,19 @@
 //  Created by luca on 8/25/25.
 //
 // 약관 동의를 받는 뷰
-import Dependencies
-import ReactorKit
-import RxCocoa
-import RxSwift
 import SnapKit
-import Supabase
 import Then
 import UIKit
 
-final class TermsViewController: UIViewController, View {
-  typealias Reactor = TermsReactor
+final class TermsViewController: UIViewController {
 
   private let userInfo: UserRegistrationInfo
-  @Dependency(\.supabase) private var supabase
 
   private var serviceAccepted = false
   private var privacyAccepted = false
   private var marketingAccepted = false
 
-  var disposeBag = DisposeBag()
-  var reactor: TermsReactor?
+  var onAgree: ((UserRegistrationInfo) -> Void)?
 
   // MARK: UI
   let descriptionLabel = UILabel().then {
@@ -116,9 +108,8 @@ final class TermsViewController: UIViewController, View {
     $0.isEnabled = false
   }
 
-  init(userInfo: UserRegistrationInfo, reactor: TermsReactor) {
+  init(userInfo: UserRegistrationInfo) {
     self.userInfo = userInfo
-    self.reactor = reactor
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -134,17 +125,6 @@ final class TermsViewController: UIViewController, View {
     applyInitialUI()
     updateAllAcceptCheckboxImage()
     updateNextButtonState()
-  }
-}
-
-// MARK: - ReactorKit View binding
-extension TermsViewController {
-  func bind(reactor: TermsReactor) {
-    nextButton.rx.tap
-      .subscribe(with: reactor) { reactor, _ in
-        reactor.action.onNext(.tapNext)
-      }
-      .disposed(by: disposeBag)
   }
 }
 
@@ -303,87 +283,7 @@ private extension TermsViewController {
 
   @objc func didTapNext() {
     guard serviceAccepted && privacyAccepted else { return }
-    Task { await registerOnSupabase() }
-  }
-}
-
-// MARK: - Supabase & Helpers
-private extension TermsViewController {
-  func makeUserInfo(id: UUID, provider: String) -> UserInfo {
-    UserInfo(
-      id: id,
-      nickname: userInfo.nickname,
-      profile: nil,
-      provider: provider,
-      signDate: Date(),
-      latestUploaded: nil
-    )
-  }
-
-  func providerString() -> String {
-    return userInfo.isAppleLogin ? "apple" : "mail"
-  }
-
-  func alert(_ message: String) {
-    let alertController = UIAlertController(title: "Notice", message: message, preferredStyle: .alert)
-    alertController.addAction(.init(title: "OK", style: .default))
-    present(alertController, animated: true)
-  }
-
-  func showLoding(_ show: Bool) {
-    nextButton.isEnabled = !show
-    nextButton.alpha = show ? 0.6 : 1.0
-  }
-
-  func insertUserInfoRow(userId: UUID, provider: String) async throws {
-    let info = makeUserInfo(id: userId, provider: provider)
-    _ = try await supabase
-      .from("User_Info")
-      .insert(info)
-      .execute()
-  }
-
-  func registerOnSupabase() async {
-    do {
-      showLoding(true)
-      let provider = providerString()
-      var userId: UUID
-
-      if userInfo.isAppleLogin {
-        do {
-          let session = try await supabase.auth.session
-          userId = session.user.id
-        } catch {
-          showLoding(false)
-          alert("로그인 세션이 없습니다")
-          return
-        }
-      } else {
-        guard let pwd = userInfo.password else {
-          showLoding(false)
-          alert("비밀번호가 없습니다")
-          return
-        }
-        do {
-          let res = try await supabase.auth.signUp(email: userInfo.mail, password: pwd)
-          let user = res.user
-          userId = user.id
-        } catch {
-          showLoding(false)
-          alert("회원가입 실패")
-          return
-        }
-      }
-      do {
-        try await insertUserInfoRow(userId: userId, provider: provider)
-      } catch {
-        showLoding(false)
-        alert("회원가입 실패: \(error.localizedDescription)")
-        return
-      }
-      showLoding(false)
-      alert("회원가입 완료")
-    }
+    onAgree?(userInfo)
   }
 }
 

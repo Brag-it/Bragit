@@ -32,7 +32,6 @@ final class LoginReactor: Reactor, Stepper {
   enum Mutation {
     case setLoading(Bool)
     case setError(String?)
-    case setRoute(Route?)
     case setNonce(raw: String?, hashed: String?)
   }
 
@@ -40,14 +39,8 @@ final class LoginReactor: Reactor, Stepper {
   struct State {
     var isLoading = false
     var errorMessage: String?
-    var route: Route?
     var appleNonce: String?
     var appleHashsedNonce: String?
-  }
-
-  // 화면 전환 의도 (지금은 로그인 성공만 표현)
-  enum Route: Equatable {
-    case goUserInfo(mail: String?)
   }
 
   var initialState = State()
@@ -78,7 +71,8 @@ final class LoginReactor: Reactor, Stepper {
       let hashed = Self.sha256(raw)
       return .just(.setNonce(raw: raw, hashed: hashed))
     case .tapSignUp:
-      return .just(.setRoute(.goUserInfo(mail: nil)))
+      steps.accept(AppStep.signup(initialMail: nil))
+      return .empty()
     case .tapNext:
       steps.accept(AppStep.home)
       return .empty()
@@ -90,7 +84,6 @@ final class LoginReactor: Reactor, Stepper {
     switch mutation {
     case .setLoading(let load): state.isLoading = load
     case .setError(let msg): state.errorMessage = msg
-    case .setRoute(let route): state.route = route
     case .setNonce(let raw, let hashed):
       state.appleNonce = raw
       state.appleHashsedNonce = hashed
@@ -114,6 +107,8 @@ final class LoginReactor: Reactor, Stepper {
           let session = try await self.supabase.auth.session
           let userId = session.user.id
 
+          print("[apple]: \(session.user.email as Any), \(mail as Any)")
+
           let users: [UserInfo] = try await self.supabase
             .from("User_Info")
             .select()
@@ -123,11 +118,11 @@ final class LoginReactor: Reactor, Stepper {
 
           if users.first != nil {
             await MainActor.run { self.steps.accept(AppStep.home) }
-            observer.onCompleted()
           } else {
-            observer.onNext(.setRoute(.goUserInfo(mail: mail)))
-            observer.onCompleted()
+            //            let email = mail
+            await MainActor.run { self.steps.accept(AppStep.signup(initialMail: mail)) }
           }
+          observer.onCompleted()
         } catch {
           observer.onNext(.setError("가입 여부 확인 실패: \(error.localizedDescription)"))
           observer.onCompleted()

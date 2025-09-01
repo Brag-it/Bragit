@@ -193,10 +193,11 @@ final class UserInfoFormView: UIView {
 
 // MARK: - 2) VC 본체(줄 수 최소화)
 final class UserInfoViewController: UIViewController {
+  var onNext: ((UserRegistrationInfo) -> Void)?
 
   // 초기 상태
   private let initialMail: String?
-  private var isAppleLogin: Bool { initialMail != nil }
+  private var isAppleLogin: Bool { initialMail?.isEmpty == false }
 
   // 검증 상태
   fileprivate var mailValid = false
@@ -216,7 +217,14 @@ final class UserInfoViewController: UIViewController {
   ]
 
   init(initialMail: String?) {
-    self.initialMail = initialMail
+    //    self.initialMail = initialMail
+    if let space = initialMail?.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    ), !space.isEmpty {
+      self.initialMail = space
+    } else {
+      self.initialMail = nil
+    }
     super.init(nibName: nil, bundle: nil)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -233,8 +241,8 @@ final class UserInfoViewController: UIViewController {
   }
 
   private func configureInitialState() {
-    if let email = initialMail {
-      formView.mailTextField.text = email
+    if let mail = initialMail {
+      formView.mailTextField.text = mail
       [formView.mailTextField, formView.pwTextField, formView.rePwTextField].forEach { $0.isEnabled = false }
       [formView.pwTextField, formView.rePwTextField].forEach { $0.placeholder = "social User" }
 
@@ -252,6 +260,7 @@ final class UserInfoViewController: UIViewController {
       formView.mailCheckLabel.text = " "
       formView.pwCheckLabel.text = " "
     }
+    print("[UserInfoVC]: \(initialMail as Any)")
     formView.nicknameCheckLabel.text = " "
     updateNextButton()
   }
@@ -282,16 +291,13 @@ final class UserInfoViewController: UIViewController {
   }
 
   @objc private func onTapNext() {
-    view.endEditing(true)
     let info = UserRegistrationInfo(
       mail: formView.mailTextField.text ?? "",
       password: isAppleLogin ? nil : formView.pwTextField.text,
       nickname: formView.nicknameTextField.text ?? "",
       isAppleLogin: isAppleLogin
     )
-    let reactor = TermsReactor(userInfo: info)
-    let nextVC = TermsViewController(userInfo: info, reactor: reactor)
-    navigationController?.pushViewController(nextVC, animated: true)
+    onNext?(info)
   }
 
   @objc private func dismissKeyboard() { view.endEditing(true) }
