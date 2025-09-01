@@ -71,11 +71,11 @@ class FeedView: UIView {
     let allItemsInSnapshot = snapshot.itemIdentifiers
 
     let itemsToReconfigure = posts
-        .filter { allItemsInSnapshot.contains($0) }
+      .filter { allItemsInSnapshot.contains($0) }
 
     if !itemsToReconfigure.isEmpty {
-        snapshot.reconfigureItems(itemsToReconfigure)
-        dataSource.apply(snapshot, animatingDifferences: false)
+      snapshot.reconfigureItems(itemsToReconfigure)
+      dataSource.apply(snapshot, animatingDifferences: false)
     }
   }
 

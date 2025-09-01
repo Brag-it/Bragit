@@ -4,10 +4,13 @@
 //
 //  Created by 이태윤 on 8/26/25.
 //
+
 import ReactorKit
 import RxSwift
 import RxFlow
 import RxRelay
+import Then
+import Dependencies
 
 class MyPageReactor: Reactor, Stepper {
   var initialState: State
@@ -15,16 +18,33 @@ class MyPageReactor: Reactor, Stepper {
 
   private let disposeBag = DisposeBag()
 
+  @Dependency(\.userManager) private var userManager
+  @Dependency(\.postManager) private var postManager
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
+    case setUserInform
+    case loadMyPost
+    case loadNextPost
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
+    case setFollowers([String])
+    case setFollowings([String])
+    case setFavoriteTags([String])
+    case setPosts([Post])
+    case setLoading(Bool)
+    case appendPosts([Post])
   }
 
   // View의 상태 정의 (현재 View의 상태값)
-  struct State {
+  struct State: Then {
+    var followers: [String] = []
+    var followings: [String] = []
+    var favoriteTags: [String] = []
+    var posts: [Post] = []
+    var hasNexPage: Bool = false
+    var isLoading: Bool = false
   }
 
   init() {
@@ -35,15 +55,75 @@ class MyPageReactor: Reactor, Stepper {
   // 사용자 입력 → 상태 변화 신호로 변환
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .setUserInform:
+      @LocalStorage(location: .favoriteTags) var favoriteTags: [String]?
+      @LocalStorage(location: .followUser) var followUsers: [String]?
+
+      if followUsers == nil {
+        followUsers = []
+      }
+
+      if favoriteTags == nil {
+        favoriteTags = []
+      }
+
+      return .merge([
+        .just(.setFollowers(followUsers ?? [])),
+        .just(.setFavoriteTags(favoriteTags ?? [])),
+        userManager.rxFetchFollowers().map { Mutation.setFollowings($0) }
+      ])
+    case .loadMyPost:
+      @LocalStorage(location: .nowUser) var nowUserId: String?
+      return postManager.rxFetchPostByAuthorId(authorId: nowUserId ?? "", from: 0, to: 10).map {
+        .setPosts($0)
+      }
+    case .loadNextPost:
+      guard currentState.isLoading == false, currentState.hasNexPage else {
+        return .empty()
+      }
+      let postCount = self.currentState.posts.count
+      @LocalStorage(location: .nowUser) var nowUserId: String?
+
+      return .concat([
+        .just(.setLoading(true)),
+        postManager.rxFetchPostByAuthorId(authorId: nowUserId ?? "", from: postCount, to: postCount + 10)
+          .map { .appendPosts($0) },
+        .just(.setLoading(false))
+      ])
     }
   }
+
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
   func reduce(state: State, mutation: Mutation) -> State {
-    var newState = state
     switch mutation {
+    case .setFollowers(let followers):
+      return state.with {
+        $0.followers = followers
+      }
+    case .setFollowings(let followings):
+      return state.with {
+        $0.followings = followings
+      }
+    case .setFavoriteTags(let favoriteTags):
+      return state.with {
+        $0.favoriteTags = favoriteTags
+      }
+    case .setPosts(let posts):
+      return state.with {
+        $0.hasNexPage = posts.count >= 10
+        $0.posts = posts
+      }
+    case .setLoading(let isLoading):
+      return state.with {
+        $0.isLoading = isLoading
+      }
+    case .appendPosts(let posts):
+      return state.with {
+        $0.hasNexPage = posts.count >= 10
+        $0.posts.append(contentsOf: posts)
+      }
     }
-    return newState
   }
 
   func transform(state: Observable<State>) -> Observable<State> {

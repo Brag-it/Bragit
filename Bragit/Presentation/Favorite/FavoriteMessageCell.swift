@@ -40,7 +40,7 @@ final class FavoriteMessageCell: UICollectionViewCell {
     contentView.addSubview(dividerView)
 
     messageLabel.snp.makeConstraints {
-      $0.bottom.equalTo(self.snp.centerY).offset(3)
+      $0.bottom.equalTo(self.snp.centerY).offset(-3)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 

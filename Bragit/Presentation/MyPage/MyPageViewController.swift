@@ -27,5 +27,14 @@ class MyPageViewController: UIViewController, View {
   }
 
   func bind(reactor: MyPageReactor) {
+    self.rx.viewDidLoad
+      .flatMap {
+        Observable.from([
+          .setUserInform,
+          .loadMyPost
+        ])
+      }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }

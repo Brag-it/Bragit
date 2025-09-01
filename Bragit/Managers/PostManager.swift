@@ -21,6 +21,7 @@ protocol PostManagerProtocol {
   func rxSearchFollowUserPost(followIds: [String], from: Int, to: Int) -> Observable<[Post]>
   func fetchPopularPost(from: Int, to: Int) async throws -> [Post]
   func rxFetchPopularPost(from: Int, to: Int) -> Observable<[Post]>
+  func rxFetchPostByAuthorId(authorId: String, from: Int, to: Int) -> Observable<[Post]>
 }
 
 class PostManager: PostManagerProtocol {
@@ -203,6 +204,35 @@ class PostManager: PostManagerProtocol {
           observer.onCompleted()
         } catch {
           print(error)
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
+  // author id로 게시글 가져오기
+  func rxFetchPostByAuthorId(authorId: String, from: Int, to: Int) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let posts: [Post] = try await self.client
+            .from("Post")
+            .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(id, nickname, profile)")
+            .eq("author_id", value: authorId)
+            .order("date", ascending: false)
+            .range(from: from, to: to)
+            .execute()
+            .value
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
           observer.onError(error)
         }
       }
