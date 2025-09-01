@@ -32,6 +32,14 @@ enum SupabaseDependencyKey: DependencyKey {
   }()
 }
 
+enum TagDependencyKey: DependencyKey {
+  static let liveValue: TagManagerProtocol = TagManager()
+}
+
+enum UserDependencyKey: DependencyKey {
+  static let liveValue: UserManagerProtocol = UserManager()
+}
+
 extension DependencyValues {
   var postManager: PostManagerProtocol {
     get { self[PostDependencyKey.self] }
@@ -46,5 +54,15 @@ extension DependencyValues {
   var authClient: AuthClient {
     get { self[AuthClient.self] }
     set { self[AuthClient.self] = newValue }
+  }
+
+  var tagManager: TagManagerProtocol {
+    get { self[TagDependencyKey.self] }
+    set { self[TagDependencyKey.self] = newValue }
+  }
+
+  var userManager: UserManagerProtocol {
+    get { self[UserDependencyKey.self] }
+    set { self[UserDependencyKey.self] = newValue }
   }
 }

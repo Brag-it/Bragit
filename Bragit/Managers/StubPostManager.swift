@@ -11,6 +11,14 @@ import Supabase
 import RxSwift
 
 class StubPostManager: PostManagerProtocol {
+  func fetchPopularPost(from: Int, to: Int) async throws -> [Post] {
+    return Self.samplePosts
+  }
+
+  func rxFetchPopularPost(from: Int, to: Int) -> RxSwift.Observable<[Post]> {
+    return .just(Self.samplePosts)
+  }
+
   func rxSearchFollowUserPost(followIds: [String], from: Int, to: Int) -> RxSwift.Observable<[Post]> {
     return .just(Self.samplePosts)
   }
