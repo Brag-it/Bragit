@@ -64,6 +64,7 @@ class FavoriteReactor: Reactor, Stepper {
     self.initialState = State()
   }
 
+  // swiftlint:disable cyclomatic_complexity
   func mutate(action: Action) -> Observable<Mutation> {
     print(action)
 
@@ -208,6 +209,7 @@ class FavoriteReactor: Reactor, Stepper {
       }
     }
   }
+  // swiftlint:enable cyclomatic_complexity
 
   func reduce(state: State, mutation: Mutation) -> State {
     switch mutation {
