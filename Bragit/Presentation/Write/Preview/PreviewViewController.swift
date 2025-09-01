@@ -113,6 +113,8 @@ final class PreviewViewController: UIViewController, View {
       .map { Reactor.Action.tapDismiss }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    
   }
 
   private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -257,12 +259,12 @@ final class PreviewViewController: UIViewController, View {
     snapshot.appendItems([.title(TitleItem(text: state.title))], toSection: .title)
     // 썸네일
     var thumbItems: [Item] = [.thumbnail(ThumbnailItem(kind: .addButton))]
-    thumbItems += state.thumbnail.map { .thumbnail(ThumbnailItem(kind: .image($0))) }
+    thumbItems += state.thumbnails.map { .thumbnail(ThumbnailItem(kind: .image($0))) }
     snapshot.appendItems(thumbItems, toSection: .thumbnails)
     // 요약
-    snapshot.appendItems([.description(DescriptionItem(text: state.decription))], toSection: .description)
+    snapshot.appendItems([.description(DescriptionItem(text: state.description))], toSection: .description)
     // 태그
-    let tagItems: [Item] = state.tag.map { .tag(TagItem(title: $0)) }
+    let tagItems: [Item] = state.tags.map { .tag(TagItem(title: $0)) }
     snapshot.appendItems(tagItems, toSection: .tags)
 
     dataSource.apply(snapshot, animatingDifferences: true)
@@ -330,9 +332,17 @@ final class PreviewViewController: UIViewController, View {
     // 섹션 헤더 등록
     let headerRegistration = UICollectionView.SupplementaryRegistration<HeaderView>(
       elementKind: UICollectionView.elementKindSectionHeader
-    ) { header, _, indexPath in
+    ) { [weak self] header, _, indexPath in
+      guard let self, let reactor = self.reactor else { return }
       let section = Section.allCases[indexPath.section]
       header.configure(section: section)
+      // 태그 섹션에서만 + 버튼 활성화
+      guard section == .tags else { return }
+
+      header.plusButton.rx.tap
+        .map { PreviewReactor.Action.tapAddTag }
+        .bind(to: reactor.action)
+        .disposed(by: header.disposeBag)
     }
 
     dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in

@@ -21,6 +21,7 @@ class PreviewReactor: Reactor, Stepper {
   enum Action {
     case tapDismiss
     case tapPop
+    case tapAddTag
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -31,16 +32,18 @@ class PreviewReactor: Reactor, Stepper {
   struct State {
     var title: String
     var content: NSAttributedString
-    var thumbnail: [UIImage]
-    var decription: String
-    var tag: [String] = ["iOS", "TIL", "정보 공유", "내일배움 캠프", "열 다섯글자를 위한 테스트임"]
+    var thumbnails: [UIImage]
+    var description: String
+    var tags: [String] = ["iOS", "TIL", "정보 공유", "내일배움 캠프", "열 다섯글자를 위한 테스트임"]
+
+    @Pulse var presentTagModal = false
   }
 
   init(draft: PostDraft) {
     self.draft = draft
     let images = PreviewReactor.extractImages(from: draft.content)
     let decription = PreviewReactor.extractDecription(from: draft.content, limit: 80)
-    self.initialState = State(title: draft.title, content: draft.content, thumbnail: images, decription: decription)
+    self.initialState = State(title: draft.title, content: draft.content, thumbnails: images, description: decription)
   }
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
@@ -50,8 +53,13 @@ class PreviewReactor: Reactor, Stepper {
     case .tapDismiss:
       steps.accept(AppStep.dismiss)
       return .empty()
+
     case .tapPop:
       steps.accept(AppStep.pop)
+      return .empty()
+
+    case .tapAddTag:
+      steps.accept(AppStep.writeTagSearch)
       return .empty()
     }
   }

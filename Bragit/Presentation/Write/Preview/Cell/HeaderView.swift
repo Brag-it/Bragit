@@ -5,18 +5,21 @@
 //  Created by 이태윤 on 9/1/25.
 //
 import UIKit
+
 import SnapKit
 import Then
+import RxSwift
 
 final class HeaderView: UICollectionReusableView {
   static let identifier = "HeaderView"
+  var disposeBag = DisposeBag()
 
   private let titleLabel = UILabel().then {
     $0.font = .pretendard(size: 13, weight: .medium)
     $0.textColor = .grayScale600
   }
 
-  private let plusButton = UIButton(type: .system).then {
+  let plusButton = UIButton(type: .system).then {
     $0.setImage(.plus, for: .normal)
     $0.contentMode = .scaleAspectFit
     $0.tintColor = .grayScale600
@@ -35,11 +38,15 @@ final class HeaderView: UICollectionReusableView {
       $0.trailing.equalToSuperview()
       $0.top.bottom.equalToSuperview()
     }
-
   }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    disposeBag = DisposeBag()
   }
 
   func configure(section: Section) {

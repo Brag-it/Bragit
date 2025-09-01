@@ -24,6 +24,8 @@ final class WriteFeedFlow: Flow {
     case .pop:
       nav.popViewController(animated: true)
       return .none
+    case .writeTagSearch:
+      return showSearchTagView()
     default:
       return .none
     }
@@ -47,6 +49,18 @@ final class WriteFeedFlow: Flow {
 
     return .one(flowContributor: .contribute(
       withNextPresentable: previewVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showSearchTagView() -> FlowContributors {
+    let reactor = SearchTagReactor()
+    let searchTagVc = SearchTagViewController(reactor: reactor)
+
+    nav.topViewController?.present(searchTagVc, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: searchTagVc,
       withNextStepper: reactor
     ))
   }
