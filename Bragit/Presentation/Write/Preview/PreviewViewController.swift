@@ -76,6 +76,17 @@ final class PreviewViewController: UIViewController, View {
     $0.layer.borderWidth = 1
   }
 
+  private let tagTitle = UILabel().then {
+    $0.text = "태그 추가"
+    $0.font = .pretendard(size: 13, weight: .medium)
+    $0.textColor = .grayScale600
+  }
+
+  private let tagAddButton = UIButton(type: .system).then {
+    $0.image = .plus
+    $0.tintColor = .grayScale600
+  }
+
   init(reactor: PreviewReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
@@ -188,14 +199,8 @@ final class PreviewViewController: UIViewController, View {
       .distinctUntilChanged()
       .bind { [weak self] images in
         guard let self else { return }
-        applySnapshot(with: images)
-      }
-      .disposed(by: disposeBag)
-
-    reactor.state
-      .map(\.thumbnail)
-      .bind { images in
         print("📸 바인딩된 이미지 수: \(images.count)")
+        applySnapshot(with: images)
       }
       .disposed(by: disposeBag)
 
