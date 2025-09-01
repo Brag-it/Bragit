@@ -36,22 +36,22 @@ final class PreviewViewController: UIViewController, View {
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
-  private let titleTextField = UITextField().then {
-    $0.placeholder = "제목을 입력해 주세요"
-    $0.borderStyle = .none
-    $0.textColor = .grayScale900
-    $0.font = .pretendard(size: 20, weight: .semibold)
-  }
-
-  private let dividerView = UIView().then {
-    $0.backgroundColor = .grayScale100
-  }
-
-  private let thumbnailTitle = UILabel().then {
-    $0.text = "대표 이미지(썸네일)"
-    $0.font = .pretendard(size: 13, weight: .medium)
-    $0.textColor = .grayScale600
-  }
+//  private let titleTextField = UITextField().then {
+//    $0.placeholder = "제목을 입력해 주세요"
+//    $0.borderStyle = .none
+//    $0.textColor = .grayScale900
+//    $0.font = .pretendard(size: 20, weight: .semibold)
+//  }
+//
+//  private let dividerView = UIView().then {
+//    $0.backgroundColor = .grayScale100
+//  }
+//
+//  private let thumbnailTitle = UILabel().then {
+//    $0.text = "대표 이미지(썸네일)"
+//    $0.font = .pretendard(size: 13, weight: .medium)
+//    $0.textColor = .grayScale600
+//  }
 
   private lazy var dataSource = setupDataSource(self.thumbnailCollectionView)
 
@@ -61,31 +61,31 @@ final class PreviewViewController: UIViewController, View {
     $0.keyboardDismissMode = .onDrag
   }
 
-  private let decriptionTitle = UILabel().then {
-    $0.text = "게시글 설명"
-    $0.font = .pretendard(size: 13, weight: .medium)
-    $0.textColor = .grayScale600
-  }
+//  private let decriptionTitle = UILabel().then {
+//    $0.text = "게시글 설명"
+//    $0.font = .pretendard(size: 13, weight: .medium)
+//    $0.textColor = .grayScale600
+//  }
+//
+//  private let descriptionLabel = DescriptionTextView().then {
+//    $0.placeholder = "내용을 잘 나타내는 설명을 입력해 주세요"
+//    $0.font = .pretendard(size: 15)
+//    $0.layer.cornerRadius = 14
+//    $0.layer.borderColor = UIColor.grayScale100.cgColor
+//    $0.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16) // 내부 여백
+//    $0.layer.borderWidth = 1
+//  }
 
-  private let descriptionLabel = DescriptionTextView().then {
-    $0.placeholder = "내용을 잘 나타내는 설명을 입력해 주세요"
-    $0.font = .pretendard(size: 15)
-    $0.layer.cornerRadius = 14
-    $0.layer.borderColor = UIColor.grayScale100.cgColor
-    $0.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16) // 내부 여백
-    $0.layer.borderWidth = 1
-  }
-
-  private let tagTitle = UILabel().then {
-    $0.text = "태그 추가"
-    $0.font = .pretendard(size: 13, weight: .medium)
-    $0.textColor = .grayScale600
-  }
-
-  private let tagAddButton = UIButton(type: .system).then {
-    $0.setImage(.plus, for: .normal)
-    $0.tintColor = .grayScale600
-  }
+//  private let tagTitle = UILabel().then {
+//    $0.text = "태그 추가"
+//    $0.font = .pretendard(size: 13, weight: .medium)
+//    $0.textColor = .grayScale600
+//  }
+//
+//  private let tagAddButton = UIButton(type: .system).then {
+//    $0.setImage(.plus, for: .normal)
+//    $0.tintColor = .grayScale600
+//  }
 
   init(reactor: PreviewReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -144,11 +144,11 @@ final class PreviewViewController: UIViewController, View {
     //      $0.leading.trailing.equalToSuperview().inset(20)
     //    }
     //
-    //    dividerView.snp.makeConstraints {
-    //      $0.top.equalTo(titleTextField.snp.bottom).offset(16)
-    //      $0.leading.trailing.equalTo(titleTextField)
-    //      $0.height.equalTo(1)
-    //    }
+//        dividerView.snp.makeConstraints {
+//          $0.top.equalTo(titleTextField.snp.bottom).offset(16)
+//          $0.leading.trailing.equalTo(titleTextField)
+//          $0.height.equalTo(1)
+//        }
     //
     //    thumbnailTitle.snp.makeConstraints {
     //      $0.top.equalTo(dividerView.snp.bottom).offset(24)
@@ -354,56 +354,6 @@ final class PreviewViewController: UIViewController, View {
     }
 
     return dataSource
-  }
-}
-
-extension PreviewViewController {
-  enum Section: CaseIterable {
-    case title
-    case thumbnails
-    case description
-    case tags
-
-    // 헤더 타이틀
-    var headerTitle: String {
-      switch self {
-      case .title: return ""
-      case .thumbnails: return "대표 이미지(썸네일)"
-      case .description: return "게시글 설명"
-      case .tags: return "태그 추가"
-      }
-    }
-  }
-
-  enum Item: Hashable {
-    case thumbnail(ThumbnailItem)     // 썸네일
-    case description(DescriptionItem) // 설명
-    case tag(TagItem)                 // 태그
-  }
-
-  struct ThumbnailItem: Hashable {
-    enum ItemType: Hashable {
-      case addButton            // 고정 추가 버튼 셀
-      case image(UIImage)       // 썸네일 이미지 셀
-    }
-
-    let id: UUID = UUID()
-    let type: ItemType
-    var isSelected: Bool = false
-
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
-    static func == (lhs: ThumbnailItem, rhs: ThumbnailItem) -> Bool { lhs.id == rhs.id }
-  }
-
-  struct DescriptionItem: Hashable {
-    let id: UUID = UUID()
-    var text: String
-  }
-
-  struct TagItem: Hashable {
-    let id: UUID = UUID()
-    var title: String
-    var isDeletable: Bool = true
   }
 }
 

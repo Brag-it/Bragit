@@ -18,7 +18,7 @@ final class TagCell: UICollectionViewCell {
     $0.distribution = .fillProportionally
   }
 
-  let tagLabel = UILabel().then {
+  private let tagLabel = UILabel().then {
     $0.font = .pretendard(size: 15, weight: .medium)
     $0.textColor = .grayScale700
   }

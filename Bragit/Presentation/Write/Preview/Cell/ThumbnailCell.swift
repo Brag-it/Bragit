@@ -12,7 +12,7 @@ import Then
 final class ThumbnailCell: UICollectionViewCell {
   static let identifier: String = "ThumbnailCell"
 
-  let imageView: UIImageView = .init().then {
+  private let imageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
     $0.clipsToBounds = true
   }

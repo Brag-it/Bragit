@@ -12,36 +12,30 @@ import Then
 final class TitleCell: UICollectionViewCell {
   static let identifier: String = "TitleCell"
 
-  private let tagView = UIStackView().then {
-    $0.axis = .horizontal
-    $0.spacing = 10
-    $0.distribution = .fillProportionally
-  }
-
-  let tagLabel = UILabel().then {
-    $0.font = .pretendard(size: 15, weight: .medium)
+  private let titleLabel = UILabel().then {
+    $0.font = .pretendard(size: 20, weight: .semibold)
     $0.textColor = .grayScale700
   }
 
-  private let xMarker = UIImageView().then {
-    $0.image = .xMarker
-    $0.contentMode = .scaleAspectFit
-    $0.tintColor = .grayScale700
+  private let dividerView = UIView().then {
+    $0.backgroundColor = .grayScale100
   }
 
   override init(frame: CGRect) {
     super.init(frame: frame)
     contentView.backgroundColor = .white
-    contentView.layer.cornerRadius = 80
-    contentView.layer.borderWidth = 1
-    contentView.layer.borderColor = UIColor.grayScale100.cgColor
-    contentView.addSubview(tagView)
-    tagView.addArrangedSubview(tagLabel)
-    tagView.addArrangedSubview(xMarker)
+    contentView.addSubview(titleLabel)
+    contentView.addSubview(dividerView)
 
-    tagView.snp.makeConstraints {
+    titleLabel.snp.makeConstraints {
       $0.top.bottom.equalToSuperview()
-      $0.leading.trailing.equalToSuperview().inset(14)
+      $0.leading.trailing.equalToSuperview().inset(20)
+    }
+
+    dividerView.snp.makeConstraints {
+      $0.top.equalTo(titleLabel.snp.bottom).offset(16)
+      $0.leading.trailing.equalTo(titleLabel)
+      $0.height.equalTo(1)
     }
   }
 
