@@ -83,7 +83,7 @@ final class PreviewViewController: UIViewController, View {
   }
 
   private let tagAddButton = UIButton(type: .system).then {
-    $0.image = .plus
+    $0.setImage(.plus, for: .normal)
     $0.tintColor = .grayScale600
   }
 
