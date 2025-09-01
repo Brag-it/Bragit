@@ -144,7 +144,7 @@ final class PreviewViewController: UIViewController, View {
     thumbnailCollectionView.snp.makeConstraints {
       $0.top.equalTo(thumbnailTitle.snp.bottom).offset(8)
       $0.leading.trailing.equalToSuperview().inset(20)
-      $0.height.equalTo(193)
+      $0.height.equalTo(160)
     }
 
     decriptionTitle.snp.makeConstraints {

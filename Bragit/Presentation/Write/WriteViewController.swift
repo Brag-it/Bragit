@@ -22,21 +22,20 @@ class WriteViewController: UIViewController, View {
 
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.xMarker, for: .normal)
-    $0.tintColor = .black
+    $0.tintColor = .grayScale900
   }
 
   private let titleLabel = UILabel().then {
     $0.text = "글쓰기"
     $0.font = UIFont.systemFont(ofSize: 16)
-    $0.textColor = .label
+    $0.textColor = .grayScale900
     $0.textAlignment = .center
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
   private let doneButton = UIButton(type: .system).then {
     $0.setTitle("완료", for: .normal)
-    $0.setTitleColor(.black, for: .normal)
-    $0.setTitleColor(.systemGray, for: .disabled)
+    $0.setTitleColor(.grayScale900, for: .normal)
     $0.titleLabel?.font = .pretendard(size: 14)
   }
 
@@ -47,7 +46,7 @@ class WriteViewController: UIViewController, View {
   }
 
   private let dividerView = UIView().then {
-    $0.backgroundColor = .lightGray
+    $0.backgroundColor = .grayScale100
   }
 
   private let editorView = EditorView()
@@ -63,7 +62,7 @@ class WriteViewController: UIViewController, View {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
   }
