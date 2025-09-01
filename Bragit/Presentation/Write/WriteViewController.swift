@@ -127,7 +127,6 @@ class WriteViewController: UIViewController, View {
     backButton.rx.tap
       .bind { [weak self] in
         guard let self else { return }
-        view.endEditing(true) // 키보드 레이아웃 내리기
         backAlert.show(in: self.view)
       }
       .disposed(by: disposeBag)
