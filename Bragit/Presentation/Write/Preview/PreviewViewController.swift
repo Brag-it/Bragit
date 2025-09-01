@@ -58,7 +58,7 @@ final class PreviewViewController: UIViewController, View {
   private lazy var thumbnailCollectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout()).then {
     $0.backgroundColor = .white
     $0.showsVerticalScrollIndicator = false
-    $0.isScrollEnabled = false
+    $0.keyboardDismissMode = .onDrag
   }
 
   private let decriptionTitle = UILabel().then {
@@ -111,66 +111,79 @@ final class PreviewViewController: UIViewController, View {
 
     headerView.addSubview(backButton)
     headerView.addSubview(titleLabel)
-
-    view.addSubview(titleTextField)
-    view.addSubview(dividerView)
-    view.addSubview(thumbnailTitle)
     view.addSubview(thumbnailCollectionView)
-    view.addSubview(decriptionTitle)
-    view.addSubview(descriptionLabel)
     view.addSubview(doneButton)
+
+    //    view.addSubview(titleTextField)
+    //    view.addSubview(dividerView)
+    //    view.addSubview(thumbnailTitle)
+    //    view.addSubview(decriptionTitle)
+    //    view.addSubview(descriptionLabel)
+    //    view.addSubview(tagTitle)
+    //    view.addSubview(tagAddButton)
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
       $0.leading.trailing.equalToSuperview()
       $0.height.equalTo(58)
     }
+
     backButton.snp.makeConstraints {
       $0.leading.equalToSuperview().offset(20)
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
-    titleLabel.snp.makeConstraints {
-      $0.centerX.equalTo(headerView.snp.centerX)
-      $0.centerY.equalTo(headerView.snp.centerY)
-      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
-    }
-
-    titleTextField.snp.makeConstraints {
-      $0.top.equalTo(headerView.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
-    }
-
-    dividerView.snp.makeConstraints {
-      $0.top.equalTo(titleTextField.snp.bottom).offset(16)
-      $0.leading.trailing.equalTo(titleTextField)
-      $0.height.equalTo(1)
-    }
-
-    thumbnailTitle.snp.makeConstraints {
-      $0.top.equalTo(dividerView.snp.bottom).offset(24)
-      $0.leading.trailing.equalTo(titleTextField)
-    }
+    //    titleLabel.snp.makeConstraints {
+    //      $0.centerX.equalTo(headerView.snp.centerX)
+    //      $0.centerY.equalTo(headerView.snp.centerY)
+    //      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
+    //    }
+    //
+    //   titleTextField.snp.makeConstraints {
+    //      $0.top.equalTo(headerView.snp.bottom).offset(24)
+    //      $0.leading.trailing.equalToSuperview().inset(20)
+    //    }
+    //
+    //    dividerView.snp.makeConstraints {
+    //      $0.top.equalTo(titleTextField.snp.bottom).offset(16)
+    //      $0.leading.trailing.equalTo(titleTextField)
+    //      $0.height.equalTo(1)
+    //    }
+    //
+    //    thumbnailTitle.snp.makeConstraints {
+    //      $0.top.equalTo(dividerView.snp.bottom).offset(24)
+    //      $0.leading.trailing.equalTo(titleTextField)
+    //    }
 
     thumbnailCollectionView.snp.makeConstraints {
-      $0.top.equalTo(thumbnailTitle.snp.bottom).offset(8)
+      $0.top.equalTo(headerView.snp.bottom).offset(24)
       $0.leading.trailing.equalToSuperview().inset(20)
-      $0.height.equalTo(160)
+      $0.bottom.equalTo(doneButton.snp.top).offset(-24)
     }
 
-    decriptionTitle.snp.makeConstraints {
-      $0.top.equalTo(thumbnailCollectionView.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
-    }
-
-    descriptionLabel.snp.makeConstraints {
-      $0.top.equalTo(decriptionTitle.snp.bottom).offset(8)
-      $0.leading.trailing.equalToSuperview().inset(20)
-      $0.height.equalTo(128)
-    }
+    //    decriptionTitle.snp.makeConstraints {
+    //      $0.top.equalTo(thumbnailCollectionView.snp.bottom).offset(24)
+    //      $0.leading.trailing.equalToSuperview().inset(20)
+    //    }
+    //
+    //    descriptionLabel.snp.makeConstraints {
+    //      $0.top.equalTo(decriptionTitle.snp.bottom).offset(8)
+    //      $0.leading.trailing.equalToSuperview().inset(20)
+    //      $0.height.equalTo(128)
+    //    }
+    //
+    //    tagTitle.snp.makeConstraints {
+    //      $0.top.equalTo(descriptionLabel.snp.bottom).offset(44)
+    //      $0.leading.equalToSuperview().inset(20)
+    //    }
+    //
+    //    tagAddButton.snp.makeConstraints {
+    //      $0.top.equalTo(tagTitle)
+    //      $0.trailing.equalToSuperview().inset(20)
+    //    }
 
     doneButton.snp.makeConstraints {
-      $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(24)
+      $0.bottom.equalTo(view).inset(24)
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
     }
@@ -212,32 +225,98 @@ final class PreviewViewController: UIViewController, View {
   }
 
   private func createLayout() -> UICollectionViewCompositionalLayout {
-    return UICollectionViewCompositionalLayout { _, _ in
-      let itemSize = NSCollectionLayoutSize(
-        widthDimension: .absolute(160),
-        heightDimension: .absolute(120)
-      )
-      let item = NSCollectionLayoutItem(layoutSize: itemSize)
-      let groupSize = NSCollectionLayoutSize(
-        widthDimension: .absolute(160),
-        heightDimension: .absolute(120)
-      )
-      let group = NSCollectionLayoutGroup.horizontal(
-        layoutSize: groupSize,
-        subitems: [item]
-      )
-      let section = NSCollectionLayoutSection(group: group)
-      section.orthogonalScrollingBehavior = .continuous
-      section.interGroupSpacing = 8
-      return section
+    return UICollectionViewCompositionalLayout { sectionIndex, environment in
+      switch sectionIndex {
+      case 0:
+        return self.titleSectionLayout()
+      case 1:
+        return self.thumbnailSectionLayout()
+      case 2:
+        return self.descriptionSectionLayout()
+      case 3:
+        return self.tagSectionLayout()
+      default:
+        return self.titleSectionLayout()
+      }
     }
+  }
+
+  // 타이틀
+  private func titleSectionLayout() -> NSCollectionLayoutSection {
+    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .absolute(380))
+    let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+    let section = NSCollectionLayoutSection(group: group)
+    section.boundarySupplementaryItems = [header]
+    section.orthogonalScrollingBehavior = .continuous
+    section.interGroupSpacing = 16
+    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    return section
+  }
+  // 타이틀
+  private func thumbnailSectionLayout() -> NSCollectionLayoutSection {
+    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+    let itemSize = NSCollectionLayoutSize(
+      widthDimension: .absolute(160),
+      heightDimension: .absolute(120)
+    )
+    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+    let groupSize = NSCollectionLayoutSize(
+      widthDimension: .absolute(160),
+      heightDimension: .absolute(120)
+    )
+    let group = NSCollectionLayoutGroup.horizontal(
+      layoutSize: groupSize,
+      subitems: [item]
+    )
+    let section = NSCollectionLayoutSection(group: group)
+    section.orthogonalScrollingBehavior = .groupPagingCentered
+    section.interGroupSpacing = 8
+    return section
+  }
+  // 타이틀
+  private func descriptionSectionLayout() -> NSCollectionLayoutSection {
+    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .absolute(380))
+    let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+    let section = NSCollectionLayoutSection(group: group)
+    section.boundarySupplementaryItems = [header]
+    section.orthogonalScrollingBehavior = .groupPagingCentered
+    section.interGroupSpacing = 16
+    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    return section
+  }
+  // 타이틀
+  private func tagSectionLayout() -> NSCollectionLayoutSection {
+    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .absolute(380))
+    let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+    let section = NSCollectionLayoutSection(group: group)
+    section.boundarySupplementaryItems = [header]
+    section.orthogonalScrollingBehavior = .groupPagingCentered
+    section.interGroupSpacing = 16
+    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    return section
   }
 
   func applySnapshot(with images: [UIImage]) {
     var snapshot = NSDiffableDataSourceSnapshot<Section, ThumbnailItem>()
-    snapshot.appendSections([.main])
-    snapshot.appendItems([ThumbnailItem(type: .addButton)], toSection: .main)
-    snapshot.appendItems(images.map { ThumbnailItem(type: .image($0)) }, toSection: .main)
+    snapshot.appendSections([.thumbnails])
+    snapshot.appendSections([.description])
+    snapshot.appendSections([.tags])
+
+    snapshot.appendItems([ThumbnailItem(type: .addButton)], toSection: .thumbnails)
+    snapshot.appendItems(images.map { ThumbnailItem(type: .image($0)) }, toSection: .thumbnails)
     dataSource.apply(snapshot, animatingDifferences: true)
   }
 
@@ -280,25 +359,51 @@ final class PreviewViewController: UIViewController, View {
 
 extension PreviewViewController {
   enum Section: CaseIterable {
-    case main
+    case title
+    case thumbnails
+    case description
+    case tags
+
+    // 헤더 타이틀
+    var headerTitle: String {
+      switch self {
+      case .title: return ""
+      case .thumbnails: return "대표 이미지(썸네일)"
+      case .description: return "게시글 설명"
+      case .tags: return "태그 추가"
+      }
+    }
+  }
+
+  enum Item: Hashable {
+    case thumbnail(ThumbnailItem)     // 썸네일
+    case description(DescriptionItem) // 설명
+    case tag(TagItem)                 // 태그
   }
 
   struct ThumbnailItem: Hashable {
     enum ItemType: Hashable {
-      case addButton          // 고정 추가 버튼 셀
-      case image(UIImage)     // 썸네일 이미지 셀
+      case addButton            // 고정 추가 버튼 셀
+      case image(UIImage)       // 썸네일 이미지 셀
     }
 
-    let id: UUID = UUID()     // 고유 식별자
-    let type: ItemType        // 어떤 타입인지
+    let id: UUID = UUID()
+    let type: ItemType
+    var isSelected: Bool = false
 
-    func hash(into hasher: inout Hasher) {
-      hasher.combine(id)      // id 기준으로만 비교
-    }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (lhs: ThumbnailItem, rhs: ThumbnailItem) -> Bool { lhs.id == rhs.id }
+  }
 
-    static func == (lhs: ThumbnailItem, rhs: ThumbnailItem) -> Bool {
-      return lhs.id == rhs.id
-    }
+  struct DescriptionItem: Hashable {
+    let id: UUID = UUID()
+    var text: String
+  }
+
+  struct TagItem: Hashable {
+    let id: UUID = UUID()
+    var title: String
+    var isDeletable: Bool = true
   }
 }
 
