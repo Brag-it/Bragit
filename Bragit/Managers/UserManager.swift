@@ -20,6 +20,7 @@ protocol UserManagerProtocol {
   func unfollowUser(id: String) async throws
   func rxFollowUser(id: String) -> Completable
   func rxUnfollowUser(id: String) -> Completable
+  func rxFetchFollowers() -> Observable<[String]>
 }
 
 class UserManager: UserManagerProtocol {
@@ -150,8 +151,7 @@ class UserManager: UserManagerProtocol {
       print("⚠️ UserManager userId nil")
       return
     }
-    print("me \(userId!)")
-    print("unfollowUser \(id)")
+
     try await client
       .from("Follow")
       .delete()
@@ -173,6 +173,36 @@ class UserManager: UserManagerProtocol {
         } catch {
           print(error)
           observer(.error(error))
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
+  // 팔로워들 id 가져오기
+  func rxFetchFollowers() -> Observable<[String]> {
+    .create { [weak self] observer in
+      guard self?.userId != nil else {
+        print("⚠️ UserManager userId nil")
+        return Disposables.create()
+      }
+
+      Task { [weak self] in
+        do {
+          guard let self = self else { return }
+          let users: [FollowResponse] = try await self.client
+            .from("Follow")
+            .select()
+            .eq("follow_id", value: userId)
+            .execute()
+            .value
+
+          observer.onNext(users.map { $0.userId })
+          observer.onCompleted()
+        } catch {
+          print(error)
+          observer.onError(error)
         }
       }
 
