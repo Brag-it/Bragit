@@ -55,12 +55,19 @@ final class WriteFeedFlow: Flow {
 
   private func showSearchTagView() -> FlowContributors {
     let reactor = SearchTagReactor()
-    let searchTagVc = SearchTagViewController(reactor: reactor)
+    let modal = SearchTagViewController(reactor: reactor)
 
-    nav.topViewController?.present(searchTagVc, animated: true)
+    modal.modalPresentationStyle = .pageSheet
+    if let sheet = modal.sheetPresentationController {
+      sheet.detents = [.custom(identifier: .init("fixed668")) { _ in 668 }]
+      sheet.prefersGrabberVisible = true // 핸들 색상 지정 불가
+      sheet.preferredCornerRadius = 14
+    }
+
+    nav.topViewController?.present(modal, animated: true)
 
     return .one(flowContributor: .contribute(
-      withNextPresentable: searchTagVc,
+      withNextPresentable: modal,
       withNextStepper: reactor
     ))
   }
