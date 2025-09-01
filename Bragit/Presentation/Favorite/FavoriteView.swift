@@ -27,10 +27,13 @@ class FavoriteView: UIView {
     $0.semanticContentAttribute = .forceRightToLeft
   }
 
+  let feedView = FavoriteFeedView()
+
   override init(frame: CGRect) {
     super.init(frame: frame)
 
     setUI()
+    self.backgroundColor = .white
   }
 
   required init?(coder: NSCoder) {
@@ -39,6 +42,7 @@ class FavoriteView: UIView {
 
   private func setUI() {
     addSubview(headerView)
+    addSubview(feedView)
     headerView.addSubview(searchButton)
     headerView.addSubview(choiceButton)
 
@@ -56,6 +60,11 @@ class FavoriteView: UIView {
     choiceButton.snp.makeConstraints {
       $0.centerY.equalToSuperview()
       $0.leading.equalToSuperview().offset(20)
+    }
+
+    feedView.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom)
+      $0.leading.trailing.bottom.equalToSuperview()
     }
   }
 }

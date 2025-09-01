@@ -16,10 +16,12 @@ protocol PostManagerProtocol {
   func searchFeed(tagID: String) async throws -> [Post]
   func searchFeed(tagIDs: [String], from: Int, to: Int) async throws -> [Post]
   func searchPosts(searchText: String) async throws -> [Post]
-  func searchTags(searchText: String) async throws -> [Tag]
   func rxFetchMainFeedData(from: Int, to: Int) -> Observable<[Post]>
   func rxSearchFeed(tagIDs: [String], from: Int, to: Int) -> Observable<[Post]>
   func rxSearchFollowUserPost(followIds: [String], from: Int, to: Int) -> Observable<[Post]>
+  func fetchPopularPost(from: Int, to: Int) async throws -> [Post]
+  func rxFetchPopularPost(from: Int, to: Int) -> Observable<[Post]>
+  func rxFetchPostByAuthorId(authorId: String, from: Int, to: Int) -> Observable<[Post]>
 }
 
 class PostManager: PostManagerProtocol {
@@ -83,6 +85,7 @@ class PostManager: PostManagerProtocol {
       .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(id, nickname, profile)")
       .in("post_tags.tag_id", values: tagIDs)
       .order("date", ascending: false)
+      .range(from: from, to: to)
       .execute()
       .value
 
@@ -130,6 +133,7 @@ class PostManager: PostManagerProtocol {
             .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(id, nickname, profile)")
             .in("author_id", values: followIds)
             .order("date", ascending: false)
+            .range(from: from, to: to)
             .execute()
             .value
           observer.onNext(posts)
@@ -141,18 +145,6 @@ class PostManager: PostManagerProtocol {
 
       return Disposables.create()
     }
-  }
-
-  // 태그 검색
-  func searchTags(searchText: String) async throws -> [Tag] {
-    let tags: [Tag] = try await client
-      .from("Tag")
-      .select()
-      .ilike("tag", pattern: "%\(searchText)%")
-      .execute()
-      .value
-
-    return tags
   }
 
   // 게시글 검색
@@ -180,5 +172,72 @@ class PostManager: PostManagerProtocol {
     }
 
     return Array(uniquePosts.values)
+  }
+
+  // 인기 게시글 가져오기
+  func fetchPopularPost(from: Int, to: Int) async throws -> [Post] {
+    let posts: [Post] = try await client
+      .from("Post")
+      .select("*, Tag(*), comment_count:Comment(count), post_tags!left(*), User_Info(id, nickname, profile)")
+      .order("like", ascending: false)
+      .range(from: from, to: to)
+      .execute()
+      .value
+
+    return posts
+  }
+
+  func rxFetchPopularPost(from: Int, to: Int) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let posts = try await self.fetchPopularPost(
+            from: from,
+            to: to
+          )
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
+          print(error)
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
+  // author id로 게시글 가져오기
+  func rxFetchPostByAuthorId(authorId: String, from: Int, to: Int) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let posts: [Post] = try await self.client
+            .from("Post")
+            .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(id, nickname, profile)")
+            .eq("author_id", value: authorId)
+            .order("date", ascending: false)
+            .range(from: from, to: to)
+            .execute()
+            .value
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
   }
 }

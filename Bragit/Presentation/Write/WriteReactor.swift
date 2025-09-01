@@ -4,6 +4,8 @@
 //
 //  Created by 이태윤 on 8/22/25.
 //
+import UIKit
+
 import ReactorKit
 import RxSwift
 import RxFlow
@@ -16,15 +18,27 @@ class WriteReactor: Reactor, Stepper {
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
-    case tapDismiss // 탭 닫기
+    case tapDismiss
+    case doneButtonTapped
+    case boldTapped
+    case underlineTapped
+    case strikethroughTapped
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
+    case setBoldActive(Bool)
+    case setUnderlineActive(Bool)
+    case setStrikethroughActive(Bool)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
+    var title: String = ""
+    var content: NSAttributedString = NSAttributedString(string: "")
+    var isBoldActive = false
+    var isUnderlineActive = false
+    var isStrikethroughActive = false
   }
 
   init() {
@@ -38,6 +52,19 @@ class WriteReactor: Reactor, Stepper {
     case .tapDismiss:
       steps.accept(AppStep.dismiss)
       return .empty()
+
+    case .doneButtonTapped:
+      steps.accept(AppStep.dismiss)
+      return .empty()
+
+    case .boldTapped:
+      return .just(.setBoldActive(!currentState.isBoldActive))
+
+    case .underlineTapped:
+      return .just(.setUnderlineActive(!currentState.isUnderlineActive))
+
+    case .strikethroughTapped:
+      return .just(.setStrikethroughActive(!currentState.isStrikethroughActive))
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -45,6 +72,12 @@ class WriteReactor: Reactor, Stepper {
   func reduce(state: State, mutation: Mutation) -> State {
     var newState = state
     switch mutation {
+    case .setBoldActive(let isActive):
+      newState.isBoldActive = isActive
+    case .setUnderlineActive(let isActive):
+      newState.isUnderlineActive = isActive
+    case .setStrikethroughActive(let isActive):
+      newState.isStrikethroughActive = isActive
     }
     return newState
   }
