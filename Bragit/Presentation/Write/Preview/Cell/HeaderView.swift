@@ -6,31 +6,33 @@
 //
 import UIKit
 import SnapKit
+import Then
 
 final class HeaderView: UICollectionReusableView {
   static let identifier = "HeaderView"
-
 
   private let titleLabel = UILabel().then {
     $0.font = .pretendard(size: 13, weight: .medium)
     $0.textColor = .grayScale600
   }
 
-  private let pulsButton = UIButton(type: .system).then {
+  private let plusButton = UIButton(type: .system).then {
     $0.setImage(.plus, for: .normal)
+    $0.contentMode = .scaleAspectFit
     $0.tintColor = .grayScale600
   }
 
   override init(frame: CGRect) {
     super.init(frame: frame)
     addSubview(titleLabel)
+    addSubview(plusButton)
     titleLabel.snp.makeConstraints {
-      $0.leading.equalToSuperview().inset(20)
+      $0.leading.equalToSuperview()
       $0.top.bottom.equalToSuperview()
     }
 
-    pulsButton.snp.makeConstraints {
-      $0.trailing.equalToSuperview().inset(20)
+    plusButton.snp.makeConstraints {
+      $0.trailing.equalToSuperview()
       $0.top.bottom.equalToSuperview()
     }
 
@@ -44,17 +46,16 @@ final class HeaderView: UICollectionReusableView {
     switch section {
     case .title:
       titleLabel.text = ""
-      pulsButton.isHidden = true
+      plusButton.isHidden = true
     case .thumbnails:
       titleLabel.text = "대표 이미지(썸네일)"
-      pulsButton.isHidden = true
+      plusButton.isHidden = true
     case .description:
       titleLabel.text = "게시글 설명"
-      pulsButton.isHidden = true
+      plusButton.isHidden = true
     case .tags:
       titleLabel.text = "태그추가"
-      pulsButton.isHidden = false
+      plusButton.isHidden = false
     }
   }
 }
-

@@ -36,56 +36,13 @@ final class PreviewViewController: UIViewController, View {
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
-//  private let titleTextField = UITextField().then {
-//    $0.placeholder = "제목을 입력해 주세요"
-//    $0.borderStyle = .none
-//    $0.textColor = .grayScale900
-//    $0.font = .pretendard(size: 20, weight: .semibold)
-//  }
-//
-//  private let dividerView = UIView().then {
-//    $0.backgroundColor = .grayScale100
-//  }
-//
-//  private let thumbnailTitle = UILabel().then {
-//    $0.text = "대표 이미지(썸네일)"
-//    $0.font = .pretendard(size: 13, weight: .medium)
-//    $0.textColor = .grayScale600
-//  }
+  private lazy var dataSource = setupDataSource(self.priviewCollectionView)
 
-  private lazy var dataSource = setupDataSource(self.thumbnailCollectionView)
-
-  private lazy var thumbnailCollectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout()).then {
+  private lazy var priviewCollectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout()).then {
     $0.backgroundColor = .white
     $0.showsVerticalScrollIndicator = false
     $0.keyboardDismissMode = .onDrag
   }
-
-//  private let decriptionTitle = UILabel().then {
-//    $0.text = "게시글 설명"
-//    $0.font = .pretendard(size: 13, weight: .medium)
-//    $0.textColor = .grayScale600
-//  }
-//
-//  private let descriptionLabel = DescriptionTextView().then {
-//    $0.placeholder = "내용을 잘 나타내는 설명을 입력해 주세요"
-//    $0.font = .pretendard(size: 15)
-//    $0.layer.cornerRadius = 14
-//    $0.layer.borderColor = UIColor.grayScale100.cgColor
-//    $0.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16) // 내부 여백
-//    $0.layer.borderWidth = 1
-//  }
-
-//  private let tagTitle = UILabel().then {
-//    $0.text = "태그 추가"
-//    $0.font = .pretendard(size: 13, weight: .medium)
-//    $0.textColor = .grayScale600
-//  }
-//
-//  private let tagAddButton = UIButton(type: .system).then {
-//    $0.setImage(.plus, for: .normal)
-//    $0.tintColor = .grayScale600
-//  }
 
   init(reactor: PreviewReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -111,16 +68,8 @@ final class PreviewViewController: UIViewController, View {
 
     headerView.addSubview(backButton)
     headerView.addSubview(titleLabel)
-    view.addSubview(thumbnailCollectionView)
+    view.addSubview(priviewCollectionView)
     view.addSubview(doneButton)
-
-    //    view.addSubview(titleTextField)
-    //    view.addSubview(dividerView)
-    //    view.addSubview(thumbnailTitle)
-    //    view.addSubview(decriptionTitle)
-    //    view.addSubview(descriptionLabel)
-    //    view.addSubview(tagTitle)
-    //    view.addSubview(tagAddButton)
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
@@ -133,54 +82,11 @@ final class PreviewViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
-    //    titleLabel.snp.makeConstraints {
-    //      $0.centerX.equalTo(headerView.snp.centerX)
-    //      $0.centerY.equalTo(headerView.snp.centerY)
-    //      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
-    //    }
-    //
-    //   titleTextField.snp.makeConstraints {
-    //      $0.top.equalTo(headerView.snp.bottom).offset(24)
-    //      $0.leading.trailing.equalToSuperview().inset(20)
-    //    }
-    //
-//        dividerView.snp.makeConstraints {
-//          $0.top.equalTo(titleTextField.snp.bottom).offset(16)
-//          $0.leading.trailing.equalTo(titleTextField)
-//          $0.height.equalTo(1)
-//        }
-    //
-    //    thumbnailTitle.snp.makeConstraints {
-    //      $0.top.equalTo(dividerView.snp.bottom).offset(24)
-    //      $0.leading.trailing.equalTo(titleTextField)
-    //    }
-
-    thumbnailCollectionView.snp.makeConstraints {
-      $0.top.equalTo(headerView.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
-      $0.bottom.equalTo(doneButton.snp.top).offset(-24)
+    priviewCollectionView.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom)
+      $0.leading.trailing.equalToSuperview()
+      $0.bottom.equalTo(doneButton.snp.top)
     }
-
-    //    decriptionTitle.snp.makeConstraints {
-    //      $0.top.equalTo(thumbnailCollectionView.snp.bottom).offset(24)
-    //      $0.leading.trailing.equalToSuperview().inset(20)
-    //    }
-    //
-    //    descriptionLabel.snp.makeConstraints {
-    //      $0.top.equalTo(decriptionTitle.snp.bottom).offset(8)
-    //      $0.leading.trailing.equalToSuperview().inset(20)
-    //      $0.height.equalTo(128)
-    //    }
-    //
-    //    tagTitle.snp.makeConstraints {
-    //      $0.top.equalTo(descriptionLabel.snp.bottom).offset(44)
-    //      $0.leading.equalToSuperview().inset(20)
-    //    }
-    //
-    //    tagAddButton.snp.makeConstraints {
-    //      $0.top.equalTo(tagTitle)
-    //      $0.trailing.equalToSuperview().inset(20)
-    //    }
 
     doneButton.snp.makeConstraints {
       $0.bottom.equalTo(view).inset(24)
@@ -190,6 +96,14 @@ final class PreviewViewController: UIViewController, View {
   }
 
   func bind(reactor: PreviewReactor) {
+    reactor.state
+      .take(1) // 최초 1회만
+      .bind { [weak self] state in
+        guard let self else { return }
+        applySnapshot(from: state) // 제목/이미지/설명/태그를 한 번에 세팅
+      }
+      .disposed(by: disposeBag)
+
     backButton.rx.tap
       .map { Reactor.Action.tapPop }
       .bind(to: reactor.action)
@@ -199,33 +113,10 @@ final class PreviewViewController: UIViewController, View {
       .map { Reactor.Action.tapDismiss }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
-
-    // 제목
-    reactor.state
-      .map(\.title)
-      .bind(to: titleTextField.rx.text)
-      .disposed(by: disposeBag)
-
-    // 썸네일 (이미지가 있을 경우만)
-    reactor.state
-      .map(\.thumbnail)
-      .distinctUntilChanged()
-      .bind { [weak self] images in
-        guard let self else { return }
-        print("📸 바인딩된 이미지 수: \(images.count)")
-        applySnapshot(with: images)
-      }
-      .disposed(by: disposeBag)
-
-    // 미리보기 텍스트
-    reactor.state
-      .map(\.decription)
-      .bind(to: descriptionLabel.rx.text)
-      .disposed(by: disposeBag)
   }
 
   private func createLayout() -> UICollectionViewCompositionalLayout {
-    return UICollectionViewCompositionalLayout { sectionIndex, environment in
+    return UICollectionViewCompositionalLayout { sectionIndex, _ in
       switch sectionIndex {
       case 0:
         return self.titleSectionLayout()
@@ -243,23 +134,35 @@ final class PreviewViewController: UIViewController, View {
 
   // 타이틀
   private func titleSectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
-    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+    let itemSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(73)
+    )
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
-    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .absolute(380))
+
+    let groupSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(73)
+    )
     let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
     let section = NSCollectionLayoutSection(group: group)
-    section.boundarySupplementaryItems = [header]
-    section.orthogonalScrollingBehavior = .continuous
-    section.interGroupSpacing = 16
-    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    section.contentInsets = NSDirectionalEdgeInsets(top: 24, leading: 20, bottom: 16, trailing: 20)
     return section
   }
-  // 타이틀
+
+  // 썸네일
   private func thumbnailSectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
-    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+    let headerSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(22)
+    )
+    let header = NSCollectionLayoutBoundarySupplementaryItem(
+      layoutSize: headerSize,
+      elementKind: UICollectionView.elementKindSectionHeader,
+      alignment: .top
+    )
+
     let itemSize = NSCollectionLayoutSize(
       widthDimension: .absolute(160),
       heightDimension: .absolute(120)
@@ -269,92 +172,180 @@ final class PreviewViewController: UIViewController, View {
       widthDimension: .absolute(160),
       heightDimension: .absolute(120)
     )
+
     let group = NSCollectionLayoutGroup.horizontal(
       layoutSize: groupSize,
       subitems: [item]
     )
+
     let section = NSCollectionLayoutSection(group: group)
-    section.orthogonalScrollingBehavior = .groupPagingCentered
-    section.interGroupSpacing = 8
+    section.boundarySupplementaryItems = [header]
+    section.orthogonalScrollingBehavior = .continuous
+    section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 20, bottom: 24, trailing: 20)
+    section.interGroupSpacing = 6
     return section
   }
-  // 타이틀
+
+  // 요약
   private func descriptionSectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
-    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+    let headerSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(22)
+    )
+    let header = NSCollectionLayoutBoundarySupplementaryItem(
+      layoutSize: headerSize,
+      elementKind: UICollectionView.elementKindSectionHeader,
+      alignment: .top
+    )
+
+    let itemSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(201)
+    )
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
-    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .absolute(380))
+
+    let groupSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(201)
+    )
     let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
     let section = NSCollectionLayoutSection(group: group)
     section.boundarySupplementaryItems = [header]
-    section.orthogonalScrollingBehavior = .groupPagingCentered
-    section.interGroupSpacing = 16
-    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 20, bottom: 24, trailing: 20)
     return section
   }
-  // 타이틀
+
+  // 태그
   private func tagSectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
-    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+    let headerSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(22)
+    )
+    let header = NSCollectionLayoutBoundarySupplementaryItem(
+      layoutSize: headerSize,
+      elementKind: UICollectionView.elementKindSectionHeader,
+      alignment: .top
+    )
+
+    let itemSize = NSCollectionLayoutSize(
+      widthDimension: .estimated(10),
+      heightDimension: .absolute(42)
+    )
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
-    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .absolute(380))
+
+    let groupSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .estimated(52)
+    )
     let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+    group.interItemSpacing = .fixed(8)
+
     let section = NSCollectionLayoutSection(group: group)
     section.boundarySupplementaryItems = [header]
-    section.orthogonalScrollingBehavior = .groupPagingCentered
-    section.interGroupSpacing = 16
-    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    section.interGroupSpacing = 8
+    section.orthogonalScrollingBehavior = .none
+    section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 20, bottom: 24, trailing: 20)
     return section
   }
 
-  func applySnapshot(with images: [UIImage]) {
-    var snapshot = NSDiffableDataSourceSnapshot<Section, ThumbnailItem>()
-    snapshot.appendSections([.thumbnails])
-    snapshot.appendSections([.description])
-    snapshot.appendSections([.tags])
+  func applySnapshot(from state: PreviewReactor.State) {
+    var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+    snapshot.appendSections([.title, .thumbnails, .description, .tags])
 
-    snapshot.appendItems([ThumbnailItem(type: .addButton)], toSection: .thumbnails)
-    snapshot.appendItems(images.map { ThumbnailItem(type: .image($0)) }, toSection: .thumbnails)
+    // 제목
+    snapshot.appendItems([.title(TitleItem(text: state.title))], toSection: .title)
+    // 썸네일
+    var thumbItems: [Item] = [.thumbnail(ThumbnailItem(kind: .addButton))]
+    thumbItems += state.thumbnail.map { .thumbnail(ThumbnailItem(kind: .image($0))) }
+    snapshot.appendItems(thumbItems, toSection: .thumbnails)
+    // 요약
+    snapshot.appendItems([.description(DescriptionItem(text: state.decription))], toSection: .description)
+    // 태그
+    let tagItems: [Item] = state.tag.map { .tag(TagItem(title: $0)) }
+    snapshot.appendItems(tagItems, toSection: .tags)
+
     dataSource.apply(snapshot, animatingDifferences: true)
   }
 
+  // swiftlint:disable cyclomatic_complexity
   private func setupDataSource(
     _ collectionView: UICollectionView
-  ) -> UICollectionViewDiffableDataSource<Section, ThumbnailItem> {
-    //Add 버튼 셀
-    let addCellRegistration = UICollectionView.CellRegistration<AddImageCell, ThumbnailItem> { _, _, _ in
+  ) -> UICollectionViewDiffableDataSource<Section, Item> {
+    // 제목 셀 설정
+    let titleRegistration = UICollectionView.CellRegistration<TitleCell, Item> { cell, _, item in
+      if case let .title(titleItem) = item {
+        cell.configure(text: titleItem.text)
+      }
     }
-    // 일반 셀 설정
-    let imageCellRegistration = UICollectionView.CellRegistration<ThumbnailCell, ThumbnailItem> { cell, _, item in
-      if case let .image(image) = item.type {
-        cell.configure(image: image)
+
+    // 썸네일 셀 설정
+    let addRegistration = UICollectionView.CellRegistration<AddImageCell, Item> { _, _, _ in }
+    let thumbRegistration = UICollectionView.CellRegistration<ThumbnailCell, Item> { cell, _, item in
+      if case let .thumbnail(thumbnailItem) = item {
+        switch thumbnailItem.kind {
+        case .addButton:
+          break
+        case .image(let image):
+          cell.configure(image: image)
+        }
+      }
+    }
+
+    // 요약 셀 설정
+    let descRegistration = UICollectionView.CellRegistration<DescriptionCell, Item> { cell, _, item in
+      if case let .description(descriptionItem) = item {
+        cell.configure(text: descriptionItem.text)
+      }
+    }
+
+    // 태그 셀 설정
+    let tagRegistration = UICollectionView.CellRegistration<TagCell, Item> { cell, _, item in
+      if case let .tag(tagItem) = item {
+        cell.configure(text: tagItem.title)
       }
     }
 
     // 데이터 소스 생성
-    let dataSource = UICollectionViewDiffableDataSource<Section, ThumbnailItem>(
+    let dataSource = UICollectionViewDiffableDataSource<Section, Item>(
       collectionView: collectionView
     ) { collectionView, indexPath, item in
-      switch item.type {
-      case .addButton:
-        return collectionView.dequeueConfiguredReusableCell(
-          using: addCellRegistration,
-          for: indexPath,
-          item: item
-        )
-      case .image:
-        return collectionView.dequeueConfiguredReusableCell(
-          using: imageCellRegistration,
-          for: indexPath,
-          item: item
-        )
+      let section = Section.allCases[indexPath.section]
+      switch section {
+      case .title:
+        return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: item)
+      case .thumbnails:
+        if case .thumbnail(let thumbnailItem) = item, case .addButton = thumbnailItem.kind {
+          return collectionView.dequeueConfiguredReusableCell(using: addRegistration, for: indexPath, item: item)
+        } else {
+          return collectionView.dequeueConfiguredReusableCell(using: thumbRegistration, for: indexPath, item: item)
+        }
+      case .description:
+        return collectionView.dequeueConfiguredReusableCell(using: descRegistration, for: indexPath, item: item)
+      case .tags:
+        return collectionView.dequeueConfiguredReusableCell(using: tagRegistration, for: indexPath, item: item)
       }
+    }
+
+    // 섹션 헤더 등록
+    let headerRegistration = UICollectionView.SupplementaryRegistration<HeaderView>(
+      elementKind: UICollectionView.elementKindSectionHeader
+    ) { header, _, indexPath in
+      let section = Section.allCases[indexPath.section]
+      header.configure(section: section)
+    }
+
+    dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+      guard kind == UICollectionView.elementKindSectionHeader else { return nil }
+      return collectionView.dequeueConfiguredReusableSupplementary(
+        using: headerRegistration,
+        for: indexPath
+      )
     }
 
     return dataSource
   }
+  // swiftlint:enable cyclomatic_complexity
 }
 
 @available(iOS 17.0, *)

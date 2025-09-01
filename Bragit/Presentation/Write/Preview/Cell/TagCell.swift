@@ -15,7 +15,8 @@ final class TagCell: UICollectionViewCell {
   private let tagView = UIStackView().then {
     $0.axis = .horizontal
     $0.spacing = 10
-    $0.distribution = .fillProportionally
+    $0.alignment = .center
+    $0.distribution = .fill
   }
 
   private let tagLabel = UILabel().then {
@@ -32,16 +33,20 @@ final class TagCell: UICollectionViewCell {
   override init(frame: CGRect) {
     super.init(frame: frame)
     contentView.backgroundColor = .white
-    contentView.layer.cornerRadius = 80
+    contentView.layer.cornerRadius = 21
     contentView.layer.borderWidth = 1
     contentView.layer.borderColor = UIColor.grayScale100.cgColor
     contentView.addSubview(tagView)
     tagView.addArrangedSubview(tagLabel)
     tagView.addArrangedSubview(xMarker)
-    
+
     tagView.snp.makeConstraints {
       $0.top.bottom.equalToSuperview()
       $0.leading.trailing.equalToSuperview().inset(14)
+    }
+
+    xMarker.snp.makeConstraints {
+      $0.width.equalTo(16)
     }
   }
 
@@ -53,4 +58,3 @@ final class TagCell: UICollectionViewCell {
     tagLabel.text = text
   }
 }
-

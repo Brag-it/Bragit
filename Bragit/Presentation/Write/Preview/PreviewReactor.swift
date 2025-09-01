@@ -33,6 +33,7 @@ class PreviewReactor: Reactor, Stepper {
     var content: NSAttributedString
     var thumbnail: [UIImage]
     var decription: String
+    var tag: [String] = ["iOS", "TIL", "정보 공유", "내일배움 캠프", "열 다섯글자를 위한 테스트임"]
   }
 
   init(draft: PostDraft) {

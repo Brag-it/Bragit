@@ -1,4 +1,3 @@
-
 //
 //  TitleCell.swift
 //  Bragit
@@ -9,6 +8,7 @@ import UIKit
 
 import SnapKit
 import Then
+
 final class TitleCell: UICollectionViewCell {
   static let identifier: String = "TitleCell"
 
@@ -28,8 +28,8 @@ final class TitleCell: UICollectionViewCell {
     contentView.addSubview(dividerView)
 
     titleLabel.snp.makeConstraints {
-      $0.top.bottom.equalToSuperview()
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.top.equalToSuperview()
+      $0.leading.trailing.equalToSuperview()
     }
 
     dividerView.snp.makeConstraints {
@@ -42,9 +42,8 @@ final class TitleCell: UICollectionViewCell {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-  
+
   func configure(text: String) {
-    tagLabel.text = text
+    titleLabel.text = text
   }
 }
-
