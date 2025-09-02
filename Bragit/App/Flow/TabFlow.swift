@@ -44,10 +44,14 @@ final class TabFlow: NSObject, Flow, Stepper {
     Flows.use(homeFlow, favoriteFlow, writeFeedFlow, myPageFlow, when: .ready) { [unowned self]
       (homeRoot, favoriteRoot, writeRoot, myRoot) in
 
-      let homeTabBarItem = UITabBarItem(title: "홈", image: .home, tag: 0)
-      let favoriteTabBarItem = UITabBarItem(title: "관심", image: .favorite, tag: 1)
-      let writeTabBarItem = UITabBarItem(title: "글쓰기", image: .write, tag: 2)
-      let myPageTabBarItem = UITabBarItem(title: "마이", image: .mypage, tag: 3)
+      let homeTabBarItem = UITabBarItem(title: "홈", image: .home, selectedImage: .homeFilled)
+      homeTabBarItem.tag = 0
+      let favoriteTabBarItem = UITabBarItem(title: "관심", image: .favorite, selectedImage: .favoriteFilled)
+      favoriteTabBarItem.tag = 1
+      let writeTabBarItem = UITabBarItem(title: "글쓰기", image: .write, selectedImage: .writeFilled)
+      writeTabBarItem.tag = 2
+      let myPageTabBarItem = UITabBarItem(title: "마이", image: .mypage, selectedImage: .mypageFilled)
+      myPageTabBarItem.tag = 3
 
       homeRoot.tabBarItem = homeTabBarItem
       favoriteRoot.tabBarItem = favoriteTabBarItem
@@ -58,7 +62,7 @@ final class TabFlow: NSObject, Flow, Stepper {
       self.rootViewController.selectedIndex = 0
 
       let tabBar = self.rootViewController.tabBar
-      tabBar.tintColor = .systemBlue
+      tabBar.tintColor = .grayScaleBack
 
       let appearance = UITabBarAppearance()
       appearance.configureWithOpaqueBackground()
