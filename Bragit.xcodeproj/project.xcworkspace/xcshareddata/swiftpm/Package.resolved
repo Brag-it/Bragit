@@ -1,5 +1,5 @@
 {
-  "originHash" : "d8634ed759bfc27547aef3f3eac94e1335760edcb562de9e519066cf850b55ad",
+  "originHash" : "6468542be86271b646ffee9cb7b3a1c56f684c927ec5ed1f67fdb660db6254b9",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -71,6 +71,15 @@
       "state" : {
         "revision" : "8fa33f09c6f6621a2aa536d739956d53b84dd139",
         "version" : "3.2.0"
+      }
+    },
+    {
+      "identity" : "richtextkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/danielsaidi/RichTextKit.git",
+      "state" : {
+        "revision" : "8aa44cfa645404ad84e52e3ab7723ecf4b82f92b",
+        "version" : "1.2.0"
       }
     },
     {
