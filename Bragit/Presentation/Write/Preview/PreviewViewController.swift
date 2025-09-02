@@ -11,6 +11,7 @@ import ReactorKit
 import RxSwift
 import RxCocoa
 
+// swiftlint:disable type_body_length
 final class PreviewViewController: UIViewController, View {
   var disposeBag = DisposeBag()
 
@@ -123,9 +124,14 @@ final class PreviewViewController: UIViewController, View {
       }
       .bind { [weak self] item in
         guard let self else { return }
-        // 썸네일추가 셀 인지 검사
-        if case let .thumbnail(thumbnailItem) = item, case .addButton = thumbnailItem.kind {
-          presentPhotoPicker()
+        // 썸네일추가 셀 이면 사진 추가 그게아니면 썸네일 사진 선택
+        if case let .thumbnail(thumbnailItem) = item {
+          switch thumbnailItem.kind {
+          case .addButton:
+            presentPhotoPicker()
+          case .image(let image):
+            reactor.action.onNext(.tapThumbnail(image))
+          }
         }
       }
       .disposed(by: disposeBag)
@@ -137,6 +143,16 @@ final class PreviewViewController: UIViewController, View {
         guard let self else { return }
         applySnapshot(from: reactor.currentState)
         scrollToFirstThumbnailIfNeeded()
+      }
+      .disposed(by: disposeBag)
+
+    // 대표 이미지 변경 시 → 썸네일 셀들만 재구성하여 선택 표시 반영
+    reactor.state
+      .map(\.representativeImage)
+      .distinctUntilChanged { $0 === $1 }
+      .bind { [weak self] _ in
+        guard let self else { return }
+        self.reconfigureThumbnailsSelection()
       }
       .disposed(by: disposeBag)
 
@@ -315,13 +331,22 @@ final class PreviewViewController: UIViewController, View {
 
     // 썸네일 셀 설정
     let addRegistration = UICollectionView.CellRegistration<AddImageCell, Item> { _, _, _ in }
-    let thumbRegistration = UICollectionView.CellRegistration<ThumbnailCell, Item> { cell, _, item in
-      guard case let .thumbnail(thumbnailItem) = item else { return }
+    let thumbRegistration = UICollectionView.CellRegistration<ThumbnailCell, Item> { [weak self] cell, _, item in
+      guard let self, case let .thumbnail(thumbnailItem) = item else { return }
       switch thumbnailItem.kind {
       case .addButton:
-        break
+        // 선택 표시 없음
+        if let rep = self.reactor?.currentState.representativeImage {
+          // "+ 버튼" 셀은 항상 비선택
+          cell.updateSelection(isSelected: false)
+        } else {
+          cell.updateSelection(isSelected: false)
+        }
       case .image(let image):
         cell.configure(image: image)
+        let rep = self.reactor?.currentState.representativeImage
+        let isSelected = (rep != nil && rep === image)
+        cell.updateSelection(isSelected: isSelected)
       }
     }
 
@@ -413,7 +438,17 @@ final class PreviewViewController: UIViewController, View {
       self?.priviewCollectionView.scrollToItem(at: indexPath, at: .left, animated: true)
     }
   }
+
+  // 대표 이미지 선택 상태가 바뀔 때, 썸네일 섹션 아이템만 재구성해서 셀의 선택 표현을 업데이트
+  private func reconfigureThumbnailsSelection() {
+    var snapshot = dataSource.snapshot()
+    guard snapshot.sectionIdentifiers.contains(.thumbnails) else { return }
+    let thumbItems = snapshot.itemIdentifiers(inSection: .thumbnails)
+    snapshot.reconfigureItems(thumbItems)
+    dataSource.apply(snapshot, animatingDifferences: false)
+  }
 }
+// swiftlint:enable type_body_length
 
 extension PreviewViewController: PHPickerViewControllerDelegate {
   func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {

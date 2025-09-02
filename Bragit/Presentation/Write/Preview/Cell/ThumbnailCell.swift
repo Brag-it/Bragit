@@ -41,6 +41,11 @@ final class ThumbnailCell: UICollectionViewCell {
     fatalError("init(coder:) has not been implemented")
   }
 
+  func updateSelection(isSelected: Bool) {
+    contentView.layer.borderColor = isSelected ? UIColor.grayScaleBack.cgColor : UIColor.clear.cgColor
+    checkImage.isHidden = !isSelected
+  }
+  
   func configure(image: UIImage) {
     imageView.image = image
   }

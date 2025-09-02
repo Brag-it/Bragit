@@ -24,7 +24,8 @@ class PreviewReactor: Reactor, Stepper {
     case tapAddTag
     case addTag(String)
     case tapRemoveTag(String)
-    case appendThumbnail(UIImage) // 사진 추가
+    case appendThumbnail(UIImage)
+    case tapThumbnail(UIImage)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -32,6 +33,7 @@ class PreviewReactor: Reactor, Stepper {
     case appendTag(String)
     case removeTag(String)
     case appendThumbnail(UIImage)
+    case setRepresentative(UIImage?)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -39,6 +41,7 @@ class PreviewReactor: Reactor, Stepper {
     var title: String
     var content: NSAttributedString
     var thumbnails: [UIImage]
+    var representativeImage: UIImage?
     var description: String
     var tags: [String] = []
 
@@ -75,7 +78,17 @@ class PreviewReactor: Reactor, Stepper {
       return .just(.removeTag(tag))
 
     case .appendThumbnail(let image):
-        return .just(.appendThumbnail(image))
+      return .just(.appendThumbnail(image))
+
+    case .tapThumbnail(let image):
+      let nextRep: UIImage?
+      if let current = currentState.representativeImage, current === image {
+        nextRep = nil
+      } else {
+        nextRep = image
+      }
+      return .just(.setRepresentative(nextRep))
+
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -93,6 +106,9 @@ class PreviewReactor: Reactor, Stepper {
 
     case .appendThumbnail(let thumbnil):
       newState.thumbnails.insert(thumbnil, at: 0)
+
+    case .setRepresentative(let image):
+      newState.representativeImage = image
     }
 
     return newState
