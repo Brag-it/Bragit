@@ -63,8 +63,6 @@ final class LoginReactor: Reactor, Stepper {
         checkUserRegistrationAndRoute(mail: mail),
         .just(.setLoading(false)),
         .just(.setNonce(raw: nil, hashed: nil))
-        // removed line
-        //        .just(.setRoute(.goUserInfo(mail: mail)))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()

@@ -52,12 +52,12 @@ final class ImageUploadReactor: Reactor, Stepper {
     switch action {
     case .tapNext:
       if currentState.imageData != nil {
-        print("[DEBUG]사진 데이터 있음, 크기: \(currentState.imageData!.count) bytes")
+        print("[DEBUG] 사진 데이터 있음, 크기: \(currentState.imageData!.count) bytes")
         return .concat([
           .just(.setLoading(true)),
           uploadProfileImage()
             .catch { error in
-              print("[ERROR]업로드 실패: \(error)")
+              print("[ERROR] 업로드 실패: \(error)")
               return .just(.setError("이미지 업로드 실패: \(error.localizedDescription)"))
             }
             .flatMap { [weak self] mutation -> Observable<Mutation> in
@@ -82,7 +82,7 @@ final class ImageUploadReactor: Reactor, Stepper {
       ])
 
     case .pickedImageData(let data):
-      print("[DEBUG]사진 선택됨, 크기: \(data.count) bytes")
+      print("[DEBUG] 사진 선택됨, 크기: \(data.count) bytes")
       return .just(.setImageData(data))
     }
   }
@@ -108,6 +108,7 @@ final class ImageUploadReactor: Reactor, Stepper {
     state.observe(on: MainScheduler.instance)
   }
 
+  // Supabase 스토리지에 사진 저장
   private func uploadProfileImage() -> Observable<Mutation> {
     Observable.create { [weak self] observer in
       guard let self = self,
@@ -117,17 +118,17 @@ final class ImageUploadReactor: Reactor, Stepper {
         return Disposables.create()
       }
 
-      print("[DEBUG]이미지 업로드, 크기: \(imageData.count) bytes")
+      print("[DEBUG] 이미지 업로드, 크기: \(imageData.count) bytes")
 
       Task {
         do {
           let session = try await self.supabase.auth.session
           let userId = session.user.id
-          print("[DEBUG]유저 아이디: \(userId)")
+          print("[DEBUG] 유저 아이디: \(userId)")
 
-          let fileName = "\(userId.uuidString).jpg"
-          let filePath = "profiles/\(fileName)"
-          print("[DEBUG]파일 경로: \(filePath)")
+          let fileName = "\(userId.uuidString).jpg"   // 파일 이름
+          let filePath = "profiles/\(fileName)"       // 'profile-image/profiles/파일.jpg'(버킷/폴더/파일)
+          print("[DEBUG] 파일 경로: \(filePath)")
 
           //          _ = try await self.supabase.storage
           //            .from("profile-images")
@@ -153,7 +154,7 @@ final class ImageUploadReactor: Reactor, Stepper {
               )
             )
 
-          print("[DEBUG]리스폰스: \(uploadResponse)")
+          print("[DEBUG] 리스폰스: \(uploadResponse)")
           let publicURL = try self.supabase.storage
             .from("profile-images")
             .getPublicURL(path: filePath)
@@ -162,10 +163,10 @@ final class ImageUploadReactor: Reactor, Stepper {
           observer.onNext(.setProfileURL(publicURL.absoluteString))
           observer.onCompleted()
         } catch {
-          print("[ERROR]Image upload error: \(error)")
-          print("[ERROR]에러 타입: \(type(of: error))")
+          print("[ERROR] Image upload error: \(error)")
+          print("[ERROR] 에러 타입: \(type(of: error))")
           if let storageError = error as? StorageError {
-            print("[ERROR]스토리지 에러: \(storageError)")
+            print("[ERROR] 스토리지 에러: \(storageError)")
           }
           observer.onNext(.setError("업로드 중 오류 발생"))
           observer.onCompleted()
@@ -208,7 +209,7 @@ final class ImageUploadReactor: Reactor, Stepper {
 
           await MainActor.run { self.steps.accept(AppStep.home) }
         } catch {
-          print("[ERROR]Registration error: \(error)")
+          print("[ERROR] Registration error: \(error)")
           observer.onNext(.setError("회원가입 중 오류가 발생했습니다"))
           observer.onNext(.setLoading(false))
           observer.onCompleted()

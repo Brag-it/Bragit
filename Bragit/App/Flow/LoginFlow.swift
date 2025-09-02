@@ -22,8 +22,8 @@ final class LoginFlow: Flow, Stepper {
       return showLogin()
     case .signup(let initialMail):
       return showSignup(initialMail: initialMail)
-    case .signServiceConsent:
-      return showSignServiceConsent()
+    case .signTermsConset:
+      return showTermsConsent()
     case .signupPhoto:
       return showSignupPhoto()
     case .home:
@@ -52,7 +52,7 @@ final class LoginFlow: Flow, Stepper {
     userInfoVC.onNext = { [weak self] (info: UserRegistrationInfo) in
       print("[Flow]: \(initialMail as Any)")
       self?.pendingUserInfo = info
-      self?.steps.accept(AppStep.signServiceConsent)
+      self?.steps.accept(AppStep.signTermsConset)
     }
     nav.pushViewController(userInfoVC, animated: true)
     return .one(
@@ -61,7 +61,7 @@ final class LoginFlow: Flow, Stepper {
     )
   }
 
-  private func showSignServiceConsent() -> FlowContributors {
+  private func showTermsConsent() -> FlowContributors {
     guard let info = pendingUserInfo else { return .none }
     let termsVC = TermsViewController(userInfo: info)
     termsVC.onAgree = { [weak self] agreed in
