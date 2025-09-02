@@ -15,6 +15,10 @@ import RxCocoa
 final class SearchTagViewController: UIViewController, View {
   var disposeBag = DisposeBag()
 
+  private let heanderView = UIView().then {
+    $0.backgroundColor = .grayScale600
+    $0.layer.cornerRadius = 2
+  }
   private let searchBar = SearchBar()
 
   private lazy var dataSource = setupDataSource(self.searchResultCollectionView)
@@ -44,11 +48,18 @@ final class SearchTagViewController: UIViewController, View {
 
   // UI 설정
   private func setUIConstraints() {
+    view.addSubview(heanderView)
     view.addSubview(searchBar)
     view.addSubview(searchResultCollectionView)
 
+    heanderView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
+      $0.centerX.equalToSuperview()
+      $0.width.equalTo(48)
+      $0.height.equalTo(4)
+    }
     searchBar.snp.makeConstraints {
-      $0.top.equalTo(view.safeAreaLayoutGuide).inset(28)
+      $0.top.equalTo(heanderView.snp.bottom).offset(16)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 
