@@ -15,27 +15,27 @@ import Then
 
 class WriteViewController: UIViewController, View {
   var disposeBag = DisposeBag()
-  private let alert = AlertView.makeAlert(style: .tempSaveDraft)
+  private let backAlert = AlertView.makeAlert(style: .tempSaveDraft)
+  private let isEmptyAlert = AlertView.makeAlert(style: .isEmptyPost)
 
   private let headerView = UIView()
 
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.xMarker, for: .normal)
-    $0.tintColor = .black
+    $0.tintColor = .grayScale900
   }
 
   private let titleLabel = UILabel().then {
     $0.text = "글쓰기"
     $0.font = UIFont.systemFont(ofSize: 16)
-    $0.textColor = .label
+    $0.textColor = .grayScale900
     $0.textAlignment = .center
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
   private let doneButton = UIButton(type: .system).then {
     $0.setTitle("완료", for: .normal)
-    $0.setTitleColor(.black, for: .normal)
-    $0.setTitleColor(.systemGray, for: .disabled)
+    $0.setTitleColor(.grayScale900, for: .normal)
     $0.titleLabel?.font = .pretendard(size: 14)
   }
 
@@ -46,7 +46,7 @@ class WriteViewController: UIViewController, View {
   }
 
   private let dividerView = UIView().then {
-    $0.backgroundColor = .lightGray
+    $0.backgroundColor = .grayScale100
   }
 
   private let editorView = EditorView()
@@ -62,7 +62,7 @@ class WriteViewController: UIViewController, View {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
   }
@@ -109,32 +109,41 @@ class WriteViewController: UIViewController, View {
     editorView.snp.makeConstraints {
       $0.top.equalTo(dividerView.snp.bottom).offset(16)
       $0.leading.trailing.equalTo(titleTextField)
-      $0.bottom.equalTo(view.safeAreaLayoutGuide)
+      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
     }
   }
 
   func bind(reactor: WriteReactor) {
-    alert.leftTap
+    backAlert.leftTap
       .map { Reactor.Action.tapDismiss } // 왼쪽 버튼 눌리면 tapDismiss 액션으로 변환
       .bind(to: reactor.action)               // Reactor에 전달
       .disposed(by: disposeBag)
 
-    alert.rightTap
+    backAlert.rightTap
       .bind { print("오른쪽 버튼 누름") }
       .disposed(by: disposeBag)
 
     backButton.rx.tap
       .bind { [weak self] in
         guard let self else { return }
-        view.endEditing(true) // 키보드 레이아웃 내리기
-        self.alert.show(in: self.view)
+        backAlert.show(in: self.view)
       }
       .disposed(by: disposeBag)
 
     // 완료 버튼 탭
     doneButton.rx.tap
-      .map { Reactor.Action.doneButtonTapped }
-      .bind(to: reactor.action)
+      .bind { [weak self] in
+        guard let self else { return }
+
+        let isTitleEmpty = titleTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        let isContentEmpty = editorView.textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        if isTitleEmpty || isContentEmpty {
+          isEmptyAlert.show(in: self.view)
+        } else {
+          reactor.action.onNext(.tapDone)
+        }
+      }
       .disposed(by: disposeBag)
 
     editorView.accessoryView.boldButton.rx.tap
@@ -157,6 +166,19 @@ class WriteViewController: UIViewController, View {
         guard let self else { return }
         presentImagePicker()
       }
+      .disposed(by: disposeBag)
+
+    titleTextField.rx.text.orEmpty
+      .distinctUntilChanged()
+      .map { Reactor.Action.updateTitle($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    editorView.textView.rx.attributedText
+      .compactMap { $0 }
+      .distinctUntilChanged()
+      .map { Reactor.Action.updateContent($0) }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     reactor.state

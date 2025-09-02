@@ -7,7 +7,8 @@ import RxFlow
 
 enum AppStep: Step {
   // 공통
-  case dismiss                         // 닫기(모달 등)
+  case dismiss                         // 닫기(present)
+  case pop                             // 닫기(push)
 
   // 인증/가입
   case login                           // 로그인 화면 (최초 진입)
@@ -31,8 +32,9 @@ enum AppStep: Step {
 
   // 글쓰기
   case writeFeed                       // 글쓰기 루트
-  case preview(draftId: String?)       // 미리보기
-  case writeTagSearch(query: String?)  // 태그 검색
+  case preview(draft: PostDraft)       // 미리보기
+  case writeTagSearch                  // 태그 검색
+  case tagPicked(tag: String)          // 태그 선택
   case updateFeed(id: String)          // 글 수정
 
   // 마이페이지
