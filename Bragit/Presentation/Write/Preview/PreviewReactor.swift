@@ -6,6 +6,7 @@
 //
 import UIKit
 
+import Dependencies
 import ReactorKit
 import RxSwift
 import RxFlow
@@ -13,6 +14,7 @@ import RxRelay
 
 class PreviewReactor: Reactor, Stepper {
   var initialState: State
+  @Dependency(\.postManager) var postManager
   let draft: PostDraft
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
@@ -26,6 +28,7 @@ class PreviewReactor: Reactor, Stepper {
     case tapRemoveTag(String)
     case appendThumbnail(UIImage)
     case tapThumbnail(UIImage)
+    case tapDone
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -34,6 +37,9 @@ class PreviewReactor: Reactor, Stepper {
     case removeTag(String)
     case appendThumbnail(UIImage)
     case setRepresentative(UIImage?)
+    case setResized(thumbnail: Data?, attachments: [Data]) // 리사이즈된 결과 (썸네일/본문 첨부)
+    case setLoading(Bool)       // 로딩 스피너용
+    case setUploaded(Post)      // 업로드된 게시글 반환
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -44,7 +50,9 @@ class PreviewReactor: Reactor, Stepper {
     var representativeImage: UIImage?
     var description: String
     var tags: [String] = []
-
+    var isLoading: Bool = false                 // 로딩 상태
+    var resizedThumbnailData: Data?       // 리사이즈된 썸네일 JPEG 데이터
+    var resizedAttachmentDatas: [Data] = []     // 리사이즈된 본문 첨부 JPEG 데이터 목록
     @Pulse var presentTagModal = false
   }
 
@@ -89,6 +97,34 @@ class PreviewReactor: Reactor, Stepper {
       }
       return .just(.setRepresentative(nextRep))
 
+    case .tapDone:
+      // 이미지 리사이즈
+      return Observable.concat([
+        .just(.setLoading(true)),
+        Observable<Mutation>.create { [weak self] observer in
+          guard let self else {
+            observer.onCompleted()
+            return Disposables.create()
+          }
+          // 메인 스레드를 막지 않도록 백그라운드에서 리사이즈
+          DispatchQueue.global(qos: .userInitiated).async {
+            // 대표 이미지 리사이즈/압축
+            let thumbnailData = self.currentState.representativeImage?.compress(for: .thumbnail)
+            print("썸네일 리사이즈 크기: \((thumbnailData?.count ?? 0) / 1024) KB")
+            // 본문 이미지 컨텐츠 규격으로 리사이즈/압축
+            let attachments: [UIImage] = PreviewReactor.extractImages(from: self.currentState.content)
+            let attachmentDatas: [Data] = attachments.compactMap { $0.compress(for: .content) }
+            print("본문 이미지 리사이즈 개수: \(attachmentDatas.count)")
+            attachmentDatas.enumerated().forEach { index, data in
+              print("   - 이미지 \(index) 크기: \(data.count / 1024) KB")
+            }
+            observer.onNext(.setResized(thumbnail: thumbnailData, attachments: attachmentDatas))
+            observer.onCompleted()
+          }
+          return Disposables.create()
+        },
+        .just(.setLoading(false))
+      ])
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -109,6 +145,18 @@ class PreviewReactor: Reactor, Stepper {
 
     case .setRepresentative(let image):
       newState.representativeImage = image
+
+    case .setResized(let thumbnail, let attachments):
+      // 리사이즈 결과를 상태에 보관 (다음 단계: 업로드/DB 저장에서 사용)
+      newState.resizedThumbnailData = thumbnail
+      newState.resizedAttachmentDatas = attachments
+
+    case .setLoading(let flag):
+      newState.isLoading = flag
+
+    case .setUploaded(_):
+      // 이후 단계에서 업로드 완료 상태를 활용하도록 남겨둠
+      break
     }
 
     return newState
@@ -141,4 +189,5 @@ class PreviewReactor: Reactor, Stepper {
     let preview = String(cleanedText.prefix(limit))
     return preview
   }
+
 }

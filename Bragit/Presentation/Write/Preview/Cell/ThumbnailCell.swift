@@ -45,7 +45,7 @@ final class ThumbnailCell: UICollectionViewCell {
     contentView.layer.borderColor = isSelected ? UIColor.grayScaleBack.cgColor : UIColor.clear.cgColor
     checkImage.isHidden = !isSelected
   }
-  
+
   func configure(image: UIImage) {
     imageView.image = image
   }

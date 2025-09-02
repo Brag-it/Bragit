@@ -114,7 +114,7 @@ final class PreviewViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     doneButton.rx.tap
-      .map { Reactor.Action.tapDismiss }
+      .map { Reactor.Action.tapDone }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -146,13 +146,12 @@ final class PreviewViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // 대표 이미지 변경 시 → 썸네일 셀들만 재구성하여 선택 표시 반영
     reactor.state
       .map(\.representativeImage)
       .distinctUntilChanged { $0 === $1 }
       .bind { [weak self] _ in
         guard let self else { return }
-        self.reconfigureThumbnailsSelection()
+        reconfigureThumbnailsSelection()
       }
       .disposed(by: disposeBag)
 
@@ -335,13 +334,7 @@ final class PreviewViewController: UIViewController, View {
       guard let self, case let .thumbnail(thumbnailItem) = item else { return }
       switch thumbnailItem.kind {
       case .addButton:
-        // 선택 표시 없음
-        if let rep = self.reactor?.currentState.representativeImage {
-          // "+ 버튼" 셀은 항상 비선택
-          cell.updateSelection(isSelected: false)
-        } else {
-          cell.updateSelection(isSelected: false)
-        }
+        cell.updateSelection(isSelected: false)
       case .image(let image):
         cell.configure(image: image)
         let rep = self.reactor?.currentState.representativeImage
