@@ -10,8 +10,9 @@
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 
 import CryptoKit
-import Dependencies
 import Foundation
+
+import Dependencies
 import ReactorKit
 import RxFlow
 import RxRelay

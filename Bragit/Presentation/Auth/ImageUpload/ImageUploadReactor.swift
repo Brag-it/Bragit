@@ -5,8 +5,9 @@
 //  Created by luca on 8/31/25.
 //
 
-import Dependencies
 import Foundation
+
+import Dependencies
 import ReactorKit
 import RxCocoa
 import RxFlow
@@ -78,7 +79,7 @@ final class ImageUploadReactor: Reactor, Stepper {
       print("[DEBUG] Tap Later - 사진 없이 가입")
       return .concat([
         .just(.setProfileURL(nil)),
-        registerUser(),
+        registerUser()
       ])
 
     case .pickedImageData(let data):
@@ -126,21 +127,10 @@ final class ImageUploadReactor: Reactor, Stepper {
           let userId = session.user.id
           print("[DEBUG] 유저 아이디: \(userId)")
 
-          let fileName = "\(userId.uuidString).jpg"   // 파일 이름
-          let filePath = "profiles/\(fileName)"       // 'profile-image/profiles/파일.jpg'(버킷/폴더/파일)
+          let fileName = "\(userId.uuidString).jpg"  // 파일 이름
+          let filePath = "profiles/\(fileName)"  // 'profile-image/profiles/파일.jpg'(버킷/폴더/파일)
           print("[DEBUG] 파일 경로: \(filePath)")
 
-          //          _ = try await self.supabase.storage
-          //            .from("profile-images")
-          //            .upload(
-          //              filePath,
-          //              data: imageData,
-          //              options: FileOptions(
-          //                cacheControl: "3600",
-          //                contentType: "image/jpeg",
-          //                upsert: false
-          //              )
-          //            )
           print("[DEBUG] 버킷에 업로드 중")
           let uploadResponse = try await self.supabase.storage
             .from("profile-image")

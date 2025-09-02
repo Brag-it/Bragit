@@ -5,9 +5,10 @@
 //  Created by luca on 8/25/25.
 //
 // 약관 동의를 받는 뷰
+import UIKit
+
 import SnapKit
 import Then
-import UIKit
 
 final class TermsViewController: UIViewController {
 

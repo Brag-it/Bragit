@@ -5,12 +5,13 @@
 //  Created by luca on 8/27/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxCocoa
 import RxSwift
 import SnapKit
 import Then
-import UIKit
 
 class ImageUploadViewController: UIViewController, View {
   typealias Reactor = ImageUploadReactor

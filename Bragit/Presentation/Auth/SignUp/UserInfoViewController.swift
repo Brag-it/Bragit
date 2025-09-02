@@ -5,9 +5,10 @@
 //  Created by luca on 8/25/25.
 //
 
+import UIKit
+
 import SnapKit
 import Then
-import UIKit
 
 // MARK: - 1) 단일 파일 내 분리 타입: UI 전담
 final class UserInfoFormView: UIView {
