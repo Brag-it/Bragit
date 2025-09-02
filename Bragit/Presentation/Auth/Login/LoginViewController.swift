@@ -84,8 +84,6 @@ final class LoginViewController: UIViewController, View {
 
   // MARK: LAYOUT
   private func setupLayout() {
-    view.backgroundColor = .systemBackground
-
     view.addSubview(nextButton)
     //    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
     let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, mailButton]).then {
@@ -124,48 +122,44 @@ final class LoginViewController: UIViewController, View {
 
   // MARK: Reactor Binding
   func bind(reactor: LoginReactor) {
+    // 디버그 강제 홈 이동 버튼
     nextButton.rx.tap
       .subscribe(with: reactor) { reactor, _ in
         reactor.action.onNext(.tapNext)
       }
       .disposed(by: disposeBag)
 
+    // 애플 로그인 버튼
     appleButton.rx.controlEvent(.touchUpInside)
       .subscribe(with: reactor) { reactor, _ in
         reactor.action.onNext(.tapAppleButton)
       }
       .disposed(by: disposeBag)
 
+    // 회원가입 버튼
     signUpButton.rx.controlEvent(.touchUpInside)
-      .subscribe(with: reactor) { reactor, _ in
-        reactor.action.onNext(.tapSignUp)
-      }.disposed(by: disposeBag)
+      .subscribe(with: self) { owner, _ in
+        //        KeychainMailStore.clear()
+        owner.reactor?.action.onNext(.tapSignUp)
+      }
+      .disposed(by: disposeBag)
 
     // state -> ui
+    // state에서 이미 된 건 VC에서 observer(on: MainScheduler.instance)를 쓰지 않고 Reactor에서
+    //    func transform(state: Observable<State>) -> Observable<State> {
+    //      state.observe(on: MainScheduler.instance)
+    //    }
+    // 위 코드를 넣는 것으로 대체 가능
     reactor.state.compactMap(\.appleHashsedNonce)
       .distinctUntilChanged()
-      .observe(on: MainScheduler.instance)
       .subscribe { [weak self] hashed in
         self?.startAppleFlow(hashedNonce: hashed)
       }
       .disposed(by: disposeBag)
 
     reactor.state.compactMap(\.errorMessage)
-      .observe(on: MainScheduler.instance)
       .subscribe { [weak self] msg in
         self?.alert(msg)
-      }
-      .disposed(by: disposeBag)
-
-    reactor.state.compactMap(\.route)
-      .distinctUntilChanged()
-      .observe(on: MainScheduler.instance)
-      .subscribe { [weak self] route in
-        switch route {
-        case .goUserInfo(let mail):
-          let viewController = UserInfoViewController(initialMail: mail)
-          self?.navigationController?.pushViewController(viewController, animated: true)
-        }
       }
       .disposed(by: disposeBag)
   }
@@ -199,16 +193,15 @@ extension LoginViewController:
       let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
       let tokenData = credential.identityToken,
       let idToken = String(data: tokenData, encoding: .utf8),
-      //      let nonce = currentNonce,
       let reactor,
       let nonce = reactor.currentState.appleNonce
     else {
       alert("Apple 자격이 유효하지 않습니다.")
       return
     }
-    //    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce))
-    let mail = credential.email
-    if let mail { KeychainMailStore.save(mail) }
+    let rawMail = credential.email?.trimmingCharacters(in: .whitespacesAndNewlines)
+    if let rawMail, !rawMail.isEmpty { KeychainMailStore.save(rawMail) }
+    let mail = (rawMail?.isEmpty == false) ? rawMail : KeychainMailStore.load()
     reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce, mail: mail))
   }
 
@@ -217,6 +210,21 @@ extension LoginViewController:
     didCompleteWithError error: Error
   ) {
     alert("Apple 로그인 실패: \(error.localizedDescription)")
+  }
+
+  func handleAppleCredential(
+    _ credential: ASAuthorizationAppleIDCredential,
+    reactor: LoginReactor,
+    hashedNonce: String
+  ) {
+    if let email = credential.email {
+      KeychainMailStore.save(email)
+    }
+    let initialMail = credential.email ?? KeychainMailStore.load()
+    guard let idTokenData = credential.identityToken, let idToken = String(data: idTokenData, encoding: .utf8) else {
+      return
+    }
+    reactor.action.onNext(.tapApple(idToken: idToken, nonce: hashedNonce, mail: initialMail))
   }
 }
 

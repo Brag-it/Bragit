@@ -11,7 +11,8 @@ enum AppStep: Step {
 
   // 인증/가입
   case login                           // 로그인 화면 (최초 진입)
-  case signup                          // 회원가입 시작
+  case signup(initialMail: String?)    // 회원가입 시작
+  case signTermsConset                 // 약관 동의
   case signServiceConsent              // 서비스 이용 약관 동의
   case signPersonalInfoConsent         // 개인정보 수집 동의
   case signMarketingConsent            // 마케팅 정보 수집 동의
