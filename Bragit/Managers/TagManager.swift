@@ -14,6 +14,8 @@ import Dependencies
 protocol TagManagerProtocol {
   func fetchPopularTags() async throws -> [Tag]
   func rxFetchPopularTags() -> Observable<[Tag]>
+  func searchTags(searchText: String, page: Int, pageSize: Int) async throws -> [Tag]
+  func rxSearchTags(searchText: String, page: Int, pageSize: Int) -> Observable<[Tag]>
 }
 
 class TagManager: TagManagerProtocol {
@@ -54,15 +56,38 @@ class TagManager: TagManagerProtocol {
   }
 
   // 태그 검색
-  func searchTags(searchText: String) async throws -> [Tag] {
+  func searchTags(searchText: String, page: Int, pageSize: Int) async throws -> [Tag] {
+    let start = page * pageSize
+    let end = start + pageSize - 1
     let tags: [Tag] = try await client
       .from("Tag")
       .select()
       .ilike("tag", pattern: "%\(searchText)%")
-      .range(from: 0, to: 10)
+      .range(from: start, to: end)
       .execute()
       .value
 
     return tags
+  }
+
+  func rxSearchTags(searchText: String, page: Int, pageSize: Int) -> Observable<[Tag]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onNext([])
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      let task = Task {
+        do {
+          let tags = try await self.searchTags(searchText: searchText, page: page, pageSize: pageSize)
+          observer.onNext(tags)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create { task.cancel() }
+    }
   }
 }

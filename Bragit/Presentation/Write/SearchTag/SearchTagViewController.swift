@@ -22,10 +22,10 @@ final class SearchTagViewController: UIViewController, View {
   private lazy var searchResultCollectionView = UICollectionView(
     frame: .zero,
     collectionViewLayout: createLayout()).then {
-    $0.backgroundColor = .white
-    $0.showsVerticalScrollIndicator = false
-    $0.keyboardDismissMode = .onDrag
-  }
+      $0.backgroundColor = .white
+      $0.showsVerticalScrollIndicator = false
+      $0.keyboardDismissMode = .onDrag
+    }
 
   init(reactor: SearchTagReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -41,9 +41,9 @@ final class SearchTagViewController: UIViewController, View {
 
     setUIConstraints()
 
-    // 더미 데이터 테스트용
-    let dummyTags = ["Swift", "iOS", "ReactorKit", "RxSwift", "SnapKit", "Then"]
-    applySnapshot(dummyTags)
+    //    // 더미 데이터 테스트용
+    //    let dummyTags = ["Swift", "iOS", "ReactorKit", "RxSwift", "SnapKit", "Then"]
+    //    applySnapshot(dummyTags)
   }
 
   // UI 설정
@@ -63,10 +63,58 @@ final class SearchTagViewController: UIViewController, View {
   }
 
   func bind(reactor: SearchTagReactor) {
+    let searchTextStream = (searchBar.textField.rx.text.orEmpty)
+      .share(replay: 1)
 
+    searchTextStream
+      .map(SearchTagReactor.Action.updateSearchText)
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    let searchTrigger = Observable.merge(
+      searchBar.searchButton.rx.tap.asObservable(),
+      searchBar.textField.rx.controlEvent(.editingDidEndOnExit).asObservable()
+    )
+
+    searchTrigger
+      .map { SearchTagReactor.Action.didTapSearchButton }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 바닥 감지 후 다음 페이지 로드
+    searchResultCollectionView.rx.reachedBottom()
+      .map { SearchTagReactor.Action.loadNextPage }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    //    searchResultCollectionView.rx.itemSelected
+    //      .compactMap { [weak self] indexPath in
+    //        guard let self else { return }
+    //        dataSource.itemIdentifier(for: indexPath)
+    //      }
+    //      .map(SearchTagReactor.Action.selectTag)
+    //      .bind(to: reactor.action)
+    //      .disposed(by: disposeBag)
+
+    reactor.state
+      .map(\.searchResult)
+      .distinctUntilChanged()
+      .bind(with: self) { viewController, titles in
+        viewController.applySnapshot(titles)
+      }
+      .disposed(by: disposeBag)
+
+    //    // 선택후 닫기
+    //    reactor.pulse(\.$pickedTag)
+    //      .compactMap { $0 }
+    //      .bind { [weak self] in
+    //        guard let self else { return }
+    //        // 닫기 액션
+    //      }
+    //      .disposed(by: disposeBag)
   }
 
-  // 리스트
+  // 리스트 형태
   private func createLayout() -> UICollectionViewCompositionalLayout {
     var config = UICollectionLayoutListConfiguration(appearance: .plain)
     config.showsSeparators = false       // 구분선 안 보이게
