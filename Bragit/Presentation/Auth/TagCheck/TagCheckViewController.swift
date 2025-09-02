@@ -34,7 +34,9 @@ class TagCheckViewController: UIViewController {
   }
 
   lazy var tagCollectionView: UICollectionView = {
-    let layout = UICollectionViewFlowLayout()
+    let layout = LeftAlignedFlowLayout()
+    //    layout.minimumInteritemSpacing = 8
+    //    layout.minimumLineSpacing = 10
     layout.minimumInteritemSpacing = 8
     layout.minimumLineSpacing = 10
     layout.scrollDirection = .vertical
@@ -178,9 +180,11 @@ class TagCheckViewController: UIViewController {
 }
 
 extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewDataSource,
-  UICollectionViewDelegateFlowLayout
-{
-  func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+  UICollectionViewDelegateFlowLayout {
+  func collectionView(
+    _ collectionView: UICollectionView,
+    numberOfItemsInSection section: Int
+  ) -> Int {
     return tags.count
   }
 
@@ -203,13 +207,27 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
     layout collectionViewLayout: UICollectionViewLayout,
     sizeForItemAt indexPath: IndexPath
   ) -> CGSize {
-//    return CGSize(width: 80, height: 80)
+    // return CGSize(width: 80, height: 80)
     let tag = tags[indexPath.item]
-    let label = UILabel()
-    label.text = tag.tag
-    label.sizeToFit()
-    let width = label.frame.width + 28
-    let height = label.frame.height + 16
+    //    let label = UILabel()
+    //    label.text = tag.tag
+    //    label.sizeToFit()
+    //    let width = label.frame.width + 28
+    //    let height = label.frame.height + 16
+    let font = UIFont.preferredFont(forTextStyle: .body)
+    let text = tag.tag as NSString
+    let max = CGSize(
+      width: CGFloat.greatestFiniteMagnitude,
+      height: CGFloat.greatestFiniteMagnitude
+    )
+    let rect = text.boundingRect(
+      with: max,
+      options: [.usesLineFragmentOrigin, .usesFontLeading],
+      attributes: [.font: font],
+      context: nil
+    )
+    let width = ceil(rect.width) + 28
+    let height = ceil(rect.height) + 16
     return CGSize(width: width, height: height)
   }
 
@@ -224,6 +242,10 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
 
     collectionView.reloadItems(at: [indexPath])
     updateNextButtonState()
+
+    //    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat { return 8 } // [ADDED]
+    //
+    //    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat { return 8 } // [ADDED]
   }
 }
 
@@ -269,4 +291,49 @@ class TagButtonCell: UICollectionViewCell {
       tagButton.backgroundColor = .gray
     }
   }
+}
+
+final class LeftAlignedFlowLayout: UICollectionViewFlowLayout {
+  override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+    guard
+      let attributes = super.layoutAttributesForElements(in: rect)?.map({
+        $0.copy() as! UICollectionViewLayoutAttributes
+      })
+    else { return nil }
+
+    guard scrollDirection == .vertical,
+      let collectionView = collectionView
+    else { return attributes }
+
+    let contentWidth =
+      collectionView.bounds.width - collectionView.contentInset.left - collectionView.contentInset.right
+    let sectionInsets = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.sectionInset ?? .zero
+    let inter = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.minimumInteritemSpacing ?? 8
+
+    var left = sectionInsets.left
+    var lastY: CGFloat = -CGFloat.greatestFiniteMagnitude
+
+    for attr in attributes where attr.representedElementCategory == .cell {
+      if attr.frame.origin.y >= lastY + attr.frame.height / 2 {
+        left = sectionInsets.left
+        lastY = attr.frame.origin.y
+      }
+
+      var frame = attr.frame
+      if frame.width > contentWidth - sectionInsets.left - sectionInsets.right {
+        frame.size.width = contentWidth - sectionInsets.left - sectionInsets.right
+      }
+      frame.origin.x = left
+      attr.frame = frame.integral
+
+      left = frame.maxX + inter
+      if left + frame.width > contentWidth - sectionInsets.right {
+        left = sectionInsets.left
+        lastY = frame.maxY + minimumLineSpacing
+      }
+    }
+    return attributes
+  }
+
+  override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool { true }
 }
