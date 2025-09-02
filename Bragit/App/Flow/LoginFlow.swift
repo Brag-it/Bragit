@@ -27,8 +27,8 @@ final class LoginFlow: Flow, Stepper {
       return showTermsConsent()
     case .signupPhoto:
       return showSignupPhoto()
-    case .signSelectTag:
-      return showSignSelectTag()
+    case .signSelectTag(let profileURL):
+      return showSignSelectTag(profileURL: profileURL)
     case .home:
       return .end(forwardToParentFlowWithStep: AppStep.home)
     default:
@@ -85,17 +85,17 @@ final class LoginFlow: Flow, Stepper {
     return .one(flowContributor: .contribute(withNextPresentable: photoVC, withNextStepper: reactor))
   }
 
-  private func showSignSelectTag() -> FlowContributors {
+  private func showSignSelectTag(profileURL: String?) -> FlowContributors {
     guard let info = pendingUserInfo else { return .none }
-    let reactor = TagCheckReactor(useInfo: info)
+    let reactor = TagCheckReactor(userInfo: info, profileURL: profileURL)
     let tagVC = TagCheckViewController(userInfo: info, reactor: reactor)
     nav.pushViewController(tagVC, animated: true)
     return .one(
       flowContributor:
-          .contribute(
-            withNextPresentable: tagVC,
-            withNextStepper: reactor
-          )
+        .contribute(
+          withNextPresentable: tagVC,
+          withNextStepper: reactor
+        )
     )
   }
 }

@@ -12,11 +12,17 @@ import SnapKit
 import Then
 import UIKit
 
+typealias PopularTag = Tag
+
 class TagCheckViewController: UIViewController {
   private let disposeBag = DisposeBag()
   @Dependency(\.tagManager) private var tagManager
   private var tags: [PopularTag] = []
   private var selectedTags: Set<String> = []
+
+  private let userInfo: UserRegistrationInfo
+  private let injectReactor: TagCheckReactor
+  var reactor: TagCheckReactor?
 
   // MARK: UI
   let mainDescriptionLabel = UILabel().then {
@@ -54,16 +60,35 @@ class TagCheckViewController: UIViewController {
     $0.backgroundColor = .orange
   }
 
+  init(userInfo: UserRegistrationInfo, reactor: TagCheckReactor) {
+    self.userInfo = userInfo
+    self.injectReactor = reactor
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
     title = "회원가입"
     setupLayout()
     loadTags()
+
+    self.reactor = injectReactor
+    bind(reactor: injectReactor)
   }
 
   private func setupLayout() {
-    [mainDescriptionLabel, subDescriptionLabel, beLaterButton, nextButton].forEach {
+    [
+      mainDescriptionLabel,
+      subDescriptionLabel,
+      tagCollectionView,
+      beLaterButton,
+      nextButton
+    ].forEach {
       view.addSubview($0)
     }
 
@@ -80,10 +105,13 @@ class TagCheckViewController: UIViewController {
     tagCollectionView.snp.makeConstraints {
       $0.top.equalTo(subDescriptionLabel.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
+
+      $0.bottom.equalTo(beLaterButton.snp.top).offset(-16)
     }
 
     beLaterButton.snp.makeConstraints {
-      $0.bottom.equalTo(nextButton.snp.top).inset(8)
+      //      $0.bottom.equalTo(nextButton.snp.top).inset(8)
+      $0.bottom.equalTo(nextButton.snp.top).offset(-8)
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
     }
@@ -104,7 +132,11 @@ class TagCheckViewController: UIViewController {
       .disposed(by: disposeBag)
 
     nextButton.rx.tap
-      .map { TagCheckReactor.Action.tapNext }
+      //      .map { TagCheckReactor.Action.tapNext }
+      .withUnretained(self)
+      .map { owner, _ in
+        TagCheckReactor.Action.tapNext(tags: Array(owner.selectedTags))
+      }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -125,11 +157,12 @@ class TagCheckViewController: UIViewController {
       .observe(on: MainScheduler.instance)
       .subscribe(
         onNext: { [weak self] tags in
-//          self?.tags = tags
+          self?.tags = tags
+          //          self?.tags = tags as! [PopularTag]
           self?.tagCollectionView.reloadData()
         },
         onError: { error in
-          print("[ERROR] 태그 ㅑ로딩 에러: \(error)")
+          print("[ERROR] 태그 로딩 에러: \(error)")
         }
       )
       .disposed(by: disposeBag)
@@ -144,13 +177,18 @@ class TagCheckViewController: UIViewController {
   }
 }
 
-extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewDataSource {
+extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewDataSource,
+  UICollectionViewDelegateFlowLayout
+{
   func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
     return tags.count
   }
 
   func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-    guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagButtonCell.identifier, for: indexPath) as? TagButtonCell else {
+    guard
+      let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagButtonCell.identifier, for: indexPath)
+        as? TagButtonCell
+    else {
       return UICollectionViewCell()
     }
     let tag = tags[indexPath.item]
@@ -160,8 +198,19 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
     return cell
   }
 
-  func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-    return CGSize(width: 80, height: 80)
+  func collectionView(
+    _ collectionView: UICollectionView,
+    layout collectionViewLayout: UICollectionViewLayout,
+    sizeForItemAt indexPath: IndexPath
+  ) -> CGSize {
+//    return CGSize(width: 80, height: 80)
+    let tag = tags[indexPath.item]
+    let label = UILabel()
+    label.text = tag.tag
+    label.sizeToFit()
+    let width = label.frame.width + 28
+    let height = label.frame.height + 16
+    return CGSize(width: width, height: height)
   }
 
   func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -182,12 +231,16 @@ class TagButtonCell: UICollectionViewCell {
   static let identifier = "TagButtonCell"
 
   private let tagButton = UIButton().then {
-    $0.layer.cornerRadius = 40
+    // $0.layer.cornerRadius = 80
     $0.layer.borderWidth = 1
     $0.titleLabel?.textAlignment = .center
     $0.titleLabel?.lineBreakMode = .byWordWrapping
     $0.isUserInteractionEnabled = false
-    $0.contentEdgeInsets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+
+    var config = UIButton.Configuration.plain()
+    config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14)
+    config.cornerStyle = .capsule
+    $0.configuration = config
   }
 
   override init(frame: CGRect) {
@@ -203,7 +256,7 @@ class TagButtonCell: UICollectionViewCell {
     contentView.addSubview(tagButton)
     tagButton.snp.makeConstraints {
       $0.edges.equalToSuperview()
-      $0.width.height.equalTo(80)
+      // $0.width.height.equalTo(80)
     }
   }
 
@@ -215,17 +268,5 @@ class TagButtonCell: UICollectionViewCell {
     } else {
       tagButton.backgroundColor = .gray
     }
-  }
-}
-
-struct PopularTag: Codable {
-  let id: UUID
-  let tag: String
-  let count: Int
-
-  enum CodingKeys: String, CodingKey {
-    case id
-    case tag
-    case count
   }
 }

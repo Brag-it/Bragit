@@ -18,7 +18,8 @@ struct LocalStorage<V: Codable> {
   }
 
   private var userDefaults: UserDefaults {
-    let suiteName = UserDefaults.standard.string(forKey: LocalStorageCase.nowUser.rawValue)
+//    let suiteName = UserDefaults.standard.string(forKey: LocalStorageCase.nowUser.rawValue)
+    let suiteName = UserDefaults.standard.string(forKey: "nowUser")
     return UserDefaults(suiteName: suiteName) ?? .standard
   }
 
@@ -66,4 +67,3 @@ struct LocalStorage<V: Codable> {
     }
   }
 }
-

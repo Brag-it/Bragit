@@ -26,7 +26,7 @@ final class ImageUploadReactor: Reactor, Stepper {
   enum Mutation {
     case setLoading(Bool)
     case setError(String?)
-    case setRegistrationComplete(Bool)
+    //    case setRegistrationComplete(Bool)
     case setProfileURL(String?)
     case setImageData(Data?)
   }
@@ -61,26 +61,26 @@ final class ImageUploadReactor: Reactor, Stepper {
               print("[ERROR] 업로드 실패: \(error)")
               return .just(.setError("이미지 업로드 실패: \(error.localizedDescription)"))
             }
-            .flatMap { [weak self] mutation -> Observable<Mutation> in
-              guard let self = self else { return .empty() }
-              return .concat([
-                .just(mutation),
-                self.registerUser()
-              ])
-            }
-          .just(.setLoading(false)),
+            .do { [weak self] mutation in
+              guard let self else { return }
+              switch mutation {
+              case .setProfileURL(let url):
+                self.steps.accept(AppStep.signSelectTag(profileURL: url))
+              default:
+                break
+              }
+            },
+          .just(.setLoading(false))
         ])
       } else {
         print("[DEBUG] 사진 데이터가 없음")
-        return registerUser()
+        self.steps.accept(AppStep.signSelectTag(profileURL: nil))
+        return .empty()
       }
 
     case .tapLater:
-      print("[DEBUG] Tap Later - 사진 없이 가입")
-      return .concat([
-        .just(.setProfileURL(nil)),
-        registerUser()
-      ])
+      self.steps.accept(AppStep.signSelectTag(profileURL: nil))
+      return .empty()
 
     case .pickedImageData(let data):
       print("[DEBUG] 사진 선택됨, 크기: \(data.count) bytes")
@@ -95,8 +95,8 @@ final class ImageUploadReactor: Reactor, Stepper {
       newState.isLoading = isLoading
     case .setError(let message):
       newState.errorMessage = message
-    case .setRegistrationComplete:
-      break
+    //    case .setRegistrationComplete:
+    //      break
     case .setProfileURL(let url):
       newState.profileURL = url
     case .setImageData(let data):
@@ -166,72 +166,72 @@ final class ImageUploadReactor: Reactor, Stepper {
     }
   }
 
-  private func registerUser() -> Observable<Mutation> {
-    Observable.create { [weak self] observer in
-      guard let self else {
-        observer.onCompleted()
-        return Disposables.create()
-      }
-      Task {
-        do {
-          observer.onNext(.setLoading(true))
-          let session = try await self.supabase.auth.session
-          let userId = session.user.id
-          let profileURL = self.currentState.profileURL
-          print("[DEBUG] 사진 유무: \(profileURL ?? "nil")")
+  //  private func registerUser() -> Observable<Mutation> {
+  //    Observable.create { [weak self] observer in
+  //      guard let self else {
+  //        observer.onCompleted()
+  //        return Disposables.create()
+  //      }
+  //      Task {
+  //        do {
+  //          observer.onNext(.setLoading(true))
+  //          let session = try await self.supabase.auth.session
+  //          let userId = session.user.id
+  //          let profileURL = self.currentState.profileURL
+  //          print("[DEBUG] 사진 유무: \(profileURL ?? "nil")")
+  //
+  //          let userInfo = UserInfo(
+  //            id: userId,
+  //            nickname: self.userInfo.nickname,
+  //            profile: profileURL,
+  //            provider: self.userInfo.isAppleLogin ? "apple" : "mail",
+  //            signDate: Date(),
+  //            latestUploaded: nil
+  //          )
+  //
+  //          print("[DEBUG] 디비에 유저 정보 저장")
+  //          try await self.saveUserInfo(userInfo)
+  //          print("[DEBUG] 유저 정보 저장 완료")
+  //
+  //          observer.onNext(.setRegistrationComplete(true))
+  //          observer.onNext(.setLoading(false))
+  //          observer.onCompleted()
+  //
+  //          await MainActor.run { self.steps.accept(AppStep.home) }
+  //        } catch {
+  //          print("[ERROR] Registration error: \(error)")
+  //          observer.onNext(.setError("회원가입 중 오류가 발생했습니다"))
+  //          observer.onNext(.setLoading(false))
+  //          observer.onCompleted()
+  //        }
+  //      }
+  //      return Disposables.create()
+  //    }
+  //  }
+  //
+  //  private func saveUserInfo(_ userInfo: UserInfo) async throws {
+  //    _ =
+  //      try await supabase
+  //      .from("User_Info")
+  //      .insert(userInfo)
+  //      .execute()
+  //  }
+  //}
 
-          let userInfo = UserInfo(
-            id: userId,
-            nickname: self.userInfo.nickname,
-            profile: profileURL,
-            provider: self.userInfo.isAppleLogin ? "apple" : "mail",
-            signDate: Date(),
-            latestUploaded: nil
-          )
-
-          print("[DEBUG] 디비에 유저 정보 저장")
-          try await self.saveUserInfo(userInfo)
-          print("[DEBUG] 유저 정보 저장 완료")
-
-          observer.onNext(.setRegistrationComplete(true))
-          observer.onNext(.setLoading(false))
-          observer.onCompleted()
-
-          await MainActor.run { self.steps.accept(AppStep.home) }
-        } catch {
-          print("[ERROR] Registration error: \(error)")
-          observer.onNext(.setError("회원가입 중 오류가 발생했습니다"))
-          observer.onNext(.setLoading(false))
-          observer.onCompleted()
-        }
-      }
-      return Disposables.create()
-    }
-  }
-
-  private func saveUserInfo(_ userInfo: UserInfo) async throws {
-    _ =
-      try await supabase
-      .from("User_Info")
-      .insert(userInfo)
-      .execute()
-  }
-}
-
-struct UserInfo: Codable {
-  let id: UUID
-  let nickname: String
-  let profile: String?
-  let provider: String
-  let signDate: Date
-  let latestUploaded: Date?
-
-  enum CodingKeys: String, CodingKey {
-    case id
-    case nickname
-    case profile
-    case provider
-    case signDate = "sign_date"
-    case latestUploaded = "latest_uploaded"
-  }
+  //struct UserInfo: Codable {
+  //  let id: UUID
+  //  let nickname: String
+  //  let profile: String?
+  //  let provider: String
+  //  let signDate: Date
+  //  let latestUploaded: Date?
+  //
+  //  enum CodingKeys: String, CodingKey {
+  //    case id
+  //    case nickname
+  //    case profile
+  //    case provider
+  //    case signDate = "sign_date"
+  //    case latestUploaded = "latest_uploaded"
+  //  }
 }
