@@ -115,6 +115,15 @@ final class PreviewViewController: UIViewController, View {
       .map { Reactor.Action.tapDismiss }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    reactor.state
+      .map(\.tags)
+      .distinctUntilChanged()
+      .bind { [weak self] _ in
+        guard let self else { return }
+        applySnapshot(from: reactor.currentState)
+      }
+      .disposed(by: disposeBag)
   }
 
   private func createLayout() -> UICollectionViewCompositionalLayout {

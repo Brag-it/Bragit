@@ -23,6 +23,7 @@ class SearchTagReactor: Reactor, Stepper {
     case updateSearchText(String)
     case didTapSearchButton
     case loadNextPage
+    case selectResult(String)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -74,16 +75,18 @@ class SearchTagReactor: Reactor, Stepper {
 
     case .loadNextPage:
       guard !currentState.isLoading, currentState.hasMore else { return .empty() }
-
       let query = currentState.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !query.isEmpty else { return .empty() }
-
       let next = currentState.page + 1
       return .concat(
         .just(.setLoading(true)),
         loadPage(query: query, page: next, mode: .append),
         .just(.setLoading(false))
       )
+
+    case .selectResult(let tag):
+      steps.accept(AppStep.tagPicked(tag: tag))
+      return .empty()
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -93,14 +96,19 @@ class SearchTagReactor: Reactor, Stepper {
     switch mutation {
     case .setSearchText(let text):
       newState.searchText = text
+
     case .setSearchResult(let result):
       newState.searchResult = result
+
     case .appendSearchResult(let more):
       newState.searchResult.append(contentsOf: more)
+
     case .setLoading(let flag):
       newState.isLoading = flag
+
     case .setPage(let value):
       newState.page = value
+
     case .setHasMore(let value):
       newState.hasMore = value
     }
@@ -121,17 +129,27 @@ class SearchTagReactor: Reactor, Stepper {
       page: page,
       pageSize: size
     )
-    .flatMap { [weak self] rows -> Observable<Mutation> in
-      guard let self else { return .empty() }
-      let titles = rows.map { $0.tag }
+    .flatMap { rows -> Observable<Mutation> in
+
+      // 결과가 없고, 첫페이지 일 경우에 검색어 자체를 결과를 보여주기
+      if rows.isEmpty && page == 0 {
+        return Observable.from([
+          .setSearchResult([query]),
+          .setPage(0),
+          .setHasMore(false)
+        ])
+      }
+
+      // DB 결과
+      let tags = rows.map { $0.tag }
       let hasMore = (rows.count == size)
 
       var mutations: [Mutation] = []
       switch mode {
       case .replace:
-        mutations.append(.setSearchResult(titles))
+        mutations.append(.setSearchResult(tags))
       case .append:
-        mutations.append(.appendSearchResult(titles))
+        mutations.append(.appendSearchResult(tags))
       }
       mutations.append(.setPage(page))
       mutations.append(.setHasMore(hasMore))

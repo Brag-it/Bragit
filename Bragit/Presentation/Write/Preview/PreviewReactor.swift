@@ -22,10 +22,12 @@ class PreviewReactor: Reactor, Stepper {
     case tapDismiss
     case tapPop
     case tapAddTag
+    case addTag(String)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
+    case appendTag(String)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -34,7 +36,7 @@ class PreviewReactor: Reactor, Stepper {
     var content: NSAttributedString
     var thumbnails: [UIImage]
     var description: String
-    var tags: [String] = ["iOS", "TIL", "정보 공유", "내일배움 캠프", "열 다섯글자를 위한 테스트임"]
+    var tags: [String] = []
 
     @Pulse var presentTagModal = false
   }
@@ -61,6 +63,9 @@ class PreviewReactor: Reactor, Stepper {
     case .tapAddTag:
       steps.accept(AppStep.writeTagSearch)
       return .empty()
+
+    case .addTag(let tag):
+      return .just(.appendTag(tag))
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -68,6 +73,10 @@ class PreviewReactor: Reactor, Stepper {
   func reduce(state: State, mutation: Mutation) -> State {
     var newState = state
     switch mutation {
+    case .appendTag(let tag):
+      if !state.tags.contains(tag) {
+        newState.tags.append(tag)
+      }
     }
     return newState
   }

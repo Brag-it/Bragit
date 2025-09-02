@@ -34,6 +34,7 @@ enum AppStep: Step {
   case writeFeed                       // 글쓰기 루트
   case preview(draft: PostDraft)       // 미리보기
   case writeTagSearch                  // 태그 검색
+  case tagPicked(tag: String)          // 태그 선택
   case updateFeed(id: String)          // 글 수정
 
   // 마이페이지

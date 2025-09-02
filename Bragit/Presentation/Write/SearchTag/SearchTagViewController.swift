@@ -40,10 +40,6 @@ final class SearchTagViewController: UIViewController, View {
     view.backgroundColor = .white
 
     setUIConstraints()
-
-    //    // 더미 데이터 테스트용
-    //    let dummyTags = ["Swift", "iOS", "ReactorKit", "RxSwift", "SnapKit", "Then"]
-    //    applySnapshot(dummyTags)
   }
 
   // UI 설정
@@ -87,31 +83,22 @@ final class SearchTagViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    //    searchResultCollectionView.rx.itemSelected
-    //      .compactMap { [weak self] indexPath in
-    //        guard let self else { return }
-    //        dataSource.itemIdentifier(for: indexPath)
-    //      }
-    //      .map(SearchTagReactor.Action.selectTag)
-    //      .bind(to: reactor.action)
-    //      .disposed(by: disposeBag)
-
     reactor.state
       .map(\.searchResult)
       .distinctUntilChanged()
-      .bind(with: self) { viewController, titles in
-        viewController.applySnapshot(titles)
+      .bind { [weak self] tag in
+        guard let self else { return }
+        applySnapshot(tag)
       }
       .disposed(by: disposeBag)
 
-    //    // 선택후 닫기
-    //    reactor.pulse(\.$pickedTag)
-    //      .compactMap { $0 }
-    //      .bind { [weak self] in
-    //        guard let self else { return }
-    //        // 닫기 액션
-    //      }
-    //      .disposed(by: disposeBag)
+    searchResultCollectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath -> SearchTagReactor.Action? in
+        guard let tag = self?.dataSource.itemIdentifier(for: indexPath) else { return nil }
+        return .selectResult(tag)
+      }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 
   // 리스트 형태
@@ -132,9 +119,9 @@ final class SearchTagViewController: UIViewController, View {
   private func setupDataSource(
     _ collectionView: UICollectionView
   ) -> UICollectionViewDiffableDataSource<Int, String> {
-    let registration = UICollectionView.CellRegistration<UICollectionViewListCell, String> { cell, _, title in
+    let registration = UICollectionView.CellRegistration<UICollectionViewListCell, String> { cell, _, tags in
       var content = cell.defaultContentConfiguration()
-      content.text = "# " + title
+      content.text = "# " + tags
       content.textProperties.font = .pretendard(size: 15)
       content.textProperties.color = .grayScale900
       cell.contentConfiguration = content
@@ -146,10 +133,4 @@ final class SearchTagViewController: UIViewController, View {
       collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
     }
   }
-}
-
-@available(iOS 17.0, *)
-#Preview {
-  let reactor = SearchTagReactor()
-  return UINavigationController(rootViewController: SearchTagViewController(reactor: reactor))
 }

@@ -26,6 +26,14 @@ final class WriteFeedFlow: Flow {
       return .none
     case .writeTagSearch:
       return showSearchTagView()
+
+    case .tagPicked(let tag):
+
+      if let previewVC = nav.topViewController as? PreviewViewController {
+        previewVC.reactor?.action.onNext(.addTag(tag))
+      }
+      nav.topViewController?.presentedViewController?.dismiss(animated: true)
+      return .none
     default:
       return .none
     }
