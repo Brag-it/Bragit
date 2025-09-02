@@ -60,6 +60,5 @@ struct DescriptionItem: Hashable {
 
 struct TagItem: Hashable {
   let id = UUID()
-  var title: String
-  var isDeletable: Bool = true
+  var tag: String
 }

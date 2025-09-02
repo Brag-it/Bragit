@@ -41,10 +41,10 @@ final class PreviewViewController: UIViewController, View {
   private lazy var priviewCollectionView = UICollectionView(
     frame: .zero,
     collectionViewLayout: createLayout()).then {
-    $0.backgroundColor = .white
-    $0.showsVerticalScrollIndicator = false
-    $0.keyboardDismissMode = .onDrag
-  }
+      $0.backgroundColor = .white
+      $0.showsVerticalScrollIndicator = false
+      $0.keyboardDismissMode = .onDrag
+    }
 
   init(reactor: PreviewReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -273,7 +273,7 @@ final class PreviewViewController: UIViewController, View {
     // 요약
     snapshot.appendItems([.description(DescriptionItem(text: state.description))], toSection: .description)
     // 태그
-    let tagItems: [Item] = state.tags.map { .tag(TagItem(title: $0)) }
+    let tagItems: [Item] = state.tags.map { .tag(TagItem(tag: $0)) }
     snapshot.appendItems(tagItems, toSection: .tags)
 
     dataSource.apply(snapshot, animatingDifferences: true)
@@ -285,36 +285,38 @@ final class PreviewViewController: UIViewController, View {
   ) -> UICollectionViewDiffableDataSource<Section, Item> {
     // 제목 셀 설정
     let titleRegistration = UICollectionView.CellRegistration<TitleCell, Item> { cell, _, item in
-      if case let .title(titleItem) = item {
-        cell.configure(text: titleItem.text)
-      }
+      guard case let .title(titleItem) = item else { return }
+      cell.configure(text: titleItem.text)
     }
 
     // 썸네일 셀 설정
     let addRegistration = UICollectionView.CellRegistration<AddImageCell, Item> { _, _, _ in }
     let thumbRegistration = UICollectionView.CellRegistration<ThumbnailCell, Item> { cell, _, item in
-      if case let .thumbnail(thumbnailItem) = item {
-        switch thumbnailItem.kind {
-        case .addButton:
-          break
-        case .image(let image):
-          cell.configure(image: image)
-        }
+      guard case let .thumbnail(thumbnailItem) = item else { return }
+      switch thumbnailItem.kind {
+      case .addButton:
+        break
+      case .image(let image):
+        cell.configure(image: image)
       }
     }
 
     // 요약 셀 설정
     let descRegistration = UICollectionView.CellRegistration<DescriptionCell, Item> { cell, _, item in
-      if case let .description(descriptionItem) = item {
-        cell.configure(text: descriptionItem.text)
-      }
+      guard case let .description(descriptionItem) = item else { return }
+      cell.configure(text: descriptionItem.text)
     }
 
     // 태그 셀 설정
-    let tagRegistration = UICollectionView.CellRegistration<TagCell, Item> { cell, _, item in
-      if case let .tag(tagItem) = item {
-        cell.configure(text: tagItem.title)
-      }
+    let tagRegistration = UICollectionView.CellRegistration<TagCell, Item> { [weak self] cell, _, item in
+      guard let self, let reactor = self.reactor else { return }
+      guard case let .tag(tagItem) = item else { return }
+      cell.configure(text: tagItem.tag)
+
+      cell.xMarker.rx.tap
+        .map { PreviewReactor.Action.tapRemoveTag(tagItem.tag) }
+        .bind(to: reactor.action)
+        .disposed(by: cell.disposeBag)
     }
 
     // 데이터 소스 생성

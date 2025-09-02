@@ -4,13 +4,15 @@
 //
 //  Created by 이태윤 on 9/1/25.
 //
-//
 import UIKit
 
 import SnapKit
 import Then
+import RxSwift
+
 final class TagCell: UICollectionViewCell {
   static let identifier: String = "TagCell"
+  var disposeBag = DisposeBag()
 
   private let tagView = UIStackView().then {
     $0.axis = .horizontal
@@ -24,8 +26,8 @@ final class TagCell: UICollectionViewCell {
     $0.textColor = .grayScale700
   }
 
-  private let xMarker = UIImageView().then {
-    $0.image = .xMarker
+  let xMarker = UIButton(type: .system).then {
+    $0.setImage(.xMarker, for: .normal)
     $0.contentMode = .scaleAspectFit
     $0.tintColor = .grayScale700
   }
@@ -46,8 +48,13 @@ final class TagCell: UICollectionViewCell {
     }
 
     xMarker.snp.makeConstraints {
-      $0.width.equalTo(16)
+      $0.width.height.equalTo(16)
     }
+  }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    disposeBag = DisposeBag()
   }
 
   required init?(coder: NSCoder) {

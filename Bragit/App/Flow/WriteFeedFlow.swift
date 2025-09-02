@@ -68,7 +68,7 @@ final class WriteFeedFlow: Flow {
     modal.modalPresentationStyle = .pageSheet
     if let sheet = modal.sheetPresentationController {
       sheet.detents = [.custom(identifier: .init("fixed668")) { _ in 668 }]
-      sheet.prefersGrabberVisible = true // 핸들 색상 지정 불가
+      sheet.prefersGrabberVisible = false // 핸들 색상 지정 불가
       sheet.preferredCornerRadius = 14
     }
 

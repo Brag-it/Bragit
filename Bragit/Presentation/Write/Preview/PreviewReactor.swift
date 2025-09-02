@@ -23,11 +23,13 @@ class PreviewReactor: Reactor, Stepper {
     case tapPop
     case tapAddTag
     case addTag(String)
+    case tapRemoveTag(String)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
     case appendTag(String)
+    case removeTag(String)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -66,6 +68,9 @@ class PreviewReactor: Reactor, Stepper {
 
     case .addTag(let tag):
       return .just(.appendTag(tag))
+
+    case .tapRemoveTag(let tag):
+      return .just(.removeTag(tag))
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -77,7 +82,11 @@ class PreviewReactor: Reactor, Stepper {
       if !state.tags.contains(tag) {
         newState.tags.append(tag)
       }
+
+    case .removeTag(let tag):
+      newState.tags.removeAll { $0 == tag }
     }
+
     return newState
   }
 
