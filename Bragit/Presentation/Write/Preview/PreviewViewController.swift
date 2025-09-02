@@ -121,13 +121,10 @@ final class PreviewViewController: UIViewController, View {
       .compactMap { [weak self] indexPath in
         self?.dataSource.itemIdentifier(for: indexPath)
       }
-
       .bind { [weak self] item in
         guard let self else { return }
         // 썸네일추가 셀 인지 검사
-
-        if case let .thumbnail(thumbnailItem) = item,
-           case .addButton = thumbnailItem.kind {
+        if case let .thumbnail(thumbnailItem) = item, case .addButton = thumbnailItem.kind {
           presentPhotoPicker()
         }
       }
@@ -139,6 +136,7 @@ final class PreviewViewController: UIViewController, View {
       .bind { [weak self] _ in
         guard let self else { return }
         applySnapshot(from: reactor.currentState)
+        scrollToFirstThumbnailIfNeeded()
       }
       .disposed(by: disposeBag)
 
@@ -401,6 +399,19 @@ final class PreviewViewController: UIViewController, View {
     let picker = PHPickerViewController(configuration: config)
     picker.delegate = self
     present(picker, animated: true)
+  }
+
+  // 이미지 추가후 처음 셀로 스크롤
+  private func scrollToFirstThumbnailIfNeeded() {
+    guard let thumbnailsSection = Section.allCases.firstIndex(of: .thumbnails) else { return }
+    let items = priviewCollectionView.numberOfItems(inSection: thumbnailsSection)
+    guard items > 1 else { return }
+    let indexPath = IndexPath(item: 0, section: thumbnailsSection)
+
+    priviewCollectionView.layoutIfNeeded()
+    DispatchQueue.main.async { [weak self] in
+      self?.priviewCollectionView.scrollToItem(at: indexPath, at: .left, animated: true)
+    }
   }
 }
 
