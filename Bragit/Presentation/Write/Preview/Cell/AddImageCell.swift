@@ -8,9 +8,12 @@ import UIKit
 
 import SnapKit
 import Then
+import RxSwift
+
 final class AddImageCell: UICollectionViewCell {
   static let identifier: String = "AddImageCell"
-
+  var disposeBag = DisposeBag()
+  
   private let plusImageView = UIImageView().then {
     $0.image = .camera
     $0.tintColor = .grayScale700
@@ -27,6 +30,11 @@ final class AddImageCell: UICollectionViewCell {
       $0.top.bottom.equalToSuperview().inset(37)
       $0.leading.trailing.equalToSuperview().inset(55)
     }
+  }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    disposeBag = DisposeBag()
   }
 
   required init?(coder: NSCoder) {
