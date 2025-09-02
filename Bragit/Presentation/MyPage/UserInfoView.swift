@@ -15,17 +15,20 @@ class UserInfoView: UIView {
   private let numberLabel = UILabel().then {
     $0.font = .pretendard(size: 16, weight: .semibold)
     $0.textColor = .grayScale900
+    $0.textAlignment = .center
   }
 
   private let infoLabel = UILabel().then {
     $0.font = .pretendard(size: 14, weight: .regular)
     $0.textColor = .grayScale900
+    $0.textAlignment = .center
   }
 
   init (number: String, info: String) {
+    super.init(frame: .zero)
+    setupUI()
     numberLabel.text = number
     infoLabel.text = info
-    super.init()
   }
 
   override init(frame: CGRect) {
@@ -55,5 +58,9 @@ class UserInfoView: UIView {
   func configure(number: String, info: String) {
     numberLabel.text = number
     infoLabel.text = info
+  }
+
+  func setNumber(number: String) {
+    numberLabel.text = number
   }
 }

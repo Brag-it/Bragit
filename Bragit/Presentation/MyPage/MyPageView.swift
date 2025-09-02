@@ -10,6 +10,11 @@ import UIKit
 import SnapKit
 import Then
 
+enum MyPageItem: Hashable {
+  case userInfo(Profile)
+  case post(Post)
+}
+
 final class MyPageView: UIView {
 
   private let headerView = UIView().then {
@@ -28,15 +33,22 @@ final class MyPageView: UIView {
     $0.textColor = .grayScale900
   }
 
-  let MyPageCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout()).then {
-
+  lazy var collectionView = UICollectionView(
+    frame: .zero,
+    collectionViewLayout: makeCollectionViewLayout()).then {
+      $0.showsVerticalScrollIndicator = false
+      $0.backgroundColor = .white
   }
+
+  private lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
 
   override init(frame: CGRect) {
     super.init(frame: frame)
     backgroundColor = .white
+
+    setupUI()
   }
-  
+
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
@@ -44,6 +56,8 @@ final class MyPageView: UIView {
   private func setupUI() {
     addSubview(headerView)
     headerView.addSubview(myPageLabel)
+    headerView.addSubview(settingButton)
+    addSubview(collectionView)
 
     headerView.snp.makeConstraints {
       $0.top.leading.trailing.equalTo(self.safeAreaLayoutGuide)
@@ -58,11 +72,15 @@ final class MyPageView: UIView {
       $0.centerY.equalToSuperview()
       $0.trailing.equalToSuperview().inset(20)
     }
+
+    collectionView.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom)
+      $0.leading.trailing.bottom.equalTo(self.safeAreaLayoutGuide)
+    }
   }
 
   func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-    return UICollectionViewCompositionalLayout { [weak self] (sectionIndex, _) -> NSCollectionLayoutSection? in
-      guard let self = self else { return nil }
+    return UICollectionViewCompositionalLayout { (sectionIndex, _) -> NSCollectionLayoutSection? in
 
       if sectionIndex == 0 {
         // 유저정보 셀
@@ -71,7 +89,7 @@ final class MyPageView: UIView {
         let group = NSCollectionLayoutGroup.vertical(
           layoutSize: .init(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .absolute(165)),
+            heightDimension: .absolute(170)),
           subitems: [item])
         return NSCollectionLayoutSection(group: group)
       } else {
@@ -93,29 +111,26 @@ final class MyPageView: UIView {
     }
   }
 
-  private func makeFavoriteCollectionViewDataSource(
-    _ collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, FavoriteItem> {
+  private func makeCollectionViewDataSource(
+    _ collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, MyPageItem> {
 
-      let messageCellRegistration = UICollectionView
-        .CellRegistration<FavoriteMessageCell, FavoriteReactor.PostType> { cell, _, item in
-        cell.configure(type: item)
+      let profilCellRegistration = UICollectionView.CellRegistration<MyPageProfileCell, Profile> { cell, _, item in
+        cell.configure(profile: item)
       }
 
-      let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { [weak self] cell, _, item in
-        guard let self = self else { return }
+      let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in
         cell.configure(data: item)
       }
 
-      let headerRegistration = UICollectionView.SupplementaryRegistration<FavoriteSectionHeaderView>(
-        elementKind: UICollectionView.elementKindSectionHeader
-      ) { _, _, _ in }
+      let headerRegistration = UICollectionView.SupplementaryRegistration<MyPostsHeader>(
+        elementKind: UICollectionView.elementKindSectionHeader) { _, _, _ in }
 
-      let dataSource = UICollectionViewDiffableDataSource<Int, FavoriteItem>(
+      let dataSource = UICollectionViewDiffableDataSource<Int, MyPageItem>(
         collectionView: collectionView) { collectionView, indexPath, item in
           switch item {
-          case .message(let postType):
+          case .userInfo(let profile):
             return collectionView.dequeueConfiguredReusableCell(
-              using: messageCellRegistration, for: indexPath, item: postType)
+              using: profilCellRegistration, for: indexPath, item: profile)
           case .post(let post):
             return collectionView.dequeueConfiguredReusableCell(using: postCellRegistration, for: indexPath, item: post)
           }
@@ -131,4 +146,15 @@ final class MyPageView: UIView {
 
       return dataSource
     }
+
+  func dataApply(profile: Profile, posts: [Post]) {
+    var snapshot = NSDiffableDataSourceSnapshot<Int, MyPageItem>()
+
+    snapshot.appendSections([0])
+    snapshot.appendItems([.userInfo(profile)], toSection: 0)
+    snapshot.appendSections([1])
+    snapshot.appendItems(posts.map { .post($0) }, toSection: 1)
+
+    dataSource.apply(snapshot)
+  }
 }
