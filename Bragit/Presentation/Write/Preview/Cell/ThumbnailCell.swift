@@ -11,18 +11,13 @@ import Then
 
 final class ThumbnailCell: UICollectionViewCell {
   static let identifier: String = "ThumbnailCell"
-  override var isSelected: BooleanLiteralType {
-    didSet {
-      contentView.layer.borderColor = isSelected ? UIColor.grayScaleBack.cgColor : UIColor.clear.cgColor
-      checkIamge.isHidden = !isSelected // 선택 해제 및 선택
-    }
-  }
+
   private let imageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
     $0.clipsToBounds = true
   }
 
-  private let checkIamge = UIImageView().then {
+  private let checkImage = UIImageView().then {
     $0.image = .check
     $0.tintColor = .grayScaleBack
     $0.isHidden = true
@@ -37,9 +32,9 @@ final class ThumbnailCell: UICollectionViewCell {
     contentView.layer.borderColor = UIColor.clear.cgColor
     contentView.layer.masksToBounds = true
     contentView.addSubview(imageView)
-    contentView.addSubview(checkIamge)
+    contentView.addSubview(checkImage)
     imageView.snp.makeConstraints { $0.directionalEdges.equalToSuperview() }
-    checkIamge.snp.makeConstraints { $0.top.trailing.equalTo(imageView).inset(8) }
+    checkImage.snp.makeConstraints { $0.top.trailing.equalTo(imageView).inset(8) }
   }
 
   required init?(coder _: NSCoder) {
