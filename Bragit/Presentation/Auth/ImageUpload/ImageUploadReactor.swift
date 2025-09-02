@@ -65,9 +65,9 @@ final class ImageUploadReactor: Reactor, Stepper {
               guard let self = self else { return .empty() }
               return .concat([
                 .just(mutation),
-                self.registerUser(),
+                self.registerUser()
               ])
-            },
+            }
           .just(.setLoading(false)),
         ])
       } else {
