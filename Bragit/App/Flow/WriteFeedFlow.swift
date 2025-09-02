@@ -19,6 +19,21 @@ final class WriteFeedFlow: Flow {
     case .dismiss:
       nav.dismiss(animated: true)
       return .none
+    case .preview(let draft):
+      return showPreview(draft: draft)
+    case .pop:
+      nav.popViewController(animated: true)
+      return .none
+    case .writeTagSearch:
+      return showSearchTagView()
+
+    case .tagPicked(let tag):
+
+      if let previewVC = nav.topViewController as? PreviewViewController {
+        previewVC.reactor?.action.onNext(.addTag(tag))
+      }
+      nav.topViewController?.presentedViewController?.dismiss(animated: true)
+      return .none
     default:
       return .none
     }
@@ -30,6 +45,37 @@ final class WriteFeedFlow: Flow {
     nav.setViewControllers([writeVC], animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: writeVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showPreview(draft: PostDraft) -> FlowContributors {
+    let reactor = PreviewReactor(draft: draft)
+    let previewVC = PreviewViewController(reactor: reactor)
+
+    nav.pushViewController(previewVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: previewVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showSearchTagView() -> FlowContributors {
+    let reactor = SearchTagReactor()
+    let modal = SearchTagViewController(reactor: reactor)
+
+    modal.modalPresentationStyle = .pageSheet
+    if let sheet = modal.sheetPresentationController {
+      sheet.detents = [.custom(identifier: .init("fixed668")) { _ in 668 }]
+      sheet.prefersGrabberVisible = false // 핸들 색상 지정 불가
+      sheet.preferredCornerRadius = 14
+    }
+
+    nav.topViewController?.present(modal, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: modal,
       withNextStepper: reactor
     ))
   }
