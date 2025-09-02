@@ -38,7 +38,9 @@ final class PreviewViewController: UIViewController, View {
 
   private lazy var dataSource = setupDataSource(self.priviewCollectionView)
 
-  private lazy var priviewCollectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout()).then {
+  private lazy var priviewCollectionView = UICollectionView(
+    frame: .zero,
+    collectionViewLayout: createLayout()).then {
     $0.backgroundColor = .white
     $0.showsVerticalScrollIndicator = false
     $0.keyboardDismissMode = .onDrag
