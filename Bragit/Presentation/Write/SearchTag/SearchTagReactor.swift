@@ -51,4 +51,3 @@ class SearchTagReactor: Reactor, Stepper {
     return state.observe(on: MainScheduler.instance)
   }
 }
-

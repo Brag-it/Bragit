@@ -113,8 +113,6 @@ final class PreviewViewController: UIViewController, View {
       .map { Reactor.Action.tapDismiss }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
-
-    
   }
 
   private func createLayout() -> UICollectionViewCompositionalLayout {

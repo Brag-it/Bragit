@@ -44,7 +44,7 @@ struct ThumbnailItem: Hashable {
     case addButton
     case image(UIImage)
   }
-  
+
   let id = UUID()
   let kind: Kind
   var isSelected: Bool = false

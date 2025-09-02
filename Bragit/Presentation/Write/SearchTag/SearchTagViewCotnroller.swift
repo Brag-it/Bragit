@@ -29,4 +29,3 @@ class SearchTagViewController: UIViewController, View {
   func bind(reactor: SearchTagReactor) {
   }
 }
-
