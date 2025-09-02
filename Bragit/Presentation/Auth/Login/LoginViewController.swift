@@ -31,6 +31,7 @@ final class LoginViewController: UIViewController, View {
   let googleButton = UIButton(type: .system).then {
     $0.layer.cornerRadius = 12
     $0.backgroundColor = .white
+    $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
     $0.setTitle("Google로 로그인(아직)", for: .normal)
   }
 
@@ -52,6 +53,7 @@ final class LoginViewController: UIViewController, View {
     config.imagePlacement = .leading
     config.imagePadding = 5
     $0.configuration = config
+    $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
     $0.layer.cornerRadius = 12
     $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
   }

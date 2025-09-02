@@ -18,6 +18,14 @@ final class TermsViewController: UIViewController {
   private var privacyAccepted = false
   private var marketingAccepted = false
 
+  let descFont = UIFont.pretendard(size: 20, weight: .semibold)
+  let allLabelFont = UIFont.pretendard(size: 16, weight: .medium)
+  let checkboxFont = UIFont.pretendard(size: 16, weight: .regular)
+
+  let descColor = UIColor(named: "grayScale900")
+  let labelColor = UIColor(named: "grayScale700")
+  let primaryColor = UIColor(named: "primary400")
+
   var onAgree: ((UserRegistrationInfo) -> Void)?
 
   // MARK: UI
@@ -33,7 +41,6 @@ final class TermsViewController: UIViewController {
   let allAcceptCheckbox = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "square.fill"), for: .normal)
     $0.contentHorizontalAlignment = .leading
-    $0.tintColor = .orange
   }
 
   let allAcceptLabel = UILabel().then {
@@ -105,7 +112,6 @@ final class TermsViewController: UIViewController {
     $0.setTitle("확인", for: .normal)
     $0.setTitleColor(UIColor(red: 0.315, green: 0.315, blue: 0.315, alpha: 1), for: .normal)
     $0.layer.cornerRadius = 12
-    $0.backgroundColor = .orange
     $0.isEnabled = false
   }
 
@@ -121,6 +127,7 @@ final class TermsViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
+    title = "회원가입"
     setupLayout()
     setupActions()
     applyInitialUI()
@@ -133,6 +140,17 @@ final class TermsViewController: UIViewController {
 private extension TermsViewController {
   func setupLayout() {
     // TODO: Font Setting
+    descriptionLabel.textColor = descColor
+    descriptionLabel.font = descFont
+    [allAcceptCheckbox, privacyAcceptCheckbox, serviceAcceptCheckbox, marketingAcceptCheckbox, nextButton].forEach {
+      $0.tintColor = primaryColor
+    }
+    allAcceptLabel.font = allLabelFont
+    nextButton.titleLabel?.font = allLabelFont
+    [privacyAcceptLabel, serviceAcceptLabel, marketingAcceptLabel].forEach {
+      $0.font = checkboxFont
+    }
+
     // all accept stack
     [allAcceptCheckbox, allAcceptLabel].forEach { allAcceptStack.addArrangedSubview($0) }
 
@@ -242,7 +260,8 @@ private extension TermsViewController {
   func updateNextButtonState() {
     let enabled = serviceAccepted && privacyAccepted
     nextButton.isEnabled = enabled
-    nextButton.backgroundColor = enabled ? .orange : .gray
+    nextButton.backgroundColor = primaryColor
+    nextButton.alpha = enabled ? 1.0 : 0.5
   }
 }
 

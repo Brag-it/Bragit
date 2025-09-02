@@ -24,13 +24,25 @@ class TagCheckViewController: UIViewController {
   private let injectReactor: TagCheckReactor
   var reactor: TagCheckReactor?
 
+  let descFont = UIFont.pretendard(size: 20, weight: .semibold)
+  let beLaterFont = UIFont.pretendard(size: 16, weight: .regular)
+  let nextFont = UIFont.pretendard(size: 16, weight: .medium)
+
+  let primaryColor = UIColor(named: "primary400")
+  let color900 = UIColor(named: "grayScale900")
+  let color700 = UIColor(named: "grayScale700")
+
   // MARK: UI
-  let mainDescriptionLabel = UILabel().then {
+  lazy var mainDescriptionLabel = UILabel().then {
     $0.text = "관심 있는 주제를 선택해 보세요"
+    $0.font = descFont
+    $0.textColor = color900
   }
 
-  let subDescriptionLabel = UILabel().then {
+  lazy var subDescriptionLabel = UILabel().then {
     $0.text = "해당 태그가 포함된 글들만 모아볼 수 있어요"
+    $0.font = beLaterFont
+    $0.textColor = color700
   }
 
   lazy var tagCollectionView: UICollectionView = {
@@ -51,15 +63,19 @@ class TagCheckViewController: UIViewController {
     return collectionView
   }()
 
-  let beLaterButton = UIButton().then {
+  lazy var beLaterButton = UIButton().then {
     $0.setTitle("건너뛰기", for: .normal)
+    $0.titleLabel?.font = beLaterFont
+    $0.setTitleColor(color700, for: .normal)
+    $0.backgroundColor = nil
   }
 
-  let nextButton = UIButton().then {
+  lazy var nextButton = UIButton().then {
     $0.setTitle("확인", for: .normal)
-    $0.setTitleColor(UIColor(red: 0.315, green: 0.315, blue: 0.315, alpha: 1), for: .normal)
+    $0.setTitleColor(color900, for: .normal)
+    $0.titleLabel?.font = nextFont
     $0.layer.cornerRadius = 12
-    $0.backgroundColor = .orange
+    $0.backgroundColor = primaryColor
   }
 
   init(userInfo: UserRegistrationInfo, reactor: TagCheckReactor) {
@@ -173,9 +189,6 @@ class TagCheckViewController: UIViewController {
   private func updateNextButtonState() {
     let hasSelection = !selectedTags.isEmpty
     nextButton.isEnabled = hasSelection
-    UIView.animate(withDuration: 0.3) {
-      self.nextButton.alpha = hasSelection ? 1.0 : 0.5
-    }
   }
 }
 
@@ -207,13 +220,7 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
     layout collectionViewLayout: UICollectionViewLayout,
     sizeForItemAt indexPath: IndexPath
   ) -> CGSize {
-    // return CGSize(width: 80, height: 80)
     let tag = tags[indexPath.item]
-    //    let label = UILabel()
-    //    label.text = tag.tag
-    //    label.sizeToFit()
-    //    let width = label.frame.width + 28
-    //    let height = label.frame.height + 16
     let font = UIFont.preferredFont(forTextStyle: .body)
     let text = tag.tag as NSString
     let max = CGSize(
@@ -242,10 +249,6 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
 
     collectionView.reloadItems(at: [indexPath])
     updateNextButtonState()
-
-    //    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat { return 8 } // [ADDED]
-    //
-    //    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat { return 8 } // [ADDED]
   }
 }
 
@@ -253,7 +256,6 @@ class TagButtonCell: UICollectionViewCell {
   static let identifier = "TagButtonCell"
 
   private let tagButton = UIButton().then {
-    // $0.layer.cornerRadius = 80
     $0.layer.borderWidth = 1
     $0.titleLabel?.textAlignment = .center
     $0.titleLabel?.lineBreakMode = .byWordWrapping
@@ -283,12 +285,25 @@ class TagButtonCell: UICollectionViewCell {
   }
 
   func configure(with tag: PopularTag, isSelected: Bool) {
+    let tagFont = UIFont.pretendard(size: 15, weight: .medium)
+
+    let enableColor = UIColor(named: "primary100")
+    let enableFontColor = UIColor(named: "grayScale900")
+    let disableBorder = UIColor(named: "grayScale100")
+
+    let disableFontColor = UIColor(named: "grayScale600")
+
     tagButton.setTitle(tag.tag, for: .normal)
+    tagButton.titleLabel?.font = tagFont
 
     if isSelected {
-      tagButton.backgroundColor = .orange
+      tagButton.backgroundColor = enableColor
+      tagButton.layer.borderColor = enableColor?.cgColor
+      tagButton.setTitleColor(enableFontColor, for: .normal)
     } else {
-      tagButton.backgroundColor = .gray
+      tagButton.backgroundColor = nil
+      tagButton.layer.borderColor = disableBorder?.cgColor
+      tagButton.setTitleColor(disableFontColor, for: .normal)
     }
   }
 }
