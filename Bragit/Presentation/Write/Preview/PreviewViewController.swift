@@ -5,6 +5,7 @@
 //  Created by 이태윤 on 8/27/25.
 //
 import UIKit
+import PhotosUI
 
 import ReactorKit
 import RxSwift
@@ -114,6 +115,31 @@ final class PreviewViewController: UIViewController, View {
     doneButton.rx.tap
       .map { Reactor.Action.tapDismiss }
       .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    priviewCollectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath in
+        self?.dataSource.itemIdentifier(for: indexPath)
+      }
+
+      .bind { [weak self] item in
+        guard let self else { return }
+        // 썸네일추가 셀 인지 검사
+
+        if case let .thumbnail(thumbnailItem) = item,
+           case .addButton = thumbnailItem.kind {
+          presentPhotoPicker()
+        }
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map { $0.thumbnails.count }
+      .distinctUntilChanged()
+      .bind { [weak self] _ in
+        guard let self else { return }
+        applySnapshot(from: reactor.currentState)
+      }
       .disposed(by: disposeBag)
 
     reactor.state
@@ -367,6 +393,33 @@ final class PreviewViewController: UIViewController, View {
     return dataSource
   }
   // swiftlint:enable cyclomatic_complexity
+
+  private func presentPhotoPicker() {
+    var config = PHPickerConfiguration(photoLibrary: .shared())
+    config.selectionLimit = 1
+    config.filter = .images
+    let picker = PHPickerViewController(configuration: config)
+    picker.delegate = self
+    present(picker, animated: true)
+  }
+}
+
+extension PreviewViewController: PHPickerViewControllerDelegate {
+  func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    picker.dismiss(animated: true)
+
+    guard !results.isEmpty else { return }
+
+    for result in results {
+      let provider = result.itemProvider
+      if provider.canLoadObject(ofClass: UIImage.self) {
+        provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+          guard let self, let image = object as? UIImage else { return }
+          self.reactor?.action.onNext(.appendThumbnail(image))
+        }
+      }
+    }
+  }
 }
 
 @available(iOS 17.0, *)
