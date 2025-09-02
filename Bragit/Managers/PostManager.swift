@@ -22,10 +22,17 @@ protocol PostManagerProtocol {
   func fetchPopularPost(from: Int, to: Int) async throws -> [Post]
   func rxFetchPopularPost(from: Int, to: Int) -> Observable<[Post]>
   func rxFetchPostByAuthorId(authorId: String, from: Int, to: Int) -> Observable<[Post]>
+  func uploadImage(data: Data, fileName: String, folder: String) async throws -> URL
+  func rxUploadImage(data: Data, fileName: String, folder: String) -> Observable<URL>
+  func uploadImages(datas: [Data], folder: String) async throws -> [URL]
+  func rxUploadImages(datas: [Data], folder: String) -> Observable<[URL]>
+
 }
 
 class PostManager: PostManagerProtocol {
   @Dependency(\.supabase) var client
+
+  private let bucketName: String = "post-images"
 
   // 메인 피드 게시글 가져오기
   func fetchMainFeedData(from: Int, to: Int) async throws -> [Post] {
@@ -237,6 +244,78 @@ class PostManager: PostManagerProtocol {
         }
       }
 
+      return Disposables.create()
+    }
+  }
+
+  private func publicURL(for path: String) throws -> URL {
+    let url = try client.storage
+      .from(bucketName)
+      .getPublicURL(path: path)
+    return url
+  }
+
+  // 썸네일 이미지 업로드
+  func uploadImage(data: Data, fileName: String, folder: String) async throws -> URL {
+    let path = "\(folder)/\(UUID().uuidString)-\(fileName).jpg"
+
+    _ = try await client.storage
+      .from(bucketName)
+      .upload(
+        path,
+        data: data,
+        options: FileOptions(contentType: "image/jpeg", upsert: false)
+      )
+
+    let publicURL = try publicURL(for: path)
+    return publicURL
+  }
+
+  func rxUploadImage(data: Data, fileName: String, folder: String) -> Observable<URL> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      Task {
+        do {
+          let url = try await self.uploadImage(data: data, fileName: fileName, folder: folder)
+          observer.onNext(url)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+      return Disposables.create()
+    }
+  }
+
+  // 본문 이미지 업로드
+  func uploadImages(datas: [Data], folder: String) async throws -> [URL] {
+    var urls: [URL] = []
+    urls.reserveCapacity(datas.count)
+    for (index, data) in datas.enumerated() {
+      let url = try await uploadImage(data: data, fileName: "image\(index)", folder: folder)
+      urls.append(url)
+    }
+    return urls
+  }
+
+  func rxUploadImages(datas: [Data], folder: String) -> Observable<[URL]> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      Task {
+        do {
+          let urls = try await self.uploadImages(datas: datas, folder: folder)
+          observer.onNext(urls)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
       return Disposables.create()
     }
   }

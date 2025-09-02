@@ -77,3 +77,14 @@ enum PostImageType {
     }
   }
 }
+
+// 이미지 저장 경로 path
+struct StoragePath {
+  static func thumbnail(authorId: String) -> String {
+    return "thumbnails/\(authorId)"
+  }
+
+  static func contents(authorId: String, postId: String) -> String {
+    return "contents/\(authorId)/\(postId)"
+  }
+}

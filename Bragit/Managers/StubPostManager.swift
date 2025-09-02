@@ -153,4 +153,32 @@ class StubPostManager: PostManagerProtocol {
   func searchPosts(searchText: String) async throws -> [Post] {
     return Self.samplePosts
   }
+
+  // 썸네일 이미지 업로드
+  func uploadImage(data: Data, fileName: String, folder: String) async throws -> URL {
+    // 뭐하는 코드? → 프로토콜 충족용. 네트워크 업로드 없이 테스트 가능한 URL 생성
+    return URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/600/400")!
+  }
+
+  func rxUploadImage(data: Data, fileName: String, folder: String) -> Observable<URL> {
+    let url = URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/600/400")!
+    return .just(url)
+  }
+
+  // 본문 이미지 업로드
+  func uploadImages(datas: [Data], folder: String) async throws -> [URL] {
+    return try await withCheckedThrowingContinuation { continuation in
+      let urls = (0..<datas.count).map { _ in
+        URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/800/600")!
+      }
+      continuation.resume(returning: urls)
+    }
+  }
+
+  func rxUploadImages(datas: [Data], folder: String) -> Observable<[URL]> {
+    let urls = (0..<datas.count).map { _ in
+      URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/800/600")!
+    }
+    return .just(urls)
+  }
 }

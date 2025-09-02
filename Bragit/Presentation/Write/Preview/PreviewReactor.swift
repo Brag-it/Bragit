@@ -15,6 +15,7 @@ import RxRelay
 class PreviewReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.postManager) var postManager
+
   let draft: PostDraft
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
@@ -37,9 +38,10 @@ class PreviewReactor: Reactor, Stepper {
     case removeTag(String)
     case appendThumbnail(UIImage)
     case setRepresentative(UIImage?)
-    case setResized(thumbnail: Data?, attachments: [Data]) // 리사이즈된 결과 (썸네일/본문 첨부)
-    case setLoading(Bool)       // 로딩 스피너용
-    case setUploaded(Post)      // 업로드된 게시글 반환
+    case setUploadResult(thumbnail: URL?, attachments: [URL]) // 업로드 결과 URL들
+    case setError(Error)
+    case setLoading(Bool)
+    case setUploaded(Post)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -50,9 +52,10 @@ class PreviewReactor: Reactor, Stepper {
     var representativeImage: UIImage?
     var description: String
     var tags: [String] = []
-    var isLoading: Bool = false                 // 로딩 상태
-    var resizedThumbnailData: Data?       // 리사이즈된 썸네일 JPEG 데이터
-    var resizedAttachmentDatas: [Data] = []     // 리사이즈된 본문 첨부 JPEG 데이터 목록
+    var isLoading: Bool = false
+    var uploadedThumbnailURL: URL?
+    var uploadedAttachmentURLs: [URL] = []
+
     @Pulse var presentTagModal = false
   }
 
@@ -98,7 +101,6 @@ class PreviewReactor: Reactor, Stepper {
       return .just(.setRepresentative(nextRep))
 
     case .tapDone:
-      // 이미지 리사이즈
       return Observable.concat([
         .just(.setLoading(true)),
         Observable<Mutation>.create { [weak self] observer in
@@ -106,24 +108,47 @@ class PreviewReactor: Reactor, Stepper {
             observer.onCompleted()
             return Disposables.create()
           }
-          // 메인 스레드를 막지 않도록 백그라운드에서 리사이즈
-          DispatchQueue.global(qos: .userInitiated).async {
-            // 대표 이미지 리사이즈/압축
-            let thumbnailData = self.currentState.representativeImage?.compress(for: .thumbnail)
-            print("썸네일 리사이즈 크기: \((thumbnailData?.count ?? 0) / 1024) KB")
-            // 본문 이미지 컨텐츠 규격으로 리사이즈/압축
-            let attachments: [UIImage] = PreviewReactor.extractImages(from: self.currentState.content)
-            let attachmentDatas: [Data] = attachments.compactMap { $0.compress(for: .content) }
-            print("본문 이미지 리사이즈 개수: \(attachmentDatas.count)")
-            attachmentDatas.enumerated().forEach { index, data in
-              print("   - 이미지 \(index) 크기: \(data.count / 1024) KB")
+
+          Task {
+            do {
+              // 업로드 경로 정보
+              let author = self.authorId()
+              let postId = UUID().uuidString
+              let thumbFolder = StoragePath.thumbnail(authorId: author)
+              let contentsFolder = StoragePath.contents(authorId: author, postId: postId)
+
+              // 리사이즈
+              let thumbData = self.currentState.representativeImage?.compress(for: .thumbnail)
+              let contentImages = PreviewReactor.extractImages(from: self.currentState.content)
+              let attachmentDatas = contentImages.compactMap { $0.compress(for: .content) }
+
+              // 업로드
+              async let uploadedThumb: URL? = {
+                guard let data = thumbData else { return nil }
+                let fileName = "thumbnail-\(Int(Date().timeIntervalSince1970)).jpg"
+                return try await self.postManager.uploadImage(data: data, fileName: fileName, folder: thumbFolder)
+              }()
+
+              async let uploadedAttachments: [URL] = {
+                guard !attachmentDatas.isEmpty else { return [] }
+                return try await self.postManager.uploadImages(datas: attachmentDatas, folder: contentsFolder)
+              }()
+
+              let resultThumb = try await uploadedThumb
+              let resultAttachments = try await uploadedAttachments
+
+              observer.onNext(.setUploadResult(thumbnail: resultThumb, attachments: resultAttachments))
+              observer.onNext(.setLoading(false))
+              observer.onCompleted()
+            } catch {
+              observer.onNext(.setError(error))
+              observer.onNext(.setLoading(false))
+              observer.onCompleted()
             }
-            observer.onNext(.setResized(thumbnail: thumbnailData, attachments: attachmentDatas))
-            observer.onCompleted()
           }
+
           return Disposables.create()
-        },
-        .just(.setLoading(false))
+        }
       ])
     }
   }
@@ -146,17 +171,17 @@ class PreviewReactor: Reactor, Stepper {
     case .setRepresentative(let image):
       newState.representativeImage = image
 
-    case .setResized(let thumbnail, let attachments):
-      // 리사이즈 결과를 상태에 보관 (다음 단계: 업로드/DB 저장에서 사용)
-      newState.resizedThumbnailData = thumbnail
-      newState.resizedAttachmentDatas = attachments
+    case let .setUploadResult(thumbnail, attachments):
+      newState.uploadedThumbnailURL = thumbnail
+      newState.uploadedAttachmentURLs = attachments
 
     case .setLoading(let flag):
       newState.isLoading = flag
 
     case .setUploaded(_):
-      // 이후 단계에서 업로드 완료 상태를 활용하도록 남겨둠
       break
+    case .setError(let error):
+      print("PreviewReactor Error:", error.localizedDescription)
     }
 
     return newState
@@ -190,4 +215,16 @@ class PreviewReactor: Reactor, Stepper {
     return preview
   }
 
+}
+
+extension PreviewReactor {
+  private func authorId() -> String {
+    if let id = UserDefaults.standard.string(forKey: LocalStorageCase.nowUser.rawValue) {
+      print("ID: \(id)")
+      return id
+    }
+    // 누락 확인용
+    assertionFailure("UserDefaults.userId 가 없습니다.")
+    return "unknown"
+  }
 }
