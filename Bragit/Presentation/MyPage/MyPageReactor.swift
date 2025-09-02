@@ -31,20 +31,24 @@ class MyPageReactor: Reactor, Stepper {
   enum Mutation {
     case setFollowers([String])
     case setFollowings([String])
-    case setFavoriteTags([String])
+    case setFavoriteTags([Tag])
+    case setNickName(String)
     case setPosts([Post])
     case setLoading(Bool)
     case appendPosts([Post])
+    case setProfileImage(String)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State: Then {
     var followers: [String] = []
     var followings: [String] = []
-    var favoriteTags: [String] = []
+    var favoriteTags: [Tag] = []
     var posts: [Post] = []
     var hasNexPage: Bool = false
     var isLoading: Bool = false
+    var nickName: String = ""
+    var profileImage: String = ""
   }
 
   init() {
@@ -56,8 +60,9 @@ class MyPageReactor: Reactor, Stepper {
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .setUserInform:
-      @LocalStorage(location: .favoriteTags) var favoriteTags: [String]?
+      @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
       @LocalStorage(location: .followUser) var followUsers: [String]?
+      @LocalStorage(location: .nowUser) var nowUserId: String?
 
       if followUsers == nil {
         followUsers = []
@@ -67,10 +72,19 @@ class MyPageReactor: Reactor, Stepper {
         favoriteTags = []
       }
 
+      if nowUserId == nil {
+        print("⚠️ nowUserID is nil!!")
+        nowUserId = ""
+      }
+
       return .merge([
         .just(.setFollowers(followUsers ?? [])),
         .just(.setFavoriteTags(favoriteTags ?? [])),
-        userManager.rxFetchFollowers().map { Mutation.setFollowings($0) }
+        userManager.rxFetchFollowers().map { .setFollowings($0) },
+        userManager.rxfetchUsersBy(ids: [nowUserId ?? ""]).flatMap { users -> Observable<Mutation> in
+          guard let user = users.first else { return .empty() }
+          return .of(.setNickName(user.nickname ?? ""), .setProfileImage(user.profile ?? ""))
+        }
       ])
     case .loadMyPost:
       @LocalStorage(location: .nowUser) var nowUserId: String?
@@ -122,6 +136,14 @@ class MyPageReactor: Reactor, Stepper {
       return state.with {
         $0.hasNexPage = posts.count >= 10
         $0.posts.append(contentsOf: posts)
+      }
+    case .setNickName(let nickName):
+      return state.with {
+        $0.nickName = nickName
+      }
+    case .setProfileImage(let profileImage):
+      return state.with {
+        $0.profileImage = profileImage
       }
     }
   }
