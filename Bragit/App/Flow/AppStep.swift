@@ -39,9 +39,9 @@ enum AppStep: Step {
 
   // 마이페이지
   case myPage                          // 마이 루트
-  case followersList                   // 팔로워 목록
-  case followingList                   // 팔로잉 목록
-  case favoriteList                    // 관심 태그 목록
+  case followersList([User])           // 팔로워 목록
+  case followingList([User])           // 팔로잉 목록
+  case favoriteList([Tag])             // 관심 태그 목록
 
   // 설정
   case setting                         // 설정
