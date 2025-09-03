@@ -187,6 +187,9 @@ class PreviewReactor: Reactor, Stepper {
             return .just(.setError(error))
           },
         .just(.setLoading(false))
+          .do(onNext: { [weak self] _ in
+            self?.steps.accept(AppStep.dismiss)
+          })
       ])
     }
   }
