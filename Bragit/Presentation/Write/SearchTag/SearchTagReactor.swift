@@ -130,25 +130,27 @@ class SearchTagReactor: Reactor, Stepper {
       pageSize: size
     )
     .flatMap { rows -> Observable<Mutation> in
-
-      // 결과가 없고, 첫페이지 일 경우에 검색어 자체를 결과를 보여주기
-      if rows.isEmpty && page == 0 {
-        return Observable.from([
-          .setSearchResult([query]),
-          .setPage(0),
-          .setHasMore(false)
-        ])
-      }
-
       // DB 결과
       let tags = rows.map { $0.tag }
       let hasMore = (rows.count == size)
+      let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+      let hasExact = tags.contains { $0 == trimmed }
 
       var mutations: [Mutation] = []
-      switch mode {
-      case .replace:
-        mutations.append(.setSearchResult(tags))
-      case .append:
+
+      if page == 0 {
+        if tags.isEmpty {
+          // 첫 페이지이고, 결과가 전혀 없으면 사용자가 입력한 문자열을 추가
+          mutations.append(.setSearchResult([trimmed]))
+          mutations.append(.setPage(0))
+          mutations.append(.setHasMore(false))
+          return Observable.from(mutations)
+        } else {
+          // 첫 페이지이고, 결과가 있지만 정확하게 일치하는 태그가 없다면 맨 위에 입력 문자열을 추가
+          let final = hasExact || trimmed.isEmpty ? tags : ([trimmed] + tags)
+          mutations.append(.setSearchResult(final))
+        }
+      } else {
         mutations.append(.appendSearchResult(tags))
       }
       mutations.append(.setPage(page))
