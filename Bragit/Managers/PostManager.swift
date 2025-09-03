@@ -26,9 +26,27 @@ protocol PostManagerProtocol {
   func rxUploadImage(data: Data, fileName: String, folder: String) -> Observable<URL>
   func uploadImages(datas: [Data], folder: String) async throws -> [URL]
   func rxUploadImages(datas: [Data], folder: String) -> Observable<[URL]>
-
+  func createPost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data
+  ) async throws -> Post
+  func rxCreatePost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data
+  ) -> Observable<Post>
+  func attachTags(postId: String, tagIds: [String]) async throws
+  func rxAttachTags(postId: String, tagIds: [String]) -> Observable<Void>
 }
 
+// swiftlint:disable type_body_length
 class PostManager: PostManagerProtocol {
   @Dependency(\.supabase) var client
 
@@ -319,4 +337,108 @@ class PostManager: PostManagerProtocol {
       return Disposables.create()
     }
   }
+
+  // 게시글 생성
+    func createPost(
+      postId: String,
+      authorId: String,
+      title: String,
+      description: String,
+      thumbnailURL: URL?,
+      archivedContent: Data
+    ) async throws -> Post {
+      let payload: [String: Any?] = [
+        "id": postId,
+        "title": title,
+        "thumbnail_image": thumbnailURL?.absoluteString,
+        "author_id": authorId,
+        "content": archivedContent.base64EncodedString(),
+        "description": description,
+      ]
+
+      let encodable = try JSONSerialization.data(withJSONObject: payload.compactMapValues { $0 })
+      let json = try JSONDecoder().decode([String:String].self, from: encodable)
+
+      let saved: Post = try await client
+        .from("Post")
+        .insert(json, returning: .representation)
+        .select()
+        .single()
+        .execute()
+        .value
+
+      return saved
+    }
+
+  func rxCreatePost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data
+  ) -> Observable<Post> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let post = try await self.createPost(
+            postId: postId,
+            authorId: authorId,
+            title: title,
+            description: description,
+            thumbnailURL: thumbnailURL,
+            archivedContent: archivedContent
+          )
+          observer.onNext(post)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
+    // 게시글-태그 매핑 저장
+    func attachTags(postId: String, tagIds: [String]) async throws {
+      guard !tagIds.isEmpty else { return }
+      let rows: [[String: String]] = tagIds.map { ["post_id": postId, "tag_id": $0] }
+
+      do {
+        _ = try await client
+          .from("post_tags")
+          .insert(rows, returning: .minimal)
+          .execute()
+      } catch {
+
+        throw error
+      }
+    }
+
+  func rxAttachTags(postId: String, tagIds: [String]) -> Observable<Void> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      Task {
+        do {
+          try await self.attachTags(postId: postId, tagIds: tagIds)
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
 }
+// swiftlint:enable cyclomatic_complexity

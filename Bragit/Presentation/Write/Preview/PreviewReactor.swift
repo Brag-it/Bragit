@@ -102,83 +102,144 @@ class PreviewReactor: Reactor, Stepper {
       return .just(.setRepresentative(nextRep))
 
     case .tapDone:
+      let author = self.authorId()
+      let postId = UUID().uuidString
+
+      #if DEBUG
+      print("authorId:", author)
+      print("postId:", postId)
+      #endif
+
+      let thumbData = currentState.representativeImage?.compress(for: .thumbnail)
+      let contentImages = PreviewReactor.extractImages(from: currentState.content)
+      let attachmentDatas = contentImages.compactMap { $0.compress(for: .content) }
+
+      #if DEBUG
+      let origThumbInfo: String = {
+        if let img = self.currentState.representativeImage {
+          return "size=\(img.size), scale=\(img.scale)"
+        } else {
+          return "nil"
+        }
+      }()
+      print("대표이미지 원본:", origThumbInfo)
+      print("본문 내 원본 이미지 개수:", contentImages.count)
+      print("압축 썸네일 바이트:", thumbData?.count ?? 0)
+      print("압축 첨부 바이트 총합:", attachmentDatas.reduce(0, { $0 + $1.count }))
+      #endif
+
+      // 썸네일 업로드
+      let thumbUploadStream: Observable<URL?> = {
+        if let data = thumbData {
+          return self.postManager.rxUploadImage(
+            data: data,
+            fileName: "thumbnail-\(Int(Date().timeIntervalSince1970)).jpg",
+            folder: StoragePath.thumbnail(authorId: author)
+          )
+          .map { $0 as URL? }
+        } else {
+          return .just(nil)
+        }
+      }()
+
+      // 첨부 업로드
+      let attachmentsUploadStream: Observable<[URL]> = {
+        if attachmentDatas.isEmpty {
+          return .just([])
+        } else {
+          return self.postManager.rxUploadImages(
+            datas: attachmentDatas,
+            folder: StoragePath.contents(authorId: author, postId: postId)
+          )
+        }
+      }()
+
       return Observable.concat([
         .just(.setLoading(true)),
-        Observable<Mutation>.create { [weak self] observer in
-          guard let self else {
-            observer.onCompleted()
-            return Disposables.create()
-          }
 
-          Task {
-            do {
-              // 업로드 경로 정보
-              let author = self.authorId()
-              let postId = UUID().uuidString
-              let thumbFolder = StoragePath.thumbnail(authorId: author)
-              let contentsFolder = StoragePath.contents(authorId: author, postId: postId)
-
-              // 리사이즈
-              let thumbData = self.currentState.representativeImage?.compress(for: .thumbnail)
-              let contentImages = PreviewReactor.extractImages(from: self.currentState.content)
-              let attachmentDatas = contentImages.compactMap { $0.compress(for: .content) }
-
-              // 업로드
-              async let uploadedThumb: URL? = {
-                guard let data = thumbData else { return nil }
-                let fileName = "thumbnail-\(Int(Date().timeIntervalSince1970)).jpg"
-                return try await self.postManager.uploadImage(data: data, fileName: fileName, folder: thumbFolder)
-              }()
-
-              async let uploadedAttachments: [URL] = {
-                guard !attachmentDatas.isEmpty else { return [] }
-                return try await self.postManager.uploadImages(datas: attachmentDatas, folder: contentsFolder)
-              }()
-
-              let resultThumb = try await uploadedThumb
-              let resultAttachments = try await uploadedAttachments
-
-              // 본문 이미지들 URL로 치환 (업로드 직후 fresh 결과 사용)
-              let contentForSave = self.replacingAttachmentsWithURLs(
-                in: self.currentState.content,
-                urls: resultAttachments
-              )
-              observer.onNext(.setUploadResult(thumbnail: resultThumb, attachments: resultAttachments))
-
-              // 아카이빙
-              let archived = try self.archiveAttributedString(contentForSave)
-
-              #if DEBUG
-              print("치환 후 텍스트: \(contentForSave)")
-              print("아카이빙 바이트: \(archived.count)")
-              #endif
-
-              // 태그 존재하면 count += 1, 없으면 생성
-              do {
-                let ensuredTags = try await self.tagManager.upsertTags(names: self.currentState.tags)
-                #if DEBUG
-                print("✅ 태그 업서트 완료 수: \(ensuredTags.count)")
-                #endif
-              } catch {
-                #if DEBUG
-                print("❌ 태그 업서트 실패: \(error)")
-                #endif
-              }
-
-              // TODO: Post 저장
-              // TODO: 업로드한 유저의 라스티드업로드 업데이트
-
-              observer.onNext(.setLoading(false))
-              observer.onCompleted()
-            } catch {
-              observer.onNext(.setError(error))
-              observer.onNext(.setLoading(false))
-              observer.onCompleted()
+        // 이미지 업로드
+        Observable.zip(thumbUploadStream, attachmentsUploadStream)
+          .flatMap { thumbURL, attachmentURLs -> Observable<Mutation> in
+            #if DEBUG
+            print("업로드 완료")
+            print("썸네일 URL:", thumbURL?.absoluteString ?? "nil")
+            print("첨부 URL 개수:", attachmentURLs.count)
+            if !attachmentURLs.isEmpty {
+              print("첨부 URL 리스트:", attachmentURLs.map { $0.absoluteString })
             }
-          }
+            #endif
+            // 업로드 결과를 먼저 State에 반영
+            let setUpload = Observable.just(
+              Mutation.setUploadResult(thumbnail: thumbURL, attachments: attachmentURLs)
+            )
 
-          return Disposables.create()
-        }
+            // 본문 치환 + 아카이빙
+            let contentForSave = self.replacingAttachmentsWithURLs(
+              in: self.currentState.content,
+              urls: attachmentURLs
+            )
+            #if DEBUG
+            print("치환 후 텍스트: \(contentForSave.string)")
+            #endif
+
+            let archivedData: Data
+            do {
+              archivedData = try self.archiveAttributedString(contentForSave)
+              #if DEBUG
+              print("아카이빙 완료: 바이트 =", archivedData.count)
+              #endif
+            } catch {
+              // 아카이빙 실패 시 에러 상태 반영 후 종료
+              return Observable.concat([setUpload, .just(.setError(error))])
+            }
+            // 태그 업서트 → 포스트 저장 → 포스트-태그 매핑
+            let upsertAndSave = self.tagManager.rxUpsertTags(names: self.currentState.tags)
+              .flatMap { ensuredTags -> Observable<Mutation> in
+                #if DEBUG
+                print("태그 업서트 완료: 보장된 태그 IDs =", ensuredTags.map { $0.id })
+                #endif
+                // Author는 객체로 구성
+                let authorObj = Author(id: author, nickname: nil, profile: nil)
+                let newPost = Post(
+                  id: UUID(uuidString: postId) ?? UUID(),
+                  title: self.currentState.title,
+                  thumbnailImage: thumbURL?.absoluteString,
+                  author: authorObj,
+                  date: Date(),
+                  content: contentForSave.string,
+                  like: 0,
+                  reports: 0,
+                  commentCount: 0,
+                  description: self.currentState.description
+                )
+
+                return self.postManager.rxCreatePost(
+                  postId: postId,
+                  authorId: author,
+                  title: newPost.title,
+                  description: newPost.description,
+                  thumbnailURL: thumbURL,
+                  archivedContent: archivedData
+                )
+                .flatMap { savedPost in
+                  #if DEBUG
+                  print("Post 저장 완료: id =", savedPost.id)
+                  print("post_tags 매핑 시작: tagIds =", ensuredTags.map { $0.id })
+                  #endif
+                  return self.postManager.rxAttachTags(postId: postId, tagIds: ensuredTags.map(\.id))
+                    .map {
+                      #if DEBUG
+                      print("post_tags 매핑 완료")
+                      #endif
+                      return Mutation.setUploaded(savedPost)
+                    }
+                }
+              }
+            // 업로드 결과
+
+            return Observable.concat([setUpload, upsertAndSave])
+          },
+        .just(.setLoading(false))
       ])
     }
   }

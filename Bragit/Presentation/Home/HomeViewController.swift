@@ -81,5 +81,7 @@ class HomeViewController: UIViewController, View {
         self?.homeView.feedView.reconfigurePosts(posts)
       }
       .disposed(by: disposeBag)
+
+    
   }
 }

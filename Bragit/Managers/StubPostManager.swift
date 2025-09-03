@@ -181,4 +181,62 @@ class StubPostManager: PostManagerProtocol {
     }
     return .just(urls)
   }
+
+  func createPost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data) async throws -> Post {
+      let author = Author(id: authorId, nickname: nil, profile: nil)
+      let post = Post(
+        id: UUID(uuidString: postId) ?? UUID(),
+        title: title,
+        thumbnailImage: thumbnailURL?.absoluteString,
+        author: author,
+        date: Date(),
+        tags: [],
+        content: "[archived:",
+        like: 0,
+        reports: 0,
+        commentCount: 0,
+        description: description
+      )
+      return post
+    }
+
+  func rxCreatePost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data) -> RxSwift.Observable<Post> {
+      let author = Author(id: authorId, nickname: nil, profile: nil)
+      let post = Post(
+        id: UUID(uuidString: postId) ?? UUID(),
+        title: title,
+        thumbnailImage: thumbnailURL?.absoluteString,
+        author: author,
+        date: Date(),
+        tags: [],
+        content: "[archived:",
+        like: 0,
+        reports: 0,
+        commentCount: 0,
+        description: description
+      )
+      return .just(post)
+    }
+
+  func attachTags(postId: String, tagIds: [String]) async throws {
+    _ = (postId, tagIds)
+    return
+  }
+
+  func rxAttachTags(postId: String, tagIds: [String]) -> RxSwift.Observable<Void> {
+    _ = (postId, tagIds)
+    return .just(())
+  }
 }
