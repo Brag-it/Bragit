@@ -17,6 +17,11 @@ final class MyPageFlow: Flow {
     switch step {
     case .myPage:
       return showMyPageRoot()
+    case .setting:
+      return showSetting()
+    case .dismiss:
+      nav.popViewController(animated: true)
+      return .none
     default:
       return .none
     }
@@ -28,6 +33,16 @@ final class MyPageFlow: Flow {
     nav.setViewControllers([mypageVC], animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: mypageVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showSetting() -> FlowContributors {
+    let reactor = SettingReactor()
+    let settingVC = SettingViewController(reactor: reactor)
+    nav.pushViewController(settingVC, animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: settingVC,
       withNextStepper: reactor
     ))
   }

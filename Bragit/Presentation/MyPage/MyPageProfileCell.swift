@@ -9,10 +9,13 @@ import UIKit
 
 import SnapKit
 import Then
+import RxSwift
 
 final class MyPageProfileCell: UICollectionViewCell {
 
   static let identifier = "MyPageProfileCell"
+
+  var disposeBag = DisposeBag()
 
   private let profileImageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
@@ -21,7 +24,7 @@ final class MyPageProfileCell: UICollectionViewCell {
     $0.image = .profilePerson
   }
 
-  private let editNickNameButton = UIButton().then {
+  let editNickNameButton = UIButton().then {
     var configuration = UIButton.Configuration.plain()
 
     configuration.title = ""
@@ -85,6 +88,11 @@ final class MyPageProfileCell: UICollectionViewCell {
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    self.disposeBag = DisposeBag()
   }
 
   func configure(profile: Profile) {
