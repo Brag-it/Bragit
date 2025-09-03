@@ -70,6 +70,7 @@ class PreviewReactor: Reactor, Stepper {
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
   // 사용자 입력 → 상태 변화 신호로 변환
+  // swiftlint:disable cyclomatic_complexity
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .tapDismiss:
@@ -189,6 +190,8 @@ class PreviewReactor: Reactor, Stepper {
       ])
     }
   }
+  // swiftlint:enable cyclomatic_complexity
+
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
   func reduce(state: State, mutation: Mutation) -> State {
