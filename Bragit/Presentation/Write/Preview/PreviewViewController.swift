@@ -15,6 +15,18 @@ import RxCocoa
 final class PreviewViewController: UIViewController, View {
   var disposeBag = DisposeBag()
 
+  // 배경을 어둡게 하는 반투명 오버레이
+  private let dimmingView = UIView().then {
+    $0.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+    $0.isHidden = true
+    $0.isUserInteractionEnabled = true // 터치 차단
+  }
+
+  private let activityIndicator = UIActivityIndicatorView(style: .large).then {
+    $0.hidesWhenStopped = true
+    $0.color = .primary400
+  }
+
   private let headerView = UIView()
 
   private let backButton = UIButton(type: .system).then {
@@ -67,6 +79,8 @@ final class PreviewViewController: UIViewController, View {
 
   // UI 설정
   private func setUIConstraints() {
+    view.addSubview(dimmingView)
+    view.addSubview(activityIndicator)
 
     view.addSubview(headerView)
 
@@ -74,6 +88,14 @@ final class PreviewViewController: UIViewController, View {
     headerView.addSubview(titleLabel)
     view.addSubview(priviewCollectionView)
     view.addSubview(doneButton)
+
+    dimmingView.snp.makeConstraints {
+      $0.directionalEdges.equalToSuperview()
+    }
+
+    activityIndicator.snp.makeConstraints {
+      $0.center.equalToSuperview()
+    }
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
@@ -97,6 +119,9 @@ final class PreviewViewController: UIViewController, View {
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
     }
+
+    view.bringSubviewToFront(dimmingView)
+    view.bringSubviewToFront(activityIndicator)
   }
 
   func bind(reactor: PreviewReactor) {
@@ -161,6 +186,37 @@ final class PreviewViewController: UIViewController, View {
       .bind { [weak self] _ in
         guard let self else { return }
         applySnapshot(from: reactor.currentState)
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map(\.isLoading)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .bind { [weak self] isLoading in
+        guard let self else { return }
+
+        // 디밍 on/off + 스피너 on/off
+        if isLoading {
+          self.dimmingView.isHidden = false
+          self.dimmingView.alpha = 0
+          self.view.bringSubviewToFront(self.dimmingView)
+          self.view.bringSubviewToFront(self.activityIndicator)
+
+          UIView.animate(withDuration: 0.2) { self.dimmingView.alpha = 1 }
+          self.activityIndicator.startAnimating()
+        } else {
+          UIView.animate(withDuration: 0.2, animations: {
+            self.dimmingView.alpha = 0
+          }, completion: { _ in
+            self.dimmingView.isHidden = true
+          })
+          self.activityIndicator.stopAnimating()
+        }
+
+        // 입력 막기 & 중복 탭 방지
+        self.view.isUserInteractionEnabled = !isLoading
+        self.doneButton.isEnabled = !isLoading
       }
       .disposed(by: disposeBag)
   }

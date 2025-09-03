@@ -180,16 +180,16 @@ class PreviewReactor: Reactor, Stepper {
                 print("최종 데이터 생성. 완료")
                 return Mutation.setUploaded(savedPost)
               }
+            // swiftlint:disable:next trailing_closure
+              .do(onNext: { [weak self] _ in
+                self?.steps.accept(AppStep.dismiss)
+              })
               .startWith(setUploadMutation)
           }
           .catch { error -> Observable<Mutation> in
             print("tapDone 스트림 에러: \(error.localizedDescription)")
             return .just(.setError(error))
-          },
-        .just(.setLoading(false))
-          .do(onNext: { [weak self] _ in
-            self?.steps.accept(AppStep.dismiss)
-          })
+          }
       ])
     }
   }
@@ -222,8 +222,9 @@ class PreviewReactor: Reactor, Stepper {
       newState.isLoading = flag
 
     case .setUploaded(_):
-      break
+      newState.isLoading = false
     case .setError(let error):
+      newState.isLoading = false
       print("PreviewReactor Error:", error.localizedDescription)
     }
 
