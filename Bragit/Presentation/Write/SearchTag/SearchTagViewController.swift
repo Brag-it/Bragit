@@ -75,16 +75,15 @@ final class SearchTagViewController: UIViewController, View {
     textField.rx.controlEvent(.editingChanged)
       .withLatestFrom(textField.rx.text.orEmpty)
       .map { [weak textField] raw -> String in
-        guard let textField = textField else { return raw }
+        guard let textField = textField else { return String(raw.prefix(15)) }
         if textField.markedTextRange != nil { return raw }
-        // 15자 초과하면 무시
         if raw.count > 15 {
           UIImpactFeedbackGenerator(style: .light).impactOccurred()
           textField.shake()
-          return String(raw.prefix(15))
         }
-
-        return raw
+        let clamped = String(raw.prefix(15))
+        if textField.text != clamped { textField.text = clamped }
+        return clamped
       }
       .distinctUntilChanged()
       .map(SearchTagReactor.Action.updateSearchText)
