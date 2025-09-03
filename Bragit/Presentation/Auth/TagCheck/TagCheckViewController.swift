@@ -91,14 +91,20 @@ class TagCheckViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    // 가입할 때 태그 있으면 안 되니 아예 초기화
+    if UserDefaults.standard.data(forKey: "favoriteTags") != nil {
+      UserDefaults.standard.removeObject(forKey: "favoriteTags")
+      self.favoriteTags = []
+      self.selectedTags = []
+    }
+
     view.backgroundColor = .systemBackground
     title = "회원가입"
     setupLayout()
     loadTags()
 
     if let data = UserDefaults.standard.data(forKey: "favoriteTags"),
-      let decoded = try? JSONDecoder().decode([String].self, from: data)
-    {
+      let decoded = try? JSONDecoder().decode([String].self, from: data) {
       self.favoriteTags = decoded
       self.selectedTags = Set(decoded)
     }

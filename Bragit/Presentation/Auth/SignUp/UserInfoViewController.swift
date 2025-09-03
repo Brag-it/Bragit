@@ -11,9 +11,10 @@ import UIKit
 
 // MARK: - 1) 단일 파일 내 분리 타입: UI 전담
 final class UserInfoFormView: UIView {
-
-  // Public UI (VC에서 접근)
+  // UI
   let descriptionLabel = UILabel()
+  let scrollView = UIScrollView()
+  let contentView = UIView()
   let mailLabel = UILabel()
   let mailTextField = InsetTextField()
   let mailCheckIcon = UIImageView()
@@ -66,6 +67,13 @@ final class UserInfoFormView: UIView {
 
   private func configureUI() {
     backgroundColor = .systemBackground
+    scrollView.keyboardDismissMode = .interactive
+    contentView.backgroundColor = .clear
+    contentView.isUserInteractionEnabled = true
+    scrollView.isUserInteractionEnabled = true
+    scrollView.alwaysBounceVertical = true
+    scrollView.showsVerticalScrollIndicator = true
+    scrollView.delaysContentTouches = false
 
     descriptionLabel.do {
       $0.text = "로그인에 사용할 이메일과\n비밀번호를 입력해 주세요"
@@ -231,10 +239,10 @@ final class UserInfoFormView: UIView {
       $0.backgroundColor = buttonColor
     }
 
-    [mailCheckIcon, mailCheckLabel].forEach { mailCheckStack.addArrangedSubview($0) }
-    [pwCheckIcon, pwCheckLabel].forEach { pwCheckStack.addArrangedSubview($0) }
-    [rePwCheckIcon, rePwCheckLabel].forEach { rePwCheckStack.addArrangedSubview($0) }
-    [nicknameCheckIcon, nicknameCheckLabel].forEach { nicknameCheckStack.addArrangedSubview($0) }
+    //    [mailCheckIcon, mailCheckLabel].forEach { mailCheckStack.addArrangedSubview($0) }
+    //    [pwCheckIcon, pwCheckLabel].forEach { pwCheckStack.addArrangedSubview($0) }
+    //    [rePwCheckIcon, rePwCheckLabel].forEach { rePwCheckStack.addArrangedSubview($0) }
+    //    [nicknameCheckIcon, nicknameCheckLabel].forEach { nicknameCheckStack.addArrangedSubview($0) }
 
     [mailLabel, mailTextField, mailCheckStack].forEach { mailStack.addArrangedSubview($0) }
     [pwLabel, pwTextField, pwCheckStack].forEach { pwStack.addArrangedSubview($0) }
@@ -248,38 +256,54 @@ final class UserInfoFormView: UIView {
   }
 
   private func setupLayout() {
-    [descriptionLabel, mailStack, pwStack, rePwStack, nicknameStack, nextButton]
-      .forEach { addSubview($0) }
+    addSubview(descriptionLabel)
+    addSubview(scrollView)
+    scrollView.addSubview(contentView)
+
+    [mailStack, pwStack, rePwStack, nicknameStack, nextButton]
+      .forEach { contentView.addSubview($0) }
+
+    [mailTextField, pwTextField, rePwTextField, nicknameTextField].forEach {
+      $0.snp.makeConstraints { $0.height.equalTo(52) }
+    }
+
+    scrollView.snp.makeConstraints {
+      $0.top.equalTo(descriptionLabel.snp.bottom).offset(16)
+      $0.leading.trailing.bottom.equalToSuperview()
+    }
+
+    contentView.snp.makeConstraints {
+      $0.edges.equalTo(scrollView.contentLayoutGuide)
+      $0.width.equalTo(scrollView.frameLayoutGuide)
+    }
 
     descriptionLabel.snp.makeConstraints {
       $0.top.equalTo(safeAreaLayoutGuide).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 
-    [mailTextField, pwTextField, rePwTextField, nicknameTextField].forEach {
-      $0.snp.makeConstraints { $0.height.equalTo(52) }
-    }
-
     mailStack.snp.makeConstraints {
-      $0.top.equalTo(descriptionLabel.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.top.equalTo(contentView.snp.top).offset(24)
+      $0.leading.trailing.equalTo(contentView).inset(20)
     }
     pwStack.snp.makeConstraints {
       $0.top.equalTo(mailStack.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.leading.trailing.equalTo(contentView).inset(20)
     }
     rePwStack.snp.makeConstraints {
       $0.top.equalTo(pwStack.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.leading.trailing.equalTo(contentView).inset(20)
     }
     nicknameStack.snp.makeConstraints {
       $0.top.equalTo(rePwStack.snp.bottom).offset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.leading.trailing.equalTo(contentView).inset(20)
     }
     nextButton.snp.makeConstraints {
+      $0.top.equalTo(nicknameStack.snp.bottom).offset(24)
+      $0.leading.trailing.equalTo(contentView).inset(20)
       $0.height.equalTo(52)
-      $0.bottom.equalTo(safeAreaLayoutGuide).inset(24)
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalTo(contentView.snp.bottom).inset(24)
+      //      $0.leading.trailing.equalTo(contentView).inset(20)
     }
   }
 }
@@ -309,6 +333,9 @@ final class UserInfoViewController: UIViewController {
     formView.nicknameTextField,
   ]
 
+  private var keyboardBottomInset: CGFloat = 0
+  private weak var currentFirstResponder: UITextField?
+
   init(initialMail: String?) {
     //    self.initialMail = initialMail
     if let space = initialMail?.trimmingCharacters(
@@ -331,6 +358,76 @@ final class UserInfoViewController: UIViewController {
     configureTargets()
     configureDelegates()
     addKeyboardDismissGesture()
+    registerKeyboardNotifications()
+  }
+
+  private func registerKeyboardNotifications() {
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onKeyboardWillChange(_:)),
+      name: UIResponder.keyboardWillChangeFrameNotification,
+      object: nil
+    )
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onKeyboardWillHide(_:)),
+      name: UIResponder.keyboardWillHideNotification,
+      object: nil
+    )
+  }
+
+  private func updateScrollInsets(bottom: CGFloat, duration: TimeInterval, curve: UIView.AnimationCurve) {
+    keyboardBottomInset = bottom
+    let options = UIView.AnimationOptions(rawValue: UInt(curve.rawValue << 16))
+    UIView.animate(
+      withDuration: duration,
+      delay: 0,
+      options: options,
+      animations: {
+        self.formView.scrollView.contentInset.bottom = bottom
+        var indicatorInsets = self.formView.scrollView.verticalScrollIndicatorInsets
+        indicatorInsets.bottom = bottom
+        self.formView.scrollView.verticalScrollIndicatorInsets = indicatorInsets
+      },
+      completion: nil
+    )
+  }
+
+  @objc private func onKeyboardWillChange(_ note: Notification) {
+    guard
+      let userInfo = note.userInfo,
+      let endFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue,
+      let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
+      let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int,
+      let curve = UIView.AnimationCurve(rawValue: curveRaw)
+    else { return }
+
+    // Convert to this view's coordinate space and compute the covering height
+    let kbFrameInView = view.convert(endFrame, from: nil)
+    let overlap = max(0, view.bounds.intersection(kbFrameInView).height - view.safeAreaInsets.bottom)
+    let bottomInset = overlap + 8  // small padding
+
+    updateScrollInsets(bottom: bottomInset, duration: duration, curve: curve)
+
+    // Ensure current field is visible
+    if let field = currentFirstResponder {
+      let target = field.convert(field.bounds, to: formView.scrollView)
+      formView.scrollView.scrollRectToVisible(target.insetBy(dx: 0, dy: -24), animated: true)
+    }
+  }
+
+  @objc private func onKeyboardWillHide(_ note: Notification) {
+    guard
+      let userInfo = note.userInfo,
+      let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
+      let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int,
+      let curve = UIView.AnimationCurve(rawValue: curveRaw)
+    else { return }
+    updateScrollInsets(bottom: 0, duration: duration, curve: curve)
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
   }
 
   private func configureInitialState() {
@@ -557,6 +654,13 @@ class InsetTextField: UITextField {
 
 // MARK: - 4) 같은 파일 내 익스텐션: Delegate(본체 줄 수에서 제외)
 extension UserInfoViewController: UITextFieldDelegate {
+  public func textFieldDidBeginEditing(_ textField: UITextField) {
+    currentFirstResponder = textField
+    // If keyboard is already visible, nudge to visible immediately
+    let target = textField.convert(textField.bounds, to: formView.scrollView)
+    formView.scrollView.scrollRectToVisible(target.insetBy(dx: 0, dy: -24), animated: true)
+  }
+
   public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
     if textField === formView.nicknameTextField {
       textField.resignFirstResponder()
