@@ -339,36 +339,36 @@ class PostManager: PostManagerProtocol {
   }
 
   // 게시글 생성
-    func createPost(
-      postId: String,
-      authorId: String,
-      title: String,
-      description: String,
-      thumbnailURL: URL?,
-      archivedContent: Data
-    ) async throws -> Post {
-      let payload: [String: Any?] = [
-        "id": postId,
-        "title": title,
-        "thumbnail_image": thumbnailURL?.absoluteString,
-        "author_id": authorId,
-        "content": archivedContent.base64EncodedString(),
-        "description": description,
-      ]
+  func createPost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data
+  ) async throws -> Post {
+    let payload: [String: Any?] = [
+      "id": postId,
+      "title": title,
+      "thumbnail_image": thumbnailURL?.absoluteString,
+      "author_id": authorId,
+      "content": archivedContent.base64EncodedString(),
+      "description": description,
+    ]
 
-      let encodable = try JSONSerialization.data(withJSONObject: payload.compactMapValues { $0 })
-      let json = try JSONDecoder().decode([String:String].self, from: encodable)
+    let encodable = try JSONSerialization.data(withJSONObject: payload.compactMapValues { $0 })
+    let json = try JSONDecoder().decode([String:String].self, from: encodable)
 
-      let saved: Post = try await client
-        .from("Post")
-        .insert(json, returning: .representation)
-        .select()
-        .single()
-        .execute()
-        .value
+    let saved: Post = try await client
+      .from("Post")
+      .insert(json, returning: .representation)
+      .select()
+      .single()
+      .execute()
+      .value
 
-      return saved
-    }
+    return saved
+  }
 
   func rxCreatePost(
     postId: String,
@@ -405,21 +405,21 @@ class PostManager: PostManagerProtocol {
     }
   }
 
-    // 게시글-태그 매핑 저장
-    func attachTags(postId: String, tagIds: [String]) async throws {
-      guard !tagIds.isEmpty else { return }
-      let rows: [[String: String]] = tagIds.map { ["post_id": postId, "tag_id": $0] }
+  // 게시글-태그 매핑 저장
+  func attachTags(postId: String, tagIds: [String]) async throws {
+    guard !tagIds.isEmpty else { return }
+    let rows: [[String: String]] = tagIds.map { ["post_id": postId, "tag_id": $0] }
 
-      do {
-        _ = try await client
-          .from("post_tags")
-          .insert(rows, returning: .minimal)
-          .execute()
-      } catch {
+    do {
+      _ = try await client
+        .from("post_tags")
+        .insert(rows, returning: .minimal)
+        .execute()
+    } catch {
 
-        throw error
-      }
+      throw error
     }
+  }
 
   func rxAttachTags(postId: String, tagIds: [String]) -> Observable<Void> {
     .create { [weak self] observer in
