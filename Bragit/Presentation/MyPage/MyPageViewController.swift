@@ -55,7 +55,7 @@ class MyPageViewController: UIViewController, View {
       myPageView?.dataApply(profile: profile, posts: $0.posts)
     }.disposed(by: disposeBag)
 
-    myPageView.settingButton.rx.tap.bind { [weak self] in
+    myPageView.editNicknameTap.bind { [weak self] in
       guard let self = self else { return }
       let nicknameChangeVC = NickNameChangeViewController()
 
@@ -69,6 +69,10 @@ class MyPageViewController: UIViewController, View {
         sheet.detents = [.large()]
       }
       self.present(nicknameChangeVC, animated: true)
+    }.disposed(by: disposeBag)
+
+    myPageView.settingButton.rx.tap.bind { [weak self] in
+
     }.disposed(by: disposeBag)
   }
 }
