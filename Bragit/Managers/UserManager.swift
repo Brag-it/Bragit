@@ -21,6 +21,8 @@ protocol UserManagerProtocol {
   func rxFollowUser(id: String) -> Completable
   func rxUnfollowUser(id: String) -> Completable
   func rxFetchFollowers() -> Observable<[String]>
+  func rxhasNickName(nickName: String) -> Observable<Bool>
+  func rxChangeNickName(nickName: String) -> Single<Void>
   func updateLastUploaded(userId: String, at date: Date) async throws
   func rxUpdateLastUploaded(userId: String, at date: Date) -> Observable<Void>
 }
@@ -212,6 +214,70 @@ class UserManager: UserManagerProtocol {
     }
   }
 
+  // 닉네임 확인
+  func rxhasNickName(nickName: String) -> Observable<Bool> {
+    .create { [weak self] observer in
+      let task = Task { [weak self] in
+        do {
+          guard let self = self else {
+            observer.onError(NSError(
+              domain: "selfError",
+              code: 500,
+              userInfo: [NSLocalizedDescriptionKey: "self is nil"]))
+            return Disposables.create()
+          }
+
+          let users: [User] = try await self.client
+            .from("User_Info")
+            .select()
+            .eq("nickname", value: nickName)
+            .execute()
+            .value
+
+          observer.onNext(users.isEmpty == false)
+          observer.onCompleted()
+        } catch {
+          print(error)
+          observer.onError(error)
+        }
+        return Disposables.create()
+      }
+      return Disposables.create(with: task.cancel)
+    }
+  }
+
+  // 닉네임 변경
+  func rxChangeNickName(nickName: String) -> Single<Void> {
+    Single.create { [weak self] observer in
+      guard let self = self, let userId = self.userId else {
+        observer(.failure(
+          NSError(
+            domain: "UserManagerError",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "User not logged in"]
+          )
+        ))
+        return Disposables.create()
+      }
+      Task { [weak self] in
+        do {
+          guard let self = self else { return }
+          try await self.client
+            .from("User_Info")
+            .update(["nickname": nickName])
+            .eq("id", value: userId)
+            .execute()
+          observer(.success(()))
+        } catch {
+          print(error)
+          observer(.failure(error))
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
   // 마지막 업로드 시간을 갱신
   func updateLastUploaded(userId: String, at date: Date) async throws {
     do {
@@ -245,3 +311,4 @@ class UserManager: UserManagerProtocol {
     }
   }
 }
+

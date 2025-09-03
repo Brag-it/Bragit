@@ -9,6 +9,8 @@ import UIKit
 
 import SnapKit
 import Then
+import RxRelay
+import RxSwift
 
 enum MyPageItem: Hashable {
   case userInfo(Profile)
@@ -17,11 +19,15 @@ enum MyPageItem: Hashable {
 
 final class MyPageView: UIView {
 
+  let editNicknameTap = PublishRelay<Void>()
+  var disposeBag = DisposeBag()
+  let tagDidTap = PublishRelay<Tag>()
+
   private let headerView = UIView().then {
     $0.backgroundColor = .white
   }
 
-  private let settingButton = UIButton().then {
+  let settingButton = UIButton().then {
     $0.setTitle("설정", for: .normal)
     $0.titleLabel?.font = .pretendard(size: 16)
     $0.setTitleColor(.grayScale900, for: .normal)
@@ -114,12 +120,17 @@ final class MyPageView: UIView {
   private func makeCollectionViewDataSource(
     _ collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, MyPageItem> {
 
-      let profilCellRegistration = UICollectionView.CellRegistration<MyPageProfileCell, Profile> { cell, _, item in
+      let profilCellRegistration = UICollectionView.CellRegistration<MyPageProfileCell, Profile> {
+        [editNicknameTap] cell, _, item in
+        cell.editNickNameButton.rx.tap.bind(to: editNicknameTap).disposed(by: cell.disposeBag)
         cell.configure(profile: item)
       }
 
       let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in
         cell.configure(data: item)
+        cell.tagsView.tagDidTap
+          .bind(to: self.tagDidTap)
+          .disposed(by: cell.reusableDisposeBag)
       }
 
       let headerRegistration = UICollectionView.SupplementaryRegistration<MyPostsHeader>(
