@@ -27,7 +27,7 @@ enum AppStep: Step {
   case searchFeed(query: String?)      // 피드 검색(선택적으로 쿼리 전달)
 
   // 피드 상세보기
-  case feedDetail(id: String)          // 피드 상세
+  case feedDetail(post: Post)          // 피드 상세
 
   // 관심
   case favorite                        // 관심 피드 루트

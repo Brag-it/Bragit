@@ -18,6 +18,8 @@ final class HomeFlow: Flow {
     switch step {
     case .home:
       return showHomeRoot()
+    case .feedDetail(let post):
+      return showDetailPost(post: post)
     default:
       return .none
     }
@@ -29,6 +31,18 @@ final class HomeFlow: Flow {
     nav.setViewControllers([homeVC], animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: homeVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  public func showDetailPost(post: Post) -> FlowContributors {
+    let reactor = DetailPostReactor(post: post)
+    let detailPostVC = DetailPostViewController(reactor: reactor)
+
+    nav.pushViewController(detailPostVC, animated: true)
+    
+    return .one(flowContributor: .contribute(
+      withNextPresentable: detailPostVC,
       withNextStepper: reactor
     ))
   }
