@@ -215,10 +215,16 @@ class UserManager: UserManagerProtocol {
   // 닉네임 확인
   func rxhasNickName(nickName: String) -> Observable<Bool> {
     .create { [weak self] observer in
-
-      Task { [weak self] in
+      let task = Task { [weak self] in
         do {
-          guard let self = self else { return }
+          guard let self = self else {
+            observer.onError(NSError(
+              domain: "selfError",
+              code: 500,
+              userInfo: [NSLocalizedDescriptionKey: "self is nil"]))
+            return Disposables.create()
+          }
+
           let users: [User] = try await self.client
             .from("User_Info")
             .select()
@@ -232,9 +238,9 @@ class UserManager: UserManagerProtocol {
           print(error)
           observer.onError(error)
         }
+        return Disposables.create()
       }
-
-      return Disposables.create()
+      return Disposables.create(with: task.cancel)
     }
   }
 
