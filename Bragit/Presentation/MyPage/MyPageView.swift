@@ -21,6 +21,7 @@ final class MyPageView: UIView {
 
   let editNicknameTap = PublishRelay<Void>()
   var disposeBag = DisposeBag()
+  let tagDidTap = PublishRelay<Tag>()
 
   private let headerView = UIView().then {
     $0.backgroundColor = .white
@@ -127,6 +128,9 @@ final class MyPageView: UIView {
 
       let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in
         cell.configure(data: item)
+        cell.tagsView.tagDidTap
+          .bind(to: self.tagDidTap)
+          .disposed(by: cell.reusableDisposeBag)
       }
 
       let headerRegistration = UICollectionView.SupplementaryRegistration<MyPostsHeader>(

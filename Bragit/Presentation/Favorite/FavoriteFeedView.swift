@@ -19,6 +19,7 @@ enum FavoriteItem: Hashable {
 final class FavoriteFeedView: UIView {
 
   let tagDidTap = PublishRelay<Tag>()
+  let postTagDidTap = PublishRelay<Tag>()
   let followDidTap = PublishRelay<Post>()
   private let disposeBag = DisposeBag()
 
@@ -101,6 +102,9 @@ final class FavoriteFeedView: UIView {
 
         cell.followDidTap
           .bind(to: self.followDidTap)
+          .disposed(by: cell.reusableDisposeBag)
+        cell.tagsView.tagDidTap
+          .bind(to: self.postTagDidTap)
           .disposed(by: cell.reusableDisposeBag)
       }
 

@@ -8,12 +8,16 @@
 import UIKit
 
 import Then
+import RxRelay
+import RxSwift
 
 final class TagsView: UIView {
 
   private var buttons: [UIButton] = []
   private let horizontalSpacing: CGFloat = 7.0
   private let verticalSpacing: CGFloat = 7.0
+  let tagDidTap = PublishRelay<Tag>()
+  var disposeBag = DisposeBag()
 
   override func layoutSubviews() {
     super.layoutSubviews()
@@ -132,6 +136,12 @@ final class TagsView: UIView {
 
       $0.configuration = configuration
     }
+
+    tagButton.rx.tap.bind {
+      [tagDidTap] in
+      tagDidTap.accept(tag)
+    }.disposed(by: disposeBag)
+
     return tagButton
   }
 }

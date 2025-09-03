@@ -73,6 +73,9 @@ class HomeViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // TODO: 태그 탭 이벤트
+    //homeView.feedView.tagDidTap
+
     // 특정 포스트들 갱신
     reactor.state.map { $0.postsToReconfigure }
       .distinctUntilChanged()
