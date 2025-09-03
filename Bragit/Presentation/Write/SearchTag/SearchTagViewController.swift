@@ -70,10 +70,23 @@ final class SearchTagViewController: UIViewController, View {
   }
 
   func bind(reactor: SearchTagReactor) {
-    let searchTextStream = (searchBar.textField.rx.text.orEmpty)
-      .share(replay: 1)
+    let textField = searchBar.textField
+    // 15자 제한
+    textField.rx.controlEvent(.editingChanged)
+      .withLatestFrom(textField.rx.text.orEmpty)
+      .map { [weak textField] raw -> String in
+        guard let textField = textField else { return raw }
+        if textField.markedTextRange != nil { return raw }
+        // 15자 초과하면 무시
+        if raw.count > 15 {
+          UIImpactFeedbackGenerator(style: .light).impactOccurred()
+          textField.shake()
+          return String(raw.prefix(15))
+        }
 
-    searchTextStream
+        return raw
+      }
+      .distinctUntilChanged()
       .map(SearchTagReactor.Action.updateSearchText)
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
