@@ -55,7 +55,7 @@ final class PostCell: UICollectionViewCell {
     $0.spacing = 10
   }
 
-  private let tagsView = TagsView()
+  let tagsView = TagsView()
 
   private let bottomView = UIView()
 
