@@ -5,13 +5,27 @@
 //  Created by 이태윤 on 8/27/25.
 //
 import UIKit
+import PhotosUI
 
 import ReactorKit
 import RxSwift
 import RxCocoa
 
+// swiftlint:disable type_body_length
 final class PreviewViewController: UIViewController, View {
   var disposeBag = DisposeBag()
+
+  // 배경을 어둡게 하는 반투명 오버레이
+  private let dimmingView = UIView().then {
+    $0.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+    $0.isHidden = true
+    $0.isUserInteractionEnabled = true // 터치 차단
+  }
+
+  private let activityIndicator = UIActivityIndicatorView(style: .large).then {
+    $0.hidesWhenStopped = true
+    $0.color = .primary400
+  }
 
   private let headerView = UIView()
 
@@ -65,6 +79,8 @@ final class PreviewViewController: UIViewController, View {
 
   // UI 설정
   private func setUIConstraints() {
+    view.addSubview(dimmingView)
+    view.addSubview(activityIndicator)
 
     view.addSubview(headerView)
 
@@ -72,6 +88,14 @@ final class PreviewViewController: UIViewController, View {
     headerView.addSubview(titleLabel)
     view.addSubview(priviewCollectionView)
     view.addSubview(doneButton)
+
+    dimmingView.snp.makeConstraints {
+      $0.directionalEdges.equalToSuperview()
+    }
+
+    activityIndicator.snp.makeConstraints {
+      $0.center.equalToSuperview()
+    }
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
@@ -95,6 +119,9 @@ final class PreviewViewController: UIViewController, View {
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
     }
+
+    view.bringSubviewToFront(dimmingView)
+    view.bringSubviewToFront(activityIndicator)
   }
 
   func bind(reactor: PreviewReactor) {
@@ -112,8 +139,45 @@ final class PreviewViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     doneButton.rx.tap
-      .map { Reactor.Action.tapDismiss }
+      .map { Reactor.Action.tapDone }
       .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    priviewCollectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath in
+        self?.dataSource.itemIdentifier(for: indexPath)
+      }
+      .bind { [weak self] item in
+        guard let self else { return }
+        // 썸네일추가 셀 이면 사진 추가 그게아니면 썸네일 사진 선택
+        if case let .thumbnail(thumbnailItem) = item {
+          switch thumbnailItem.kind {
+          case .addButton:
+            presentPhotoPicker()
+          case .image(let image):
+            reactor.action.onNext(.tapThumbnail(image))
+          }
+        }
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map { $0.thumbnails.count }
+      .distinctUntilChanged()
+      .bind { [weak self] _ in
+        guard let self else { return }
+        applySnapshot(from: reactor.currentState)
+        scrollToFirstThumbnailIfNeeded()
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map(\.representativeImage)
+      .distinctUntilChanged { $0 === $1 }
+      .bind { [weak self] _ in
+        guard let self else { return }
+        reconfigureThumbnailsSelection()
+      }
       .disposed(by: disposeBag)
 
     reactor.state
@@ -122,6 +186,37 @@ final class PreviewViewController: UIViewController, View {
       .bind { [weak self] _ in
         guard let self else { return }
         applySnapshot(from: reactor.currentState)
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map(\.isLoading)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .bind { [weak self] isLoading in
+        guard let self else { return }
+
+        // 디밍 on/off + 스피너 on/off
+        if isLoading {
+          self.dimmingView.isHidden = false
+          self.dimmingView.alpha = 0
+          self.view.bringSubviewToFront(self.dimmingView)
+          self.view.bringSubviewToFront(self.activityIndicator)
+
+          UIView.animate(withDuration: 0.2) { self.dimmingView.alpha = 1 }
+          self.activityIndicator.startAnimating()
+        } else {
+          UIView.animate(withDuration: 0.2, animations: {
+            self.dimmingView.alpha = 0
+          }, completion: { _ in
+            self.dimmingView.isHidden = true
+          })
+          self.activityIndicator.stopAnimating()
+        }
+
+        // 입력 막기 & 중복 탭 방지
+        self.view.isUserInteractionEnabled = !isLoading
+        self.doneButton.isEnabled = !isLoading
       }
       .disposed(by: disposeBag)
   }
@@ -291,13 +386,16 @@ final class PreviewViewController: UIViewController, View {
 
     // 썸네일 셀 설정
     let addRegistration = UICollectionView.CellRegistration<AddImageCell, Item> { _, _, _ in }
-    let thumbRegistration = UICollectionView.CellRegistration<ThumbnailCell, Item> { cell, _, item in
-      guard case let .thumbnail(thumbnailItem) = item else { return }
+    let thumbRegistration = UICollectionView.CellRegistration<ThumbnailCell, Item> { [weak self] cell, _, item in
+      guard let self, case let .thumbnail(thumbnailItem) = item else { return }
       switch thumbnailItem.kind {
       case .addButton:
-        break
+        cell.updateSelection(isSelected: false)
       case .image(let image):
         cell.configure(image: image)
+        let rep = self.reactor?.currentState.representativeImage
+        let isSelected = (rep != nil && rep === image)
+        cell.updateSelection(isSelected: isSelected)
       }
     }
 
@@ -367,6 +465,56 @@ final class PreviewViewController: UIViewController, View {
     return dataSource
   }
   // swiftlint:enable cyclomatic_complexity
+
+  private func presentPhotoPicker() {
+    var config = PHPickerConfiguration(photoLibrary: .shared())
+    config.selectionLimit = 1
+    config.filter = .images
+    let picker = PHPickerViewController(configuration: config)
+    picker.delegate = self
+    present(picker, animated: true)
+  }
+
+  // 이미지 추가후 처음 셀로 스크롤
+  private func scrollToFirstThumbnailIfNeeded() {
+    guard let thumbnailsSection = Section.allCases.firstIndex(of: .thumbnails) else { return }
+    let items = priviewCollectionView.numberOfItems(inSection: thumbnailsSection)
+    guard items > 1 else { return }
+    let indexPath = IndexPath(item: 0, section: thumbnailsSection)
+
+    priviewCollectionView.layoutIfNeeded()
+    DispatchQueue.main.async { [weak self] in
+      self?.priviewCollectionView.scrollToItem(at: indexPath, at: .left, animated: true)
+    }
+  }
+
+  // 대표 이미지 선택 상태가 바뀔 때, 썸네일 섹션 아이템만 재구성해서 셀의 선택 표현을 업데이트
+  private func reconfigureThumbnailsSelection() {
+    var snapshot = dataSource.snapshot()
+    guard snapshot.sectionIdentifiers.contains(.thumbnails) else { return }
+    let thumbItems = snapshot.itemIdentifiers(inSection: .thumbnails)
+    snapshot.reconfigureItems(thumbItems)
+    dataSource.apply(snapshot, animatingDifferences: false)
+  }
+}
+// swiftlint:enable type_body_length
+
+extension PreviewViewController: PHPickerViewControllerDelegate {
+  func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    picker.dismiss(animated: true)
+
+    guard !results.isEmpty else { return }
+
+    for result in results {
+      let provider = result.itemProvider
+      if provider.canLoadObject(ofClass: UIImage.self) {
+        provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+          guard let self, let image = object as? UIImage else { return }
+          self.reactor?.action.onNext(.appendThumbnail(image))
+        }
+      }
+    }
+  }
 }
 
 @available(iOS 17.0, *)

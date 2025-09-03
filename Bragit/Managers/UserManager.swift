@@ -23,6 +23,8 @@ protocol UserManagerProtocol {
   func rxFetchFollowers() -> Observable<[String]>
   func rxhasNickName(nickName: String) -> Observable<Bool>
   func rxChangeNickName(nickName: String) -> Single<Void>
+  func updateLastUploaded(userId: String, at date: Date) async throws
+  func rxUpdateLastUploaded(userId: String, at date: Date) -> Observable<Void>
 }
 
 class UserManager: UserManagerProtocol {
@@ -275,4 +277,38 @@ class UserManager: UserManagerProtocol {
       return Disposables.create()
     }
   }
+
+  // 마지막 업로드 시간을 갱신
+  func updateLastUploaded(userId: String, at date: Date) async throws {
+    do {
+      _ = try await client
+        .from("User_Info")
+        .update(["latest_uploaded": date])
+        .eq("id", value: userId)
+        .execute()
+    } catch {
+      throw error
+    }
+  }
+
+  func rxUpdateLastUploaded(userId: String, at date: Date) -> Observable<Void> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      Task {
+        do {
+          try await self.updateLastUploaded(userId: userId, at: date)
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
 }
+

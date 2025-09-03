@@ -62,3 +62,29 @@ struct TagItem: Hashable {
   let id = UUID()
   var tag: String
 }
+
+enum PostImageType {
+  case thumbnail   // 대표 썸네일
+  case content     // 본문 이미지
+
+  // 리사이즈할 최대 픽셀과 JPEG 압축 품질
+  var config: (maxDimension: CGFloat, quality: CGFloat) {
+    switch self {
+    case .thumbnail:
+      return (maxDimension: 600, quality: 0.7)
+    case .content:
+      return (maxDimension: 1280, quality: 0.8)
+    }
+  }
+}
+
+// 이미지 저장 경로 path
+struct StoragePath {
+  static func thumbnail(authorId: String) -> String {
+    return "thumbnails/\(authorId)"
+  }
+
+  static func contents(authorId: String, postId: String) -> String {
+    return "contents/\(authorId)/\(postId)"
+  }
+}

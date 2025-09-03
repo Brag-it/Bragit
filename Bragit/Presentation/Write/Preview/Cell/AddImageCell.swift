@@ -8,6 +8,7 @@ import UIKit
 
 import SnapKit
 import Then
+
 final class AddImageCell: UICollectionViewCell {
   static let identifier: String = "AddImageCell"
 
