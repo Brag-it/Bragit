@@ -46,7 +46,6 @@ protocol PostManagerProtocol {
   func rxAttachTags(postId: String, tagIds: [String]) -> Observable<Void>
 }
 
-// swiftlint:disable type_body_length
 class PostManager: PostManagerProtocol {
   @Dependency(\.supabase) var client
 
@@ -441,4 +440,3 @@ class PostManager: PostManagerProtocol {
     }
   }
 }
-// swiftlint:enable cyclomatic_complexity
