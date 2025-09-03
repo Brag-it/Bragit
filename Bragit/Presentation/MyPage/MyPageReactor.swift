@@ -25,6 +25,7 @@ class MyPageReactor: Reactor, Stepper {
     case setUserInform
     case loadMyPost
     case loadNextPost
+    case goToSetting
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -104,6 +105,9 @@ class MyPageReactor: Reactor, Stepper {
           .map { .appendPosts($0) },
         .just(.setLoading(false))
       ])
+    case .goToSetting:
+      steps.accept(AppStep.setting)
+      return .empty()
     }
   }
 

@@ -71,8 +71,9 @@ class MyPageViewController: UIViewController, View {
       self.present(nicknameChangeVC, animated: true)
     }.disposed(by: disposeBag)
 
-    myPageView.settingButton.rx.tap.bind { [weak self] in
-
-    }.disposed(by: disposeBag)
+    myPageView.settingButton.rx.tap
+      .map { .goToSetting }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
