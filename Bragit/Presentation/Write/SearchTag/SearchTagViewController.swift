@@ -77,10 +77,12 @@ final class SearchTagViewController: UIViewController, View {
       .map { [weak textField] raw -> String in
         guard let textField = textField else { return String(raw.prefix(15)) }
         if textField.markedTextRange != nil { return raw }
+        // 15자 초과시 애니메이션
         if raw.count > 15 {
           UIImpactFeedbackGenerator(style: .light).impactOccurred()
           textField.shake()
         }
+        // 잘라내고 UI 반영
         let clamped = String(raw.prefix(15))
         if textField.text != clamped { textField.text = clamped }
         return clamped
