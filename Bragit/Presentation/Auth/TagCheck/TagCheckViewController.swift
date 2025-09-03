@@ -19,6 +19,7 @@ class TagCheckViewController: UIViewController {
   @Dependency(\.tagManager) private var tagManager
   private var tags: [PopularTag] = []
   private var selectedTags: Set<String> = []
+  var favoriteTags: [String] = []
 
   private let userInfo: UserRegistrationInfo
   private let injectReactor: TagCheckReactor
@@ -95,6 +96,13 @@ class TagCheckViewController: UIViewController {
     setupLayout()
     loadTags()
 
+    if let data = UserDefaults.standard.data(forKey: "favoriteTags"),
+      let decoded = try? JSONDecoder().decode([String].self, from: data)
+    {
+      self.favoriteTags = decoded
+      self.selectedTags = Set(decoded)
+    }
+    self.selectedTags = Set(favoriteTags)
     self.reactor = injectReactor
     bind(reactor: injectReactor)
   }
@@ -157,17 +165,6 @@ class TagCheckViewController: UIViewController {
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
-
-    reactor.state
-      .map(\.isLoading)
-      .distinctUntilChanged()
-      .bind(with: self) { owner, loading in
-        owner.view.isUserInteractionEnabled = !loading
-        if !loading {
-          owner.updateNextButtonState()
-        }
-      }
-      .disposed(by: disposeBag)
   }
 
   private func loadTags() {
@@ -177,6 +174,7 @@ class TagCheckViewController: UIViewController {
         onNext: { [weak self] tags in
           self?.tags = tags
           //          self?.tags = tags as! [PopularTag]
+          self?.selectedTags = Set(self?.favoriteTags ?? [])
           self?.tagCollectionView.reloadData()
         },
         onError: { error in
@@ -184,11 +182,6 @@ class TagCheckViewController: UIViewController {
         }
       )
       .disposed(by: disposeBag)
-  }
-
-  private func updateNextButtonState() {
-    let hasSelection = !selectedTags.isEmpty
-    nextButton.isEnabled = hasSelection
   }
 }
 
@@ -205,9 +198,7 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
     guard
       let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagButtonCell.identifier, for: indexPath)
         as? TagButtonCell
-    else {
-      return UICollectionViewCell()
-    }
+    else { return UICollectionViewCell() }
     let tag = tags[indexPath.item]
     let isSelected = selectedTags.contains(tag.tag)
     cell.configure(with: tag, isSelected: isSelected)
@@ -247,8 +238,12 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
       selectedTags.insert(tag.tag)
     }
 
+    self.favoriteTags = Array(self.selectedTags).sorted()
+    if let data = try? JSONEncoder().encode(self.favoriteTags) {
+      UserDefaults.standard.set(data, forKey: "favoriteTags")
+    }
+    print("[favoriteTags] -> \(self.favoriteTags)")
     collectionView.reloadItems(at: [indexPath])
-    updateNextButtonState()
   }
 }
 
@@ -280,7 +275,6 @@ class TagButtonCell: UICollectionViewCell {
     contentView.addSubview(tagButton)
     tagButton.snp.makeConstraints {
       $0.edges.equalToSuperview()
-      // $0.width.height.equalTo(80)
     }
   }
 

@@ -306,7 +306,7 @@ final class UserInfoViewController: UIViewController {
     formView.mailTextField,
     formView.pwTextField,
     formView.rePwTextField,
-    formView.nicknameTextField
+    formView.nicknameTextField,
   ]
 
   init(initialMail: String?) {
@@ -404,7 +404,10 @@ final class UserInfoViewController: UIViewController {
     okText: String,
     failText: String
   ) {
-    icon.image = UIImage(named: okStatus ? "accpet" : "reject")
+    let imageName = okStatus ? "accept" : "reject"
+    let image = UIImage(named: imageName)?.withRenderingMode(.alwaysOriginal)
+    icon.image = image
+    icon.isHidden = false
     label.text = okStatus ? okText : failText
     label.textColor = okStatus ? formView.acceptColor : formView.rejectColor
   }
