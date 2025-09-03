@@ -15,6 +15,7 @@ import RxRelay
 class PreviewReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.postManager) var postManager
+  @Dependency(\.tagManager) var tagManager
 
   let draft: PostDraft
   let steps = PublishRelay<Step>()
@@ -137,7 +138,36 @@ class PreviewReactor: Reactor, Stepper {
               let resultThumb = try await uploadedThumb
               let resultAttachments = try await uploadedAttachments
 
+              // 본문 이미지들 URL로 치환 (업로드 직후 fresh 결과 사용)
+              let contentForSave = self.replacingAttachmentsWithURLs(
+                in: self.currentState.content,
+                urls: resultAttachments
+              )
               observer.onNext(.setUploadResult(thumbnail: resultThumb, attachments: resultAttachments))
+
+              // 아카이빙
+              let archived = try self.archiveAttributedString(contentForSave)
+
+              #if DEBUG
+              print("치환 후 텍스트: \(contentForSave)")
+              print("아카이빙 바이트: \(archived.count)")
+              #endif
+
+              // 태그 존재하면 count += 1, 없으면 생성
+              do {
+                let ensuredTags = try await self.tagManager.upsertTags(names: self.currentState.tags)
+                #if DEBUG
+                print("✅ 태그 업서트 완료 수: \(ensuredTags.count)")
+                #endif
+              } catch {
+                #if DEBUG
+                print("❌ 태그 업서트 실패: \(error)")
+                #endif
+              }
+
+              // TODO: Post 저장
+              // TODO: 업로드한 유저의 라스티드업로드 업데이트
+
               observer.onNext(.setLoading(false))
               observer.onCompleted()
             } catch {
@@ -215,6 +245,44 @@ class PreviewReactor: Reactor, Stepper {
     return preview
   }
 
+  // 본문 내 이미지들을 URL 텍스트로 치환
+  func replacingAttachmentsWithURLs(
+    in original: NSAttributedString,
+    urls: [URL]
+  ) -> NSAttributedString {
+    var attachmentRanges: [NSRange] = []
+    original.enumerateAttribute(
+      .attachment,
+      in: NSRange(location: 0, length: original.length)) { value, range, _ in
+      if value is NSTextAttachment {
+        attachmentRanges.append(range)
+      }
+    }
+
+    let replaceCount = min(attachmentRanges.count, urls.count)
+    if replaceCount == 0 { return original }
+
+    let mutable = NSMutableAttributedString(attributedString: original)
+
+    // 뒤에서부터 치환 하여 range 변형 방지
+    for i in stride(from: replaceCount - 1, through: 0, by: -1) {
+      let replaceRange = attachmentRanges[i]
+      let urlString = urls[i].absoluteString
+      let replacement = NSMutableAttributedString(string: urlString)
+
+      if let url = URL(string: urlString) {
+        replacement.addAttribute(.link, value: url, range: NSRange(location: 0, length: replacement.length))
+      }
+      mutable.replaceCharacters(in: replaceRange, with: replacement)
+    }
+    return mutable
+  }
+
+  // 아카이빙
+  func archiveAttributedString(_ attributed: NSAttributedString) throws -> Data {
+    let data = try NSKeyedArchiver.archivedData(withRootObject: attributed, requiringSecureCoding: true)
+    return data
+  }
 }
 
 extension PreviewReactor {
