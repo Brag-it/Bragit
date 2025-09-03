@@ -33,8 +33,8 @@ class MyPageViewController: UIViewController, View {
   }
 
   func bind(reactor: MyPageReactor) {
-    self.rx.viewDidLoad
-      .flatMap {
+    self.rx.viewWillAppear
+      .flatMap {_ in
         Observable.from([
           .setUserInform,
           .loadMyPost
@@ -53,6 +53,22 @@ class MyPageViewController: UIViewController, View {
       )
 
       myPageView?.dataApply(profile: profile, posts: $0.posts)
+    }.disposed(by: disposeBag)
+
+    myPageView.settingButton.rx.tap.bind { [weak self] in
+      guard let self = self else { return }
+      let nicknameChangeVC = NickNameChangeViewController()
+
+      nicknameChangeVC.completion = { [weak self] in
+        guard let self = self else { return }
+        self.reactor?.action.onNext(.setUserInform)
+        self.reactor?.action.onNext(.loadMyPost)
+      }
+
+      if let sheet = nicknameChangeVC.sheetPresentationController {
+        sheet.detents = [.large()]
+      }
+      self.present(nicknameChangeVC, animated: true)
     }.disposed(by: disposeBag)
   }
 }

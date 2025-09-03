@@ -12,6 +12,10 @@ struct Post: Identifiable, Codable, Hashable {
     lhs.id == rhs.id
   }
 
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
+  }
+
   let id: UUID                     // 게시글 ID (PK)
   let title: String                // 제목
   let thumbnailImage: String?      // 썸네일
