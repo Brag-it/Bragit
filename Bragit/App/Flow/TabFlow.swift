@@ -134,9 +134,9 @@ final class TabFlow: NSObject, Flow, Stepper {
     ))
   }
 
-  func showComment(id: UUID)  -> FlowContributors {
+  func showComment(id: UUID) -> FlowContributors {
     guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
-    let reactor = CommentReactor(id: id)
+    let reactor = CommentReactor(postId: id)
     let commentVC = CommentViewController(reactor: reactor)
 
     commentVC.hidesBottomBarWhenPushed = true
