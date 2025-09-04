@@ -130,7 +130,9 @@ final class SettingView: UIView {
         }
 
         cell.contentConfiguration = content
-        cell.accessories = [.disclosureIndicator()]
+        cell.accessories = [.disclosureIndicator(
+          displayed: .always,
+          options: .init(reservedLayoutWidth: .custom(40), tintColor: .grayScale900))]
     }
 
     return UICollectionViewDiffableDataSource<Int, SettingItem>(collectionView: collectionView) {
