@@ -162,7 +162,7 @@ final class PostCell: UICollectionViewCell {
       followButton.isHidden = false
     }
 
-    if favoriteUsers != nil && favoriteUsers!.contains(data.author!.id) {
+    if favoriteUsers != nil && favoriteUsers!.contains(data.author?.id ?? "") {
       followButton.isSelected = true
     } else {
       followButton.isSelected = false

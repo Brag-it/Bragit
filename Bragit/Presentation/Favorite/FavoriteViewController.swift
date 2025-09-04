@@ -112,7 +112,10 @@ class FavoriteViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     // 게시글의 태그 탭
-    //favoriteView.feedView.postTagDidTap
+    favoriteView.feedView.postTagDidTap
+      .map { tag in .goToTagDetail(tag) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
     // 팔로우 버튼 탭
     favoriteView.feedView.followDidTap

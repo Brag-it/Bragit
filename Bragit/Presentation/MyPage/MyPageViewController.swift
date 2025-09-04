@@ -76,8 +76,10 @@ class MyPageViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // TODO: 태그 클릭 이벤트
-    //myPageView.tagDidTap.bind
+    myPageView.tagDidTap
+      .map { tag in .goToTagDetail(tag) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
     myPageView.followerTap
       .bind { reactor.action.onNext(.goToFollower) }

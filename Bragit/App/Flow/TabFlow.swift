@@ -43,6 +43,8 @@ final class TabFlow: NSObject, Flow, Stepper {
       return showDetailPost(post: post)
     case .comment(let id):
       return showComment(id: id)
+    case .tagInform(let tag):
+      return showTagDetail(tag: tag)
     default:
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
@@ -144,6 +146,19 @@ final class TabFlow: NSObject, Flow, Stepper {
 
     return .one(flowContributor: .contribute(
       withNextPresentable: commentVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  func showTagDetail(tag: Tag) -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    let reactor = TagDetailReactor(tag: tag)
+    let tagDetailVC = TagDetailViewController(reactor: reactor)
+
+    navigation.pushViewController(tagDetailVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: tagDetailVC,
       withNextStepper: reactor
     ))
   }

@@ -36,6 +36,7 @@ class FavoriteReactor: Reactor, Stepper {
     case tagTapped(Tag)
     case menuTapped(Int)
     case followButtonTapped(Post)
+    case goToTagDetail(Tag)
   }
 
   enum Mutation {
@@ -207,6 +208,9 @@ class FavoriteReactor: Reactor, Stepper {
           .just(.setLoading(false))
         ])
       }
+    case .goToTagDetail(let tag):
+      self.steps.accept(AppStep.tagInform(tag))
+      return .empty()
     }
   }
   // swiftlint:enable cyclomatic_complexity

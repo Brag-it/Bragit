@@ -29,6 +29,7 @@ class MyPageReactor: Reactor, Stepper {
     case goToFollower
     case goToFollowing
     case goToFavoriteTag
+    case goToTagDetail(Tag)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -126,6 +127,9 @@ class MyPageReactor: Reactor, Stepper {
       return .empty()
     case .goToFavoriteTag:
       steps.accept(AppStep.favoriteList(currentState.favoriteTags))
+      return .empty()
+    case .goToTagDetail(let tag):
+      self.steps.accept(AppStep.tagInform(tag))
       return .empty()
     }
   }
