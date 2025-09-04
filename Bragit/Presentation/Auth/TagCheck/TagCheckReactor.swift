@@ -15,7 +15,7 @@ import RxSwift
 final class TagCheckReactor: Reactor, Stepper {
   enum Action {
     case tapLater
-    case tapNext(tags: [String])
+    case tapNext(tags: [Tag])
   }
 
   enum Mutation {
@@ -36,7 +36,7 @@ final class TagCheckReactor: Reactor, Stepper {
 
   @Dependency(\.supabase) private var supabase
   @Dependency(\.authClient) private var authClient
-  @LocalStorage<[String]>(wrappedValue: [], location: .favoriteTags) private var favoriteTags
+  @LocalStorage(location: .favoriteTags) private var favoriteTags: [Tag]?
 
   init(userInfo: UserRegistrationInfo, profileURL: String?) {
     self.userInfo = userInfo

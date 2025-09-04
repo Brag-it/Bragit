@@ -46,11 +46,11 @@ final class UserInfoFormView: UIView {
   let textFont = UIFont.pretendard(size: 14, weight: .regular)
   let labelFont = UIFont.pretendard(size: 13, weight: .medium)
   let okFont = UIFont.pretendard(size: 16, weight: .medium)
-  let fontColor = UIColor(named: "grayScale900")
-  let labelColor = UIColor(named: "grayScale700")
-  let buttonColor = UIColor(named: "primary400")
-  let acceptColor = UIColor(red: 0.208, green: 0.78, blue: 0.349, alpha: 1)
-  let rejectColor = UIColor(red: 1, green: 0.224, blue: 0.235, alpha: 1)
+  let fontColor = UIColor.grayScale900
+  let labelColor = UIColor.grayScale700
+  let buttonColor = UIColor.primary400
+  let acceptColor = UIColor.systemSafe
+  let rejectColor = UIColor.systemDanger
 
   // Private stacks
   private let mailStack = UIStackView()

@@ -18,8 +18,8 @@ class TagCheckViewController: UIViewController {
   private let disposeBag = DisposeBag()
   @Dependency(\.tagManager) private var tagManager
   private var tags: [PopularTag] = []
-  var favoriteTags: [String] = []
 
+  @LocalStorage(location: .favoriteTags) private var favoriteTags: [Tag]?
   private let userInfo: UserRegistrationInfo
   private let injectReactor: TagCheckReactor
   var reactor: TagCheckReactor?
@@ -85,20 +85,13 @@ class TagCheckViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     // 가입할 때 태그 있으면 안 되니 아예 초기화
-    if UserDefaults.standard.data(forKey: "favoriteTags") != nil {
-      UserDefaults.standard.removeObject(forKey: "favoriteTags")
-      self.favoriteTags = []
-    }
+    self.favoriteTags = []
 
     view.backgroundColor = .systemBackground
     title = "회원가입"
     setupLayout()
     loadTags()
 
-    if let data = UserDefaults.standard.data(forKey: "favoriteTags"),
-      let decoded = try? JSONDecoder().decode([Tag].self, from: data) {
-      self.favoriteTags = decoded.map { $0.tag }
-    }
     self.reactor = injectReactor
     bind(reactor: injectReactor)
   }
@@ -161,29 +154,21 @@ class TagCheckViewController: UIViewController {
           selectedIndexPaths
           .sorted { $0.item < $1.item }
           .map { owner.tags[$0.item] }
-        let chosenNames = chosenModels.map { $0.tag }
-        owner.favoriteTags = chosenNames
+        owner.favoriteTags = chosenModels
 
-        if let data = try? JSONEncoder().encode(chosenModels) {
-          UserDefaults.standard.set(data, forKey: "favoriteTags")
-          print("[userDefaults(models)] -> \(chosenModels.map { $0.tag })")
-        } else {
-          UserDefaults.standard.removeObject(forKey: "favoriteTags")
-          print("[userDefaults(models)] -> []")
-        }
-        owner.debugPrintFavoriteTagsFromUserDefaults()
-        return TagCheckReactor.Action.tapNext(tags: owner.favoriteTags)
+        print("[Local.favoriteTags(models)] -> \(chosenModels.map { $0.tag })")
+
+        return TagCheckReactor.Action.tapNext(tags: chosenModels)
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
   }
 
   private func debugPrintFavoriteTagsFromUserDefaults() {
-    if let data = UserDefaults.standard.data(forKey: "favoriteTags"),
-      let decoded = try? JSONDecoder().decode([Tag].self, from: data) {
-      print("[UserDefaults.favoriteTags] -> \(decoded.map { $0.tag })")
+    if let decoded = favoriteTags {
+      print("[Local.favoriteTags] -> \(decoded.map { $0.tag })")
     } else {
-      print("[UserDefaults.favoriteTags] -> []")
+      print("[Local.favoriteTags] -> []")
     }
   }
 
@@ -195,8 +180,8 @@ class TagCheckViewController: UIViewController {
           guard let self else { return }
           self.tags = tags
           self.tagCollectionView.reloadData()
-          if !self.favoriteTags.isEmpty {
-            for (idx, tag) in self.tags.enumerated() where self.favoriteTags.contains(tag.tag) {
+          if let selectedTags = self.favoriteTags?.map({$0.tag}), !selectedTags.isEmpty {
+            for (idx, tag) in self.tags.enumerated() where selectedTags.contains(tag.tag) {
               let indexPath = IndexPath(item: idx, section: 0)
               self.tagCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
             }
@@ -216,7 +201,6 @@ class TagCheckViewController: UIViewController {
       selectedIndexPaths
       .sorted { $0.item < $1.item }
       .map { self.tags[$0.item].tag }
-    self.favoriteTags = chosen
     print("[favoriteTags] -> \(chosen)")
   }
 }
@@ -263,12 +247,6 @@ class TagButtonCell: UICollectionViewCell {
   private let containerView = UIView()
   private let titleLabel = UILabel()
 
-  private let enableColor = UIColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 1)
-  private let enableFontColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
-  private let disableColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
-  private let disableFontColor = UIColor(red: 0.54, green: 0.54, blue: 0.54, alpha: 1)
-  private let disableBorder = UIColor(red: 0.84, green: 0.84, blue: 0.84, alpha: 1)
-
   override var isSelected: Bool {
     didSet { updateStyle() }
   }
@@ -312,13 +290,13 @@ class TagButtonCell: UICollectionViewCell {
 
   private func updateStyle() {
     if isSelected {
-      containerView.backgroundColor = enableColor
-      containerView.layer.borderColor = enableColor.cgColor
-      titleLabel.textColor = enableFontColor
+      containerView.backgroundColor = .primary100
+      containerView.layer.borderColor = UIColor.primary100.cgColor
+      titleLabel.textColor = .grayScale900
     } else {
-      containerView.backgroundColor = disableColor
-      containerView.layer.borderColor = disableBorder.cgColor
-      titleLabel.textColor = disableFontColor
+      containerView.backgroundColor = .white
+      containerView.layer.borderColor = UIColor.grayScale100.cgColor
+      titleLabel.textColor = .grayScale600
     }
   }
 
