@@ -288,6 +288,11 @@ class DetailPostViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    followButton.rx.tap
+      .map { Reactor.Action.didTapFollow }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     likeButton.rx.tap
       .map { Reactor.Action.didTapLike }
       .bind(to: reactor.action)
@@ -309,6 +314,8 @@ class DetailPostViewController: UIViewController, View {
         likeCount.text = String(state.likeCount)
         uploadDateLabel.text = reactor.post.date.timeAgoDisplay()
         if state.isLiked == true {
+          let image = UIImage.favoriteFilled.resized(to: CGSize(width: 32, height: 32))
+          likeButton.setImage(image, for: .normal)
           likeButton.tintColor = .systemDanger
         }
         if state.isfollowed == true {
@@ -330,6 +337,22 @@ class DetailPostViewController: UIViewController, View {
         } else {
           profileImage.image = .profilePerson
         }
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .bind { [weak self] state in
+        guard let self else { return }
+        likeCount.text = String(state.likeCount)
+        likeButton.tintColor = state.isLiked ? .systemDanger : .grayScale900
+        let image = if state.isLiked == true {
+          UIImage.favoriteFilled.resized(to: CGSize(width: 32, height: 32))
+        } else {
+          UIImage.favorite.resized(to: CGSize(width: 32, height: 32))
+        }
+        likeButton.setImage(image, for: .normal)
+        followButton.setTitle(state.isfollowed ? "팔로잉" : "팔로우", for: .normal)
+        followButton.backgroundColor = state.isfollowed ? .grayScale100 : .primary100
       }
       .disposed(by: disposeBag)
 
