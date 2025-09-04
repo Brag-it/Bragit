@@ -35,6 +35,10 @@ final class TabFlow: NSObject, Flow, Stepper {
       return coordinateToTabBar()
     case .writeFeed:
       return presentWriteFlow()
+    case .feedDetail(let post):
+      return showDetailPost(post: post)
+//    case .comment(let id):
+//      return showComment(id: id)
     default:
       return .none
     }
@@ -99,6 +103,34 @@ final class TabFlow: NSObject, Flow, Stepper {
       withNextStepper: OneStepper(withSingleStep: AppStep.writeFeed)
     ))
   }
+
+  func showDetailPost(post: Post) -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    let reactor = DetailPostReactor(post: post)
+    let detailPostVC = DetailPostViewController(reactor: reactor)
+
+    detailPostVC.hidesBottomBarWhenPushed = true
+    navigation.pushViewController(detailPostVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: detailPostVC,
+      withNextStepper: reactor
+    ))
+  }
+
+//  func showComment(id: UUID)  -> FlowContributors {
+//    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+//    let reactor = CommentReactor(id: id)
+//    let commentVC = CommentViewController(reactor: reactor)
+//
+//    commentVC.hidesBottomBarWhenPushed = true
+//    navigation.pushViewController(commentVC, animated: true)
+//
+//    return .one(flowContributor: .contribute(
+//      withNextPresentable: commentVC,
+//      withNextStepper: reactor
+//    ))
+//  }
 }
 
 extension TabFlow: UITabBarControllerDelegate {

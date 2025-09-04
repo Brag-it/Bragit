@@ -84,5 +84,15 @@ class HomeViewController: UIViewController, View {
         self?.homeView.feedView.reconfigurePosts(posts)
       }
       .disposed(by: disposeBag)
+
+    homeView.feedView.collectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath -> Post? in
+        return self?.homeView.feedView.dataSource.itemIdentifier(for: indexPath)
+      }
+      .map { post in
+        Reactor.Action.didTapPost(post)
+      }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
