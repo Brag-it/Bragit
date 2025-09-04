@@ -31,15 +31,17 @@ class DetailPostReactor: Reactor, Stepper {
   struct State {
     let title: String          // 제목
     let content: NSAttributedString  // 내용
-    let nickName: String                // 작성자 닉네임(빈 값 가능)
+    let nickName: String                // 게시글 작성자 닉네임(빈 값 가능)
     var isLoading: Bool = false         // 로딩 표시
+    let viewer: Bool                    // 작성자 본인판별
   }
 
   init(post: Post) {
     self.initialState = State(
       title: post.title,
       content: DetailPostReactor.unarchivedContent(content: post.content),
-      nickName: post.author?.nickname ?? "탈퇴한 유저 입니다"
+      nickName: post.author?.nickname ?? "탈퇴한 유저 입니다",
+      viewer: post.author?.id == UserDefaults.standard.string(forKey: LocalStorageCase.nowUser.rawValue)
     )
     self.post = post
   }
