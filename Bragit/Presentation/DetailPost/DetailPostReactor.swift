@@ -15,6 +15,9 @@ import Dependencies
 class DetailPostReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.userManager) var userManager
+  @LocalStorage(location: .likePosts) var likePosts: [String]?
+  @LocalStorage(location: .nowUser) var nowUser: String?
+
   let post: Post
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
@@ -32,19 +35,30 @@ class DetailPostReactor: Reactor, Stepper {
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
-    let title: String          // 제목
-    let content: NSAttributedString  // 내용
-    let nickName: String                // 게시글 작성자 닉네임(빈 값 가능)
-    var isLoading: Bool = false         // 로딩 표시
-    let viewer: Bool                    // 작성자 본인판별
+    let title: String               // 제목
+    let content: NSAttributedString // 내용
+    let nickName: String            // 게시글 작성자 닉네임
+    let profileImage: String?       // 프로필 사진
+    var isLoading: Bool = false     // 로딩 표시
+    let viewer: Bool                // 작성자 본인판별
+    var isLiked: Bool               // 좋아요 눌렀는지
+    var likeCount: Int              // 좋아요 수
+    var isfollowed: Bool            // 팔로우 여부
   }
 
   init(post: Post) {
+    @LocalStorage(location: .likePosts) var likePosts: [String]?
+    @LocalStorage(location: .nowUser) var nowUser: String?
+    @LocalStorage(location: .followUser) var followUser: [String]?
     self.initialState = State(
       title: post.title,
       content: DetailPostReactor.unarchivedContent(content: post.content),
       nickName: post.author?.nickname ?? "탈퇴한 유저 입니다",
-      viewer: post.author?.id == UserDefaults.standard.string(forKey: LocalStorageCase.nowUser.rawValue)
+      profileImage: post.author?.profile ?? nil,
+      viewer: post.author?.id == nowUser,
+      isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
+      likeCount: post.like,
+      isfollowed: followUser?.contains { $0 == post.author?.id } ?? false
     )
     self.post = post
   }

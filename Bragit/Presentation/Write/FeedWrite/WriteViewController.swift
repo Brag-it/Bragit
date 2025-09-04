@@ -95,7 +95,6 @@ class WriteViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
-
     titleTextField.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom).offset(24)
       $0.leading.trailing.equalToSuperview().inset(20)

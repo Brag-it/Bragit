@@ -12,11 +12,19 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import Then
+import Kingfisher
 
 class DetailPostViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let reportAlert = AlertView.makeAlert(style: .reportPost)
   private let deleteAlert = AlertView.makeAlert(style: .deletePost)
+  private let differentMenu = MenuView(items: ["신고하기"])
+  private let selfMenu = MenuView(items: ["신고하기", "삭제하기"])
+
+  private let activityIndicator = UIActivityIndicatorView(style: .large).then {
+    $0.hidesWhenStopped = true
+    $0.color = .primary400
+  }
 
   private let headerView = UIView()
   private let bottomView = UIView()
@@ -26,7 +34,7 @@ class DetailPostViewController: UIViewController, View {
     $0.tintColor = .grayScale900
   }
 
-  private let titleLabel = UILabel().then {
+  private let headerLabel = UILabel().then {
     $0.text = "게시물"
     $0.font = UIFont.systemFont(ofSize: 16)
     $0.textColor = .grayScale900
@@ -38,14 +46,61 @@ class DetailPostViewController: UIViewController, View {
     $0.setImage(.kebab, for: .normal)
     $0.tintColor = .grayScale900
   }
+  private let scrollView = UIScrollView()
 
-  private let favoriteButton = UIButton(type: .system).then {
+  private let scrollContentView = UIView()
+
+  private let titleView = UIView()
+
+  private let uploadDateLabel = UILabel().then {
+    $0.font = .pretendard(size: 13)
+    $0.text = "몇분 전"
+    $0.textColor = .grayScale400
+  }
+
+  private let titleLabel = UILabel().then {
+    $0.numberOfLines = 0
+    $0.font = .pretendard(size: 20, weight: .semibold)
+  }
+
+  private let profileImage = UIImageView().then {
+    $0.contentMode = .scaleAspectFill
+    $0.layer.cornerRadius = 18
+    $0.clipsToBounds = true
+    $0.kf.indicatorType = .activity // Kingfisher 인디케이터
+  }
+
+  private let nickNameLabel = UILabel().then {
+    $0.font = .pretendard(size: 15, weight: .medium)
+    $0.textColor = .grayScale900
+  }
+
+  private let followButton = UIButton(type: .system).then {
+    $0.setTitle("팔로우", for: .normal)
+    $0.titleLabel?.font = .pretendard(size: 16, weight: .medium)
+    $0.setTitleColor(.grayScale900, for: .normal)
+    $0.backgroundColor = .primary100
+    $0.layer.cornerRadius = 12
+  }
+
+  private let dividerView = UIView().then {
+    $0.backgroundColor = .grayScale100
+  }
+
+  private let contentView = UITextView().then {
+    $0.isEditable = false
+    $0.isScrollEnabled = false
+    $0.textContainerInset = .zero
+    $0.textContainer.lineFragmentPadding = 0
+  }
+
+  private let likeButton = UIButton(type: .system).then {
     let image = UIImage.favorite.resized(to: CGSize(width: 32, height: 32))
     $0.setImage(image, for: .normal)
     $0.tintColor = .grayScale900
   }
 
-  private let favoriteCount = UILabel().then {
+  private let likeCount = UILabel().then {
     $0.font = .pretendard(size: 16)
     $0.textColor = .grayScale600
   }
@@ -68,11 +123,6 @@ class DetailPostViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
-    let menu = if reactor?.currentState.viewer == true{
-      MenuView(items: ["수정하기", "삭제하기"])
-    } else {
-      MenuView(items: ["수정하기"])
-    }
 
     setUIConstraints()
     print("제목 : \(String(describing: reactor?.currentState.title))")
@@ -86,13 +136,31 @@ class DetailPostViewController: UIViewController, View {
 
     view.addSubview(headerView)
     headerView.addSubview(backButton)
-    headerView.addSubview(titleLabel)
+    headerView.addSubview(headerLabel)
     headerView.addSubview(kebabButton)
 
+    view.addSubview(scrollView)
+    scrollView.addSubview(scrollContentView)
+    scrollContentView.addSubview(titleView)
+    scrollContentView.addSubview(contentView)
+
+    scrollContentView.addSubview(activityIndicator)
+
+    titleView.addSubview(uploadDateLabel)
+    titleView.addSubview(titleLabel)
+    titleView.addSubview(profileImage)
+    titleView.addSubview(followButton)
+    titleView.addSubview(nickNameLabel)
+    titleView.addSubview(dividerView)
+
     view.addSubview(bottomView)
-    bottomView.addSubview(favoriteButton)
-    bottomView.addSubview(favoriteCount)
+    bottomView.addSubview(likeButton)
+    bottomView.addSubview(likeCount)
     bottomView.addSubview(commentButton)
+
+    activityIndicator.snp.makeConstraints {
+      $0.center.equalTo(contentView)
+    }
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
@@ -105,7 +173,7 @@ class DetailPostViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
-    titleLabel.snp.makeConstraints {
+    headerLabel.snp.makeConstraints {
       $0.centerX.equalTo(headerView.snp.centerX)
       $0.centerY.equalTo(headerView.snp.centerY)
       $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
@@ -117,19 +185,78 @@ class DetailPostViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
+    scrollView.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom)
+      $0.leading.trailing.equalToSuperview()
+      $0.bottom.equalTo(bottomView.snp.top)
+    }
+
+    scrollContentView.snp.makeConstraints {
+      $0.directionalEdges.equalTo(scrollView.contentLayoutGuide)
+      $0.width.equalTo(scrollView.frameLayoutGuide)
+    }
+
+    titleView.snp.makeConstraints {
+      $0.top.equalToSuperview().inset(24)
+      $0.leading.trailing.equalToSuperview().inset(20)
+    }
+
+    uploadDateLabel.snp.makeConstraints {
+      $0.top.equalToSuperview()
+      $0.leading.equalToSuperview()
+    }
+
+    titleLabel.snp.makeConstraints {
+      $0.top.equalTo(uploadDateLabel.snp.bottom).offset(8)
+      $0.leading.equalToSuperview()
+    }
+
+    profileImage.snp.makeConstraints {
+      $0.top.equalTo(titleLabel.snp.bottom).offset(16)
+      $0.leading.equalToSuperview()
+      $0.width.height.equalTo(36)
+    }
+
+    nickNameLabel.snp.makeConstraints {
+      $0.top.equalTo(profileImage)
+      $0.centerY.equalTo(profileImage)
+      $0.leading.equalTo(profileImage.snp.trailing).offset(12)
+    }
+
+    followButton.snp.makeConstraints {
+      $0.top.equalTo(profileImage)
+      $0.leading.greaterThanOrEqualTo(nickNameLabel.snp.trailing).offset(32)
+      $0.trailing.equalToSuperview()
+      $0.width.equalTo(66)
+      $0.height.equalTo(40)
+    }
+
+    dividerView.snp.makeConstraints {
+      $0.top.equalTo(followButton.snp.bottom).offset(18)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(1)
+      $0.bottom.equalToSuperview()
+    }
+
+    contentView.snp.makeConstraints {
+      $0.top.equalTo(dividerView.snp.bottom).offset(24)
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalTo(scrollContentView.snp.bottom).inset(24)
+    }
+
     bottomView.snp.makeConstraints {
       $0.bottom.equalTo(view.safeAreaLayoutGuide)
       $0.leading.trailing.equalToSuperview()
       $0.height.equalTo(52)
     }
 
-    favoriteButton.snp.makeConstraints {
+    likeButton.snp.makeConstraints {
       $0.leading.equalToSuperview().offset(20)
       $0.centerY.equalTo(bottomView.snp.centerY)
     }
 
-    favoriteCount.snp.makeConstraints {
-      $0.leading.equalTo(favoriteButton.snp.trailing).offset(4)
+    likeCount.snp.makeConstraints {
+      $0.leading.equalTo(likeButton.snp.trailing).offset(4)
       $0.centerY.equalTo(bottomView.snp.centerY)
     }
 
@@ -161,7 +288,7 @@ class DetailPostViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    favoriteButton.rx.tap
+    likeButton.rx.tap
       .map { Reactor.Action.didTapLike }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
@@ -170,5 +297,94 @@ class DetailPostViewController: UIViewController, View {
       .map { Reactor.Action.didTapComment }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    reactor.state
+      .take(1)
+      .observe(on: MainScheduler.instance)
+      .bind { [weak self] state in
+        guard let self else { return }
+        titleLabel.text = state.title
+        nickNameLabel.text = state.nickName
+        contentView.attributedText = state.content
+        likeCount.text = String(state.likeCount)
+        uploadDateLabel.text = reactor.post.date.timeAgoDisplay()
+        // 프로필 이미지 nil이면 기본 이미지 유지
+        if let urlString = reactor.post.author?.profile, let url = URL(string: urlString) {
+          profileImage.kf.setImage(
+            with: url,
+            options: [
+              .transition(.fade(0.2)),
+              .cacheOriginalImage
+            ]
+          )
+        } else {
+          profileImage.image = .profilePerson
+        }
+      }
+      .disposed(by: disposeBag)
+
+    rx.viewDidLayoutSubviews
+      .map { [weak self] in
+        // 텍스트가 실제로 그려질 폭 계산
+        guard let self = self else { return 0.0 }
+        let width = self.contentView.textContainer.size.width
+        return width > 0 ? width : contentView.bounds.width
+      }
+      .filter { $0 > 0 }   // 폭이 0이면 아직 레이아웃 전이기 때문에 스킵
+      .take(1)
+      .withLatestFrom(reactor.state.map(\.content).take(1)) { (maxWidth: $0, original: $1) }
+      .do { [weak self] _ in
+        guard let self = self else { return }
+        activityIndicator.startAnimating()
+        contentView.isHidden = true
+      }
+      .flatMapLatest { [weak self] pair -> Observable<NSAttributedString> in
+        guard let self = self else { return .empty() }
+        return Observable.create { observer in
+          Task {
+            let text = await self.replaceLinksWithImages(in: pair.original, maxWidth: pair.maxWidth)
+            observer.onNext(text)
+            observer.onCompleted()
+          }
+          return Disposables.create()
+        }
+      }
+      .observe(on: MainScheduler.instance)
+      .do { [weak self] _ in
+        guard let self = self else { return }
+        self.activityIndicator.stopAnimating()
+        self.contentView.isHidden = false
+      }
+      .bind(to: contentView.rx.attributedText)  // 치환 결과 적용
+      .disposed(by: disposeBag)
+
+  }
+
+  func replaceLinksWithImages(in attributed: NSAttributedString, maxWidth: CGFloat) async -> NSAttributedString {
+    let mutable = NSMutableAttributedString(attributedString: attributed)
+    var linkRanges: [(NSRange, URL)] = []
+
+    attributed.enumerateAttribute(.link, in: NSRange(location: 0, length: attributed.length)) { value, range, _ in
+      if let url = value as? URL { linkRanges.append((range, url)) }
+    }
+    guard !linkRanges.isEmpty else { return attributed }
+
+    for (range, url) in linkRanges.reversed() { // 뒤에서부터 치환 (range 안정)
+      do {
+        let result = try await KingfisherManager.shared.retrieveImage(with: url)
+        let image = result.image
+        let target = CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
+        let fitted = image.kf.resize(to: target, for: .aspectFit)
+
+        let attachment = NSTextAttachment()
+        attachment.image = fitted
+        let imgAttr = NSAttributedString(attachment: attachment)
+        mutable.replaceCharacters(in: range, with: imgAttr)
+      } catch {
+        // 실패 시 링크 텍스트 그대로
+        print("replaceLinksWithImages error:", error.localizedDescription)
+      }
+    }
+    return mutable
   }
 }
