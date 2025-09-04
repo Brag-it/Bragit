@@ -23,7 +23,7 @@ final class MyPageFlow: Flow {
       nav.popViewController(animated: true)
       return .none
     default:
-      return .none
+      return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
   }
 
