@@ -39,6 +39,7 @@ final class HomeFlow: Flow {
     let reactor = DetailPostReactor(post: post)
     let detailPostVC = DetailPostViewController(reactor: reactor)
 
+    detailPostVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(detailPostVC, animated: true)
 
     return .one(flowContributor: .contribute(
