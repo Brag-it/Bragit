@@ -19,6 +19,10 @@ enum MyPageItem: Hashable {
 
 final class MyPageView: UIView {
 
+  let followerTap = PublishRelay<Void>()
+  let followingTap = PublishRelay<Void>()
+  let favoriteTagTap = PublishRelay<Void>()
+
   let editNicknameTap = PublishRelay<Void>()
   var disposeBag = DisposeBag()
   let tagDidTap = PublishRelay<Tag>()
@@ -121,9 +125,13 @@ final class MyPageView: UIView {
     _ collectionView: UICollectionView) -> UICollectionViewDiffableDataSource<Int, MyPageItem> {
 
       let profilCellRegistration = UICollectionView.CellRegistration<MyPageProfileCell, Profile> {
-        [editNicknameTap] cell, _, item in
+        [weak self] cell, _, item in
+        guard let self = self else { return }
         cell.editNickNameButton.rx.tap.bind(to: editNicknameTap).disposed(by: cell.disposeBag)
         cell.configure(profile: item)
+        cell.followerTap.rx.event.map { _ in }.bind(to: followerTap).disposed(by: cell.disposeBag)
+        cell.followingTap.rx.event.map { _ in }.bind(to: followingTap).disposed(by: cell.disposeBag)
+        cell.favoriteTagsTap.rx.event.map { _ in }.bind(to: favoriteTagTap).disposed(by: cell.disposeBag)
       }
 
       let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in

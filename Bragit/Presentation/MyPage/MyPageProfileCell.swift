@@ -37,10 +37,12 @@ final class MyPageProfileCell: UICollectionViewCell {
     $0.configuration = configuration
   }
 
+  let followerTap = UITapGestureRecognizer()
+  let followingTap = UITapGestureRecognizer()
+  let favoriteTagsTap = UITapGestureRecognizer()
+
   private let followerView = UserInfoView(number: "0", info: "팔로워")
-
   private let followingView = UserInfoView(number: "0", info: "팔로잉")
-
   private let favoriteTagsView = UserInfoView(number: "0", info: "관심 태그")
 
   private let stackView = UIStackView().then {
@@ -55,6 +57,22 @@ final class MyPageProfileCell: UICollectionViewCell {
   override init(frame: CGRect) {
     super.init(frame: frame)
 
+    setUI()
+    followerView.addGestureRecognizer(followerTap)
+    followingView.addGestureRecognizer(followingTap)
+    favoriteTagsView.addGestureRecognizer(favoriteTagsTap)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    self.disposeBag = DisposeBag()
+  }
+
+  private func setUI() {
     contentView.addSubview(profileImageView)
     contentView.addSubview(editNickNameButton)
     contentView.addSubview(stackView)
@@ -85,16 +103,6 @@ final class MyPageProfileCell: UICollectionViewCell {
       $0.height.equalTo(10)
     }
   }
-
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
-  override func prepareForReuse() {
-    super.prepareForReuse()
-    self.disposeBag = DisposeBag()
-  }
-
   func configure(profile: Profile) {
     editNickNameButton.setTitle(profile.nickName, for: .normal)
     followerView.setNumber(number: String(profile.follwerCount))

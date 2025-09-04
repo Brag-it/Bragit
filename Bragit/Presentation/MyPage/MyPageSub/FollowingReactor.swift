@@ -1,8 +1,8 @@
 //
-//  SettingReactor.swift
+//  FollowingReactor.swift
 //  Bragit
 //
-//  Created by seongjun cho on 9/3/25.
+//  Created by seongjun cho on 9/4/25.
 //
 
 import ReactorKit
@@ -12,16 +12,16 @@ import RxRelay
 import Then
 import Dependencies
 
-class SettingReactor: Reactor, Stepper {
+class FollowingReactor: Reactor, Stepper {
   var initialState: State
   let steps = PublishRelay<Step>()
+  @Dependency(\.userManager) var userManager
 
   private let disposeBag = DisposeBag()
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
     case backButtonTap
-    case cancelAccountButtonTap
-    case logoutButtonTap
+    case followButtonTap(User)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -43,11 +43,21 @@ class SettingReactor: Reactor, Stepper {
     case .backButtonTap:
       steps.accept(AppStep.dismiss)
       return .empty()
-    case .cancelAccountButtonTap:
-      steps.accept(AppStep.cancelAccount)
-      return .empty()
-    case .logoutButtonTap:
-      steps.accept(AppStep.login)
+    case .followButtonTap(let user):
+      Task {
+        do {
+          @LocalStorage(location: .followUser) var followUser: [String]?
+          if followUser?.contains(user.id) == true {
+            followUser = followUser?.filter { $0 != user.id }
+            try await self.userManager.unfollowUser(id: user.id)
+          } else {
+            followUser = (followUser ?? []) + [user.id]
+            try await self.userManager.followUser(id: user.id)
+          }
+        } catch {
+          print(error)
+        }
+      }
       return .empty()
     }
   }
