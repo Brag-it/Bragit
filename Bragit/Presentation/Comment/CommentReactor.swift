@@ -50,8 +50,8 @@ final class CommentReactor: Reactor, Stepper {
     let postId: UUID
     let content: String
     let date: Date
-    let commenterId: String
-    let user: CommentUser?
+    let commenterId: String?   // null/빈 값 허용
+    let user: CommentUser?     // 조인 결과가 없을 수 있음
 
     enum CodingKeys: String, CodingKey {
       case id
@@ -82,7 +82,7 @@ final class CommentReactor: Reactor, Stepper {
           formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
           rows.forEach { row in
             let dateString = formatter.string(from: row.date)
-            let nick = row.user?.nickname ?? "탈퇴한 회원"
+            let nick = row.user?.nickname?.isEmpty == false ? row.user!.nickname! : "탈퇴한 회원"
             print("Reactor with nick: \(nick), content: \(row.content), date: \(dateString)")
           }
         }
@@ -126,10 +126,10 @@ final class CommentReactor: Reactor, Stepper {
       }
       let task = Task {
         do {
-          // 작성자 정보(User_Info)까지 조인해서 가져오기
+          // 작성자 정보(User_Info)까지 LEFT JOIN으로 가져오기
           let rows: [CommentRow] = try await self.supabase
             .from("Comment")
-            .select("id, post_id, content, date, commenter_id, User_Info(nickname, profile)")
+            .select("id, post_id, content, date, commenter_id, User_Info!left(nickname, profile)")
             .eq("post_id", value: postId)
             .order("date", ascending: true)
             .execute()
@@ -145,4 +145,3 @@ final class CommentReactor: Reactor, Stepper {
     }
   }
 }
-
