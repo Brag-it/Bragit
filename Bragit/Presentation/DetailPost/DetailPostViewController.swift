@@ -22,7 +22,7 @@ class DetailPostViewController: UIViewController, View {
   private let bottomView = UIView()
 
   private let backButton = UIButton(type: .system).then {
-    $0.setImage(.xMarker, for: .normal)
+    $0.setImage(.back, for: .normal)
     $0.tintColor = .grayScale900
   }
 
@@ -154,6 +154,21 @@ class DetailPostViewController: UIViewController, View {
 
     deleteAlert.rightTap
       .bind { print("삭제 버튼 누름") }
+      .disposed(by: disposeBag)
+
+    backButton.rx.tap
+      .map { Reactor.Action.didTapBack }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    favoriteButton.rx.tap
+      .map { Reactor.Action.didTapLike }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    commentButton.rx.tap
+      .map { Reactor.Action.didTapComment }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
   }
 }

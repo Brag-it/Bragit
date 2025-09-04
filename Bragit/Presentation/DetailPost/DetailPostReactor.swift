@@ -21,6 +21,9 @@ class DetailPostReactor: Reactor, Stepper {
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
+    case didTapBack
+    case didTapLike
+    case didTapComment
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -51,6 +54,14 @@ class DetailPostReactor: Reactor, Stepper {
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
 
+    case .didTapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
+    case .didTapLike:
+      return .empty()
+    case .didTapComment:
+      steps.accept(AppStep.comment(id: post.id))
+      return .empty()
     }
 
   }
