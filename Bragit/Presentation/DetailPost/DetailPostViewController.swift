@@ -20,7 +20,7 @@ class DetailPostViewController: UIViewController, View {
   private let reportAlert = AlertView.makeAlert(style: .reportPost)
   private let deleteAlert = AlertView.makeAlert(style: .deletePost)
   private let differentMenu = MenuView(items: ["신고하기"])
-  private let selfMenu = MenuView(items: ["신고하기", "삭제하기"])
+  private let selfMenu = MenuView(items: ["수정하기", "삭제하기"])
 
   private let activityIndicator = UIActivityIndicatorView(style: .large).then {
     $0.hidesWhenStopped = true
@@ -278,16 +278,58 @@ class DetailPostViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     reportAlert.rightTap
-      .bind { print("신고 버튼 누름") }
+      .map { Reactor.Action.didTapReport }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     deleteAlert.rightTap
       .bind { print("삭제 버튼 누름") }
       .disposed(by: disposeBag)
 
+    selfMenu.itemTap
+      .bind { [weak self] index in
+        guard let self else { return }
+        if index == 0 {
+          self.reactor?.action.onNext(.didTapEdit)
+        } else if index == 1 {
+          deleteAlert.show(in: view)
+        }
+      }
+      .disposed(by: disposeBag)
+
+    differentMenu.itemTap
+      .bind { [weak self] index in
+        guard let self else { return }
+        if index == 0 {
+          reportAlert.show(in: view)
+        }
+      }
+      .disposed(by: disposeBag)
+
     backButton.rx.tap
       .map { Reactor.Action.didTapBack }
       .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    kebabButton.rx.tap
+      .bind { [weak self] in
+        guard let self = self else { return }
+
+        let buttonFrameInView = kebabButton.convert(kebabButton.bounds, to: view)
+
+        let menuWidth: CGFloat = 120
+        let spacing: CGFloat = 8
+
+        let originX = buttonFrameInView.maxX - menuWidth
+        let originY = buttonFrameInView.maxY + spacing
+        let sourcePoint = CGPoint(x: originX, y: originY)
+
+        if self.reactor?.currentState.viewer == true {
+          selfMenu.show(in: view, sourcePoint: sourcePoint)
+        } else {
+          differentMenu.show(in: view, sourcePoint: sourcePoint)
+        }
+      }
       .disposed(by: disposeBag)
 
     followButton.rx.tap

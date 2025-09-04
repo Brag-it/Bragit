@@ -30,6 +30,8 @@ class DetailPostReactor: Reactor, Stepper {
     case didTapLike
     case didTapComment
     case didTapFollow
+    case didTapEdit
+    case didTapReport
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -116,9 +118,9 @@ class DetailPostReactor: Reactor, Stepper {
             self.likePosts = ids
           }
           let rollbackCount = max(0, optimisticCount + (willLike ? -1 : +1))
-          #if DEBUG
+#if DEBUG
           print("inc_post_like RPC 실패:", error.localizedDescription)
-          #endif
+#endif
           return .just(.setIsLike(!willLike, rollbackCount))
         }
       return optimistic.concat(sync)
@@ -169,6 +171,12 @@ class DetailPostReactor: Reactor, Stepper {
 
         return Disposables.create()
       }
+    case .didTapEdit:
+      //      steps.accept(AppStep.edit(postId: currentState.post))
+      return .empty()
+
+    case .didTapReport:
+      return .empty()
     }
   }
   // swiftlint:enable cyclomatic_complexity
