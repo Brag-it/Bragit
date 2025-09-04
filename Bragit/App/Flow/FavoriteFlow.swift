@@ -18,7 +18,7 @@ final class FavoriteFlow: Flow {
     case .favorite:
       return showFavoriteRoot()
     default:
-      return .none
+      return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
   }
 
