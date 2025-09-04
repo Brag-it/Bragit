@@ -14,6 +14,7 @@ import RxRelay
 class FeedView: UIView {
 
   let followDidTap = PublishRelay<Post>()
+  let tagDidTap = PublishRelay<Tag>()
 
   lazy var collectionView = UICollectionView(
     frame: .zero,
@@ -89,6 +90,9 @@ class FeedView: UIView {
 
         cell.followDidTap
           .bind(to: self.followDidTap)
+          .disposed(by: cell.reusableDisposeBag)
+        cell.tagsView.tagDidTap
+          .bind(to: self.tagDidTap)
           .disposed(by: cell.reusableDisposeBag)
       }
 

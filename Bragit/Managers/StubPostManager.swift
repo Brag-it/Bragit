@@ -153,4 +153,90 @@ class StubPostManager: PostManagerProtocol {
   func searchPosts(searchText: String) async throws -> [Post] {
     return Self.samplePosts
   }
+
+  // 썸네일 이미지 업로드
+  func uploadImage(data: Data, fileName: String, folder: String) async throws -> URL {
+    // 뭐하는 코드? → 프로토콜 충족용. 네트워크 업로드 없이 테스트 가능한 URL 생성
+    return URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/600/400")!
+  }
+
+  func rxUploadImage(data: Data, fileName: String, folder: String) -> Observable<URL> {
+    let url = URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/600/400")!
+    return .just(url)
+  }
+
+  // 본문 이미지 업로드
+  func uploadImages(datas: [Data], folder: String) async throws -> [URL] {
+    return try await withCheckedThrowingContinuation { continuation in
+      let urls = (0..<datas.count).map { _ in
+        URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/800/600")!
+      }
+      continuation.resume(returning: urls)
+    }
+  }
+
+  func rxUploadImages(datas: [Data], folder: String) -> Observable<[URL]> {
+    let urls = (0..<datas.count).map { _ in
+      URL(string: "https://picsum.photos/seed/\(UUID().uuidString)/800/600")!
+    }
+    return .just(urls)
+  }
+
+  func createPost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data) async throws -> Post {
+      let author = Author(id: authorId, nickname: nil, profile: nil)
+      let post = Post(
+        id: UUID(uuidString: postId) ?? UUID(),
+        title: title,
+        thumbnailImage: thumbnailURL?.absoluteString,
+        author: author,
+        date: Date(),
+        tags: [],
+        content: "[archived:",
+        like: 0,
+        reports: 0,
+        commentCount: 0,
+        description: description
+      )
+      return post
+    }
+
+  func rxCreatePost(
+    postId: String,
+    authorId: String,
+    title: String,
+    description: String,
+    thumbnailURL: URL?,
+    archivedContent: Data) -> RxSwift.Observable<Post> {
+      let author = Author(id: authorId, nickname: nil, profile: nil)
+      let post = Post(
+        id: UUID(uuidString: postId) ?? UUID(),
+        title: title,
+        thumbnailImage: thumbnailURL?.absoluteString,
+        author: author,
+        date: Date(),
+        tags: [],
+        content: "[archived:",
+        like: 0,
+        reports: 0,
+        commentCount: 0,
+        description: description
+      )
+      return .just(post)
+    }
+
+  func attachTags(postId: String, tagIds: [String]) async throws {
+    _ = (postId, tagIds)
+    return
+  }
+
+  func rxAttachTags(postId: String, tagIds: [String]) -> RxSwift.Observable<Void> {
+    _ = (postId, tagIds)
+    return .just(())
+  }
 }

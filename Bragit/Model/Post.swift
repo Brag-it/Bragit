@@ -12,6 +12,10 @@ struct Post: Identifiable, Codable, Hashable {
     lhs.id == rhs.id
   }
 
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
+  }
+
   let id: UUID                     // 게시글 ID (PK)
   let title: String                // 제목
   let thumbnailImage: String?      // 썸네일
@@ -75,13 +79,13 @@ struct Post: Identifiable, Codable, Hashable {
     thumbnailImage = try container.decodeIfPresent(String.self, forKey: .thumbnailImage)
     author = try container.decodeIfPresent(Author.self, forKey: .author)
     date = try container.decode(Date.self, forKey: .date)
-    tags = try container.decode([Tag].self, forKey: .tags)
+    tags = try container.decodeIfPresent([Tag].self, forKey: .tags) ?? []
     content = try container.decode(String.self, forKey: .content)
     like = try container.decode(Int.self, forKey: .like)
     reports = try container.decode(Int.self, forKey: .reports)
     description = try container.decode(String.self, forKey: .description)
 
-    let commentCountWrappers = try container.decode([CommentCountWrapper].self, forKey: .commentCount)
+    let commentCountWrappers = try container.decodeIfPresent([CommentCountWrapper].self, forKey: .commentCount) ?? []
     commentCount = commentCountWrappers.first?.count ?? 0
   }
 

@@ -2,8 +2,6 @@
 included:
   - Bragit/App
   - Bragit/Presentation
-  - Bragit/Model
-  - Bragit/Managers
   
 # 검사에서 제외할 디렉토리 (외부 의존성, 설정 등)
 excluded:

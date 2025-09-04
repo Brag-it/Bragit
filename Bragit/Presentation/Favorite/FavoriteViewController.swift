@@ -111,6 +111,9 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // 게시글의 태그 탭
+    //favoriteView.feedView.postTagDidTap
+
     // 팔로우 버튼 탭
     favoriteView.feedView.followDidTap
       .throttle(.milliseconds(500), scheduler: MainScheduler.instance)

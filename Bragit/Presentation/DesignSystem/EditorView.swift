@@ -82,11 +82,18 @@ final class EditorView: UIView {
 
     // 현재 커서 위치에 이미지 AttributedString을 삽입
     let textStorage = textView.textStorage
-    textStorage.insert(imageAttributedString, at: textView.selectedRange.location)
+    let insertionIndex = textView.selectedRange.location
+    textStorage.insert(imageAttributedString, at: insertionIndex)
 
-    // 이미지 삽입 후 커서를 이미지 다음으로 이동시키고, 줄바꿈을 추가하여 이미지 바로 뒤에 텍스트가 붙지 않도록
-    let newPosition = textView.selectedRange.location + 1
-    textView.selectedRange = NSRange(location: newPosition, length: 0)
-    textStorage.insert(NSAttributedString(string: "\n"), at: newPosition)
+    // 이미지 다음에 기본 스타일의 공백 삽입
+    let defaultAttributes = textView.typingAttributes
+    let spacer = NSAttributedString(string: " ", attributes: defaultAttributes)
+    textStorage.insert(spacer, at: insertionIndex + 1)
+
+    // 줄바꿈 추가
+    textStorage.insert(NSAttributedString(string: "\n", attributes: defaultAttributes), at: insertionIndex + 2)
+
+    // 커서를 이미지 다음 줄로 이동
+    textView.selectedRange = NSRange(location: insertionIndex + 3, length: 0)
   }
 }

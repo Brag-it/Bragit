@@ -25,14 +25,14 @@ final class AlertView: UIView {
   }
 
   private let titleLabel = UILabel().then {
-    $0.textColor = .black
+    $0.textColor = .grayScaleBack
     $0.font = UIFont.pretendard(size: 16, weight: .semibold)
     $0.textAlignment = .left
     $0.numberOfLines = 0
   }
 
   private let messageLabel = UILabel().then {
-    $0.textColor = .lightGray
+    $0.textColor = .grayScale600
     $0.font = UIFont.pretendard(size: 15, weight: .regular)
     $0.textAlignment = .left
     $0.numberOfLines = 0
@@ -81,6 +81,9 @@ final class AlertView: UIView {
     if let rightColor = rightButtonColor {
       rightButton.setTitleColor(rightColor, for: .normal)
     }
+    if leftButtonTitle == nil && rightButtonTitle != nil {
+      leftButton.isHidden = true
+    }
     bind()
   }
 
@@ -96,13 +99,10 @@ final class AlertView: UIView {
     containerView.addSubview(titleLabel)
     containerView.addSubview(messageLabel)
     containerView.addSubview(buttonStackView)
-
     buttonStackView.addArrangedSubview(leftButton)
     buttonStackView.addArrangedSubview(rightButton)
 
-    dimmedView.snp.makeConstraints {
-      $0.edges.equalToSuperview()
-    }
+    dimmedView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
     containerView.snp.makeConstraints {
       $0.center.equalToSuperview()
@@ -120,8 +120,9 @@ final class AlertView: UIView {
     }
 
     buttonStackView.snp.makeConstraints {
-      $0.top.equalTo(messageLabel.snp.bottom).offset(10)
-      $0.leading.trailing.bottom.equalToSuperview()
+      $0.top.equalTo(messageLabel.snp.bottom).offset(20)
+      $0.leading.trailing.equalToSuperview()
+      $0.bottom.equalToSuperview().inset(10)
       $0.height.equalTo(48)
     }
   }
@@ -145,6 +146,7 @@ final class AlertView: UIView {
 
   // MARK: - 화면에 띄우기
   func show(in view: UIView) {
+    view.endEditing(true)
     view.addSubview(self)
   }
 }
@@ -154,6 +156,7 @@ extension AlertView {
   // 원하는 스타일
   enum AlertStyle {
     case tempSaveDraft  //임시저장
+    case isEmptyPost  // 게시글 제목또는 내용이 비어있을때
     case deletePost  // 게시글 삭제
     case reportPost  // 게시글 신고
     case deleteComment  // 댓글 삭제
@@ -165,6 +168,7 @@ extension AlertView {
     case deleteAcount  // 회원탈퇴
   }
 
+  // swiftlint:disable cyclomatic_complexity
   static func makeAlert(style: AlertStyle) -> AlertView {
     switch style {
     case .tempSaveDraft:
@@ -173,8 +177,16 @@ extension AlertView {
         message: "지금 나가면 저장하지 않은 글은 삭제돼요.",
         leftButtonTitle: "나가기",
         rightButtonTitle: "임시저장",
-        leftButtonColor: .gray,
-        rightButtonColor: .black
+        leftButtonColor: .grayScale400,
+        rightButtonColor: .grayScaleBack
+      )
+    case .isEmptyPost:
+      return AlertView(
+        title: "확인해주세요!",
+        message: "게시글의 내용이나 제목이 비어있어요.",
+        rightButtonTitle: "확인",
+        leftButtonColor: .grayScale400,
+        rightButtonColor: .grayScaleBack
       )
     case .deletePost:
       return AlertView(
@@ -182,7 +194,7 @@ extension AlertView {
         message: "삭제된 게시물은 복구할 수 없어요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "삭제하기",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     case .reportPost:
@@ -191,7 +203,7 @@ extension AlertView {
         message: "신고가 접수된 게시글은 내부 검토를 거쳐 삭제될 수 있어요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "신고하기",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     case .deleteComment:
@@ -200,7 +212,7 @@ extension AlertView {
         message: "삭제된 댓글은 복구할 수 없어요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "삭제하기",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     case .reportComment:
@@ -209,7 +221,7 @@ extension AlertView {
         message: "신고가 접수된 댓글은 내부 검토를 거쳐 삭제될 수 있어요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "신고하기",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     case .blockUser(let nickname):
@@ -218,7 +230,7 @@ extension AlertView {
         message: "차단하면 \(nickname)님의 게시글과 댓글, 검색이 되지 않으며, 팔로잉, 팔로워 목록에서 삭제돼요. 차단여부는 상대방이 알수 없어요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "차단하기",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     case .reportUser(let nickname):
@@ -227,7 +239,7 @@ extension AlertView {
         message: "신고가 접수된 사용자는 내부 검토 후 활동이 정지될 수 있어요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "신고하기",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     case .reportApp:
@@ -236,8 +248,8 @@ extension AlertView {
         message: "악의적인 비벙이나 허위 사실이 담긴 내용을 고의적으로 제출할 경우 처벌 대상이 될 수 있어요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "제출하기",
-        leftButtonColor: .gray,
-        rightButtonColor: .black
+        leftButtonColor: .grayScale400,
+        rightButtonColor: .grayScaleBack
       )
     case .logOut:
       return AlertView(
@@ -245,7 +257,7 @@ extension AlertView {
         message: "자동 로그인 기능이 해제돼요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "로그아웃",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     case .deleteAcount:
@@ -254,9 +266,10 @@ extension AlertView {
         message: "Bragit을 탈퇴하면, Bargit 아이디를 포함한 모든 이용 기록이 삭제되고 삭제된 정보는 복구되지 않아요.",
         leftButtonTitle: "취소",
         rightButtonTitle: "탈퇴하기",
-        leftButtonColor: .gray,
+        leftButtonColor: .grayScale400,
         rightButtonColor: .systemRed
       )
     }
   }
+  // swiftlint:enable cyclomatic_complexity
 }
