@@ -14,6 +14,7 @@ import SnapKit
 import Then
 import Kingfisher
 
+// swiftlint:disable type_body_length
 class DetailPostViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let reportAlert = AlertView.makeAlert(style: .reportPost)
@@ -266,6 +267,7 @@ class DetailPostViewController: UIViewController, View {
     }
   }
 
+  // swiftlint:disable cyclomatic_complexity
   func bind(reactor: DetailPostReactor) {
     reportAlert.leftTap
       .bind { print("취소 버튼 누름") }
@@ -392,6 +394,7 @@ class DetailPostViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
   }
+  // swiftlint:enable cyclomatic_complexity
 
   func replaceLinksWithImages(in attributed: NSAttributedString, maxWidth: CGFloat) async -> NSAttributedString {
     let mutable = NSMutableAttributedString(attributedString: attributed)
@@ -420,4 +423,5 @@ class DetailPostViewController: UIViewController, View {
     }
     return mutable
   }
+  // swiftlint:enable type_body_length
 }

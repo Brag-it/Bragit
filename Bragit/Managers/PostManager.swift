@@ -44,6 +44,8 @@ protocol PostManagerProtocol {
   ) -> Observable<Post>
   func attachTags(postId: String, tagIds: [String]) async throws
   func rxAttachTags(postId: String, tagIds: [String]) -> Observable<Void>
+  func incrementLike(postId: String, delta: Int) async throws -> Int
+  func rxIncrementLike(postId: String, delta: Int) -> Observable<Int>
 }
 
 class PostManager: PostManagerProtocol {
@@ -439,4 +441,41 @@ class PostManager: PostManagerProtocol {
       return Disposables.create()
     }
   }
+
+  // 좋아요 증가/감소
+  func incrementLike(postId: String, delta: Int) async throws -> Int {
+    let newCount: Int = try await client
+      .rpc("inc_post_like", params: IncPostLikeParams(p_post_id: postId, p_delta: delta))
+      .execute()
+      .value
+    return newCount
+  }
+
+  func rxIncrementLike(postId: String, delta: Int) -> Observable<Int> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      Task {
+        do {
+          let newCount = try await self.incrementLike(postId: postId, delta: delta)
+          observer.onNext(newCount)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+      return Disposables.create()
+    }
+  }
 }
+
+extension PostManager {
+  // inc_post_like 함수에 넘겨줄 RPC 파라미터 정의
+  private struct IncPostLikeParams: Encodable, Sendable {
+    let p_post_id: String
+    let p_delta: Int
+  }
+}
+

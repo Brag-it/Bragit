@@ -15,6 +15,7 @@ import Dependencies
 class DetailPostReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.userManager) var userManager
+  @Dependency(\.postManager) var postManager
   @LocalStorage(location: .likePosts) var likePosts: [String]?
   @LocalStorage(location: .nowUser) var nowUser: String?
   @LocalStorage(location: .followUser) var followUser: [String]?
@@ -69,6 +70,7 @@ class DetailPostReactor: Reactor, Stepper {
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
   // 사용자 입력 → 상태 변화 신호로 변환
+  // swiftlint:disable cyclomatic_complexity
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .didTapBack:
@@ -76,15 +78,50 @@ class DetailPostReactor: Reactor, Stepper {
       return .empty()
 
     case .didTapLike:
-      var count = currentState.likeCount
-      if currentState.isLiked == false {
-        likePosts?.append(post.id.uuidString)
-        count += 1
+      // 게시글 단위로 좋아요 토글 (로컬 UserDefaults @LocalStorage)
+      let postId = post.id.uuidString
+      let willLike = !currentState.isLiked
+
+      if willLike {
+        var ids = likePosts ?? []
+        if !ids.contains(postId) { ids.append(postId) }
+        likePosts = ids
       } else {
-        likePosts?.removeAll { $0 == post.author?.id }
-        count -= 1
+        if var ids = likePosts {
+          ids.removeAll { $0 == postId }
+          likePosts = ids
+        }
       }
-      return .just(.setIsLike(!currentState.isLiked, count))
+
+      let optimisticCount = max(0, currentState.likeCount + (willLike ? 1 : -1))
+      let optimistic = Observable.just(Mutation.setIsLike(willLike, optimisticCount))
+      let sync = postManager.rxIncrementLike(postId: postId, delta: willLike ? 1 : -1)
+        .map { serverCount in
+          // 최신 값으로 보정
+          Mutation.setIsLike(willLike, serverCount)
+        }
+        .catch { [weak self] error in
+          // 실패 시 롤백
+          guard let self = self else { return .empty() }
+          if willLike {
+            // 되돌려 제거
+            if var ids = self.likePosts {
+              ids.removeAll { $0 == postId }
+              self.likePosts = ids
+            }
+          } else {
+            // 되돌려 추가
+            var ids = self.likePosts ?? []
+            if !ids.contains(postId) { ids.append(postId) }
+            self.likePosts = ids
+          }
+          let rollbackCount = max(0, optimisticCount + (willLike ? -1 : +1))
+          #if DEBUG
+          print("inc_post_like RPC 실패:", error.localizedDescription)
+          #endif
+          return .just(.setIsLike(!willLike, rollbackCount))
+        }
+      return optimistic.concat(sync)
 
     case .didTapComment:
       steps.accept(AppStep.comment(id: post.id))
@@ -134,6 +171,8 @@ class DetailPostReactor: Reactor, Stepper {
       }
     }
   }
+  // swiftlint:enable cyclomatic_complexity
+
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
   func reduce(state: State, mutation: Mutation) -> State {

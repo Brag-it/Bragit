@@ -239,4 +239,15 @@ class StubPostManager: PostManagerProtocol {
     _ = (postId, tagIds)
     return .just(())
   }
+
+  func incrementLike(postId: String, delta: Int) async throws -> Int {
+    let baseLikes = 50
+    return baseLikes + delta
+  }
+
+  func rxIncrementLike(postId: String, delta: Int) -> RxSwift.Observable<Int> {
+    let baseLikes = 50
+    let newLikes = baseLikes + delta
+    return .just(newLikes)
+  }
 }
