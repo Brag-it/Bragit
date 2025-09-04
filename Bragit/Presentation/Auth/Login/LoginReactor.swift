@@ -108,7 +108,7 @@ final class LoginReactor: Reactor, Stepper {
 
           print("[apple]: \(session.user.email as Any), \(mail as Any)")
 
-          let users: [UserInfo] = try await self.supabase
+          let users: [User] = try await self.supabase
             .from("User_Info")
             .select()
             .eq("id", value: userId)

@@ -19,6 +19,14 @@ class ImageUploadViewController: UIViewController, View {
   private let userInfo: UserRegistrationInfo
   private let injectReactor: ImageUploadReactor
 
+  let descFont = UIFont.pretendard(size: 20, weight: .semibold)
+  let beLaterFont = UIFont.pretendard(size: 16, weight: .regular)
+  let nextFont = UIFont.pretendard(size: 16, weight: .medium)
+
+  let primaryColor = UIColor(named: "primary400")
+  let color900 = UIColor(named: "grayScale900")
+  let color700 = UIColor(named: "grayScale700")
+
   init(userInfo: UserRegistrationInfo, reactor: ImageUploadReactor) {
     self.userInfo = userInfo
     self.injectReactor = reactor
@@ -41,7 +49,7 @@ class ImageUploadViewController: UIViewController, View {
     $0.clipsToBounds = true
     $0.imageView?.contentMode = .scaleAspectFill
     let config = UIImage.SymbolConfiguration(pointSize: 44, weight: .regular)
-    let placeholder = UIImage(systemName: "person.crop.circle.badge.plus", withConfiguration: config)
+    let placeholder = UIImage(systemName: "person", withConfiguration: config)
     $0.setImage(placeholder, for: .normal)
   }
 
@@ -49,15 +57,18 @@ class ImageUploadViewController: UIViewController, View {
     $0.allowsEditing = true
   }
 
-  let beLaterButton = UIButton().then {
+  lazy var beLaterButton = UIButton().then {
     $0.setTitle("나중에", for: .normal)
+    $0.setTitleColor(color700, for: .normal)
+    $0.backgroundColor = nil
   }
 
-  let nextButton = UIButton().then {
-    $0.setTitle("확인", for: .normal)
-    $0.setTitleColor(UIColor(red: 0.315, green: 0.315, blue: 0.315, alpha: 1), for: .normal)
+  lazy var nextButton = UIButton().then {
+    $0.setTitle("다음", for: .normal)
+    $0.setTitleColor(color900, for: .normal)
+    $0.titleLabel?.font = nextFont
     $0.layer.cornerRadius = 12
-    $0.backgroundColor = .orange
+    $0.backgroundColor = primaryColor
   }
 
   override func viewDidLayoutSubviews() {
@@ -75,6 +86,17 @@ class ImageUploadViewController: UIViewController, View {
   }
 
   private func setupLayout() {
+    descriptionLabel.font = descFont
+    descriptionLabel.textColor = color900
+
+    beLaterButton.backgroundColor = .none
+    beLaterButton.titleLabel?.font = beLaterFont
+    beLaterButton.titleLabel?.textColor = color700
+
+    nextButton.backgroundColor = primaryColor
+    nextButton.titleLabel?.font = nextFont
+    nextButton.titleLabel?.textColor = color900
+
     [descriptionLabel, imageButton, beLaterButton, nextButton].forEach {
       view.addSubview($0)
     }
@@ -92,7 +114,7 @@ class ImageUploadViewController: UIViewController, View {
 
     beLaterButton.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview().inset(20)
-      $0.bottom.equalTo(nextButton.snp.top).inset(8)
+      $0.bottom.equalTo(nextButton.snp.top).offset(-8)
       $0.height.equalTo(52)
     }
 
@@ -130,7 +152,7 @@ extension ImageUploadViewController {
       .distinctUntilChanged()
       .bind(with: self) { owner, loading in
         owner.view.isUserInteractionEnabled = !loading
-        owner.nextButton.alpha = loading ? 0.5 : 1.0
+        print("[UI] isLoading=\(loading), interactionEnabled=\(!loading)")
       }
       .disposed(by: disposeBag)
   }
@@ -153,6 +175,7 @@ extension ImageUploadViewController: UIImagePickerControllerDelegate, UINavigati
 
     if let data = image.jpegData(compressionQuality: 0.8) {
       reactor?.action.onNext(.pickedImageData(data))
+      print("[UI] picked imageData sent to reactor, size: \(data.count)")
     }
 
     picker.dismiss(animated: true, completion: nil)

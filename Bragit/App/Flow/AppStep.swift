@@ -20,7 +20,7 @@ enum AppStep: Step {
   case signPersonalInfoConsent         // 개인정보 수집 동의
   case signMarketingConsent            // 마케팅 정보 수집 동의
   case signupPhoto                     // 프로필 사진 설정
-  case signSelectTag                   // 선호 태그 선택
+  case signSelectTag(profileURL: String?)                   // 선호 태그 선택
   case findPwd                         // 비밀번호 찾기
   case setPwd                          // 비밀번호 재설정
 
