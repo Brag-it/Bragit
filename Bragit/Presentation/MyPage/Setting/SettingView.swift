@@ -35,13 +35,13 @@ final class SettingView: UIView {
     let subtitle: String
   }
 
-  private let logoutButton = UIButton().then {
+  let logoutButton = UIButton().then {
     $0.setTitle("로그아웃", for: .normal)
     $0.setTitleColor(.grayScale600, for: .normal)
     $0.titleLabel?.font = .pretendard(size: 13, weight: .medium)
   }
 
-  private let cancelAccountButton = UIButton().then {
+  let cancelAccountButton = UIButton().then {
     $0.setTitle("회원탈퇴", for: .normal)
     $0.setTitleColor(.grayScale600, for: .normal)
     $0.titleLabel?.font = .pretendard(size: 13, weight: .medium)

@@ -51,4 +51,5 @@ enum AppStep: Step {
   case service                         // 이용방법
   case report                          // 의견/오류 신고
   case openSource                      // 오픈소스 라이선스
+  case cancelAccount                   // 탈퇴하기
 }

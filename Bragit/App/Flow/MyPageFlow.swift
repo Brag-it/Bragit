@@ -28,6 +28,8 @@ final class MyPageFlow: Flow {
       return showFollowingList(users: users)
     case .favoriteList(let tags):
       return showFavoritTagsList(tags: tags)
+    case .cancelAccount:
+      return showCancelAccount()
     default:
       return .none
     }
@@ -79,6 +81,16 @@ final class MyPageFlow: Flow {
     nav.pushViewController(favoriteTagsVC, animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: favoriteTagsVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showCancelAccount() -> FlowContributors {
+    let reactor = CancelAccountReactor()
+    let cancelAccountVC = CancelAccountViewController(reactor: reactor)
+    nav.pushViewController(cancelAccountVC, animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: cancelAccountVC,
       withNextStepper: reactor
     ))
   }

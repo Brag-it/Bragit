@@ -39,9 +39,12 @@ final class SettingViewController: UIViewController, View {
 
   func bind(reactor: SettingReactor) {
     settingView.backButton.rx.tap
-      .map {
-        .backButtonTap
-      }
+      .map { .backButtonTap }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    settingView.cancelAccountButton.rx.tap
+      .map { .cancelAccountButtonTap }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
   }
