@@ -308,6 +308,16 @@ class DetailPostViewController: UIViewController, View {
         contentView.attributedText = state.content
         likeCount.text = String(state.likeCount)
         uploadDateLabel.text = reactor.post.date.timeAgoDisplay()
+        if state.isLiked == true {
+          likeButton.tintColor = .systemDanger
+        }
+        if state.isfollowed == true {
+          followButton.setTitle("팔로잉", for: .normal)
+          followButton.backgroundColor = .grayScale100
+        }
+        if state.viewer == true {
+          followButton.isHidden = true
+        }
         // 프로필 이미지 nil이면 기본 이미지 유지
         if let urlString = reactor.post.author?.profile, let url = URL(string: urlString) {
           profileImage.kf.setImage(

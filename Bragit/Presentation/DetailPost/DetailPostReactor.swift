@@ -31,6 +31,7 @@ class DetailPostReactor: Reactor, Stepper {
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
+    case setLike
   }
 
   // View의 상태 정의 (현재 View의 상태값)
