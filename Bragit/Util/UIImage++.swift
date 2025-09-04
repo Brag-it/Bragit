@@ -27,4 +27,11 @@ extension UIImage {
     // JPEG 압축
     return resized?.jpegData(compressionQuality: quality)
   }
+
+  // 특정 크기로 이미지 리사이즈
+  func resized(to size: CGSize) -> UIImage {
+    return UIGraphicsImageRenderer(size: size).image { _ in
+      draw(in: CGRect(origin: .zero, size: size))
+    }
+  }
 }

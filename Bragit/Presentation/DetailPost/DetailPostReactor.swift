@@ -21,6 +21,9 @@ class DetailPostReactor: Reactor, Stepper {
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
+    case didTapBack
+    case didTapLike
+    case didTapComment
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -31,15 +34,17 @@ class DetailPostReactor: Reactor, Stepper {
   struct State {
     let title: String          // 제목
     let content: NSAttributedString  // 내용
-    let nickName: String                // 작성자 닉네임(빈 값 가능)
+    let nickName: String                // 게시글 작성자 닉네임(빈 값 가능)
     var isLoading: Bool = false         // 로딩 표시
+    let viewer: Bool                    // 작성자 본인판별
   }
 
   init(post: Post) {
     self.initialState = State(
       title: post.title,
       content: DetailPostReactor.unarchivedContent(content: post.content),
-      nickName: post.author?.nickname ?? "탈퇴한 유저 입니다"
+      nickName: post.author?.nickname ?? "탈퇴한 유저 입니다",
+      viewer: post.author?.id == UserDefaults.standard.string(forKey: LocalStorageCase.nowUser.rawValue)
     )
     self.post = post
   }
@@ -49,6 +54,14 @@ class DetailPostReactor: Reactor, Stepper {
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
 
+    case .didTapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
+    case .didTapLike:
+      return .empty()
+    case .didTapComment:
+      steps.accept(AppStep.comment(id: post.id))
+      return .empty()
     }
 
   }

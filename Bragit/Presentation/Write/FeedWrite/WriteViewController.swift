@@ -83,17 +83,18 @@ class WriteViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
-    doneButton.snp.makeConstraints {
-      $0.trailing.equalToSuperview().inset(20)
-      $0.centerY.equalTo(headerView.snp.centerY)
-    }
-
     titleLabel.snp.makeConstraints {
       $0.centerX.equalTo(headerView.snp.centerX)
       $0.centerY.equalTo(headerView.snp.centerY)
       $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
       $0.trailing.lessThanOrEqualTo(doneButton.snp.leading).offset(-20)
     }
+
+    doneButton.snp.makeConstraints {
+      $0.trailing.equalToSuperview().inset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
 
     titleTextField.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom).offset(24)

@@ -31,6 +31,10 @@ final class TabFlow: NSObject, Flow, Stepper {
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
     switch step {
+    case .dismiss:
+      return dismiss()
+    case .pop:
+      return pop()
     case .home:
       return coordinateToTabBar()
     case .writeFeed:
@@ -42,6 +46,18 @@ final class TabFlow: NSObject, Flow, Stepper {
     default:
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
+  }
+
+  func dismiss() -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    navigation.dismiss(animated: true)
+    return .none
+  }
+
+  func pop() -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    navigation.popViewController(animated: true)
+    return .none
   }
 
   private func coordinateToTabBar() -> FlowContributors {
@@ -118,19 +134,19 @@ final class TabFlow: NSObject, Flow, Stepper {
     ))
   }
 
-//  func showComment(id: UUID)  -> FlowContributors {
-//    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
-//    let reactor = CommentReactor(id: id)
-//    let commentVC = CommentViewController(reactor: reactor)
-//
-//    commentVC.hidesBottomBarWhenPushed = true
-//    navigation.pushViewController(commentVC, animated: true)
-//
-//    return .one(flowContributor: .contribute(
-//      withNextPresentable: commentVC,
-//      withNextStepper: reactor
-//    ))
-//  }
+  //  func showComment(id: UUID)  -> FlowContributors {
+  //    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+  //    let reactor = CommentReactor(id: id)
+  //    let commentVC = CommentViewController(reactor: reactor)
+  //
+  //    commentVC.hidesBottomBarWhenPushed = true
+  //    navigation.pushViewController(commentVC, animated: true)
+  //
+  //    return .one(flowContributor: .contribute(
+  //      withNextPresentable: commentVC,
+  //      withNextStepper: reactor
+  //    ))
+  //  }
 }
 
 extension TabFlow: UITabBarControllerDelegate {
@@ -138,7 +154,6 @@ extension TabFlow: UITabBarControllerDelegate {
     guard let index = tabBarController.viewControllers?.firstIndex(where: { $0 == viewController }), index == 2 else {
       return true
     }
-    //    tabBarController.selectedViewController?.present(WriteViewController(reactor: WriteReactor()), animated: true)
     steps.accept(AppStep.writeFeed)
     return false
   }
