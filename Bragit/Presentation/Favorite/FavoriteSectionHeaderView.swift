@@ -160,6 +160,8 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
       config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14)
       config.cornerStyle = .capsule
       tagButton.configuration = config
+      tagButton.setContentHuggingPriority(.required, for: .horizontal)
+      tagButton.setContentCompressionResistancePriority(.required, for: .horizontal)
 
       tagButton.configurationUpdateHandler = { button in
         switch button.state {
