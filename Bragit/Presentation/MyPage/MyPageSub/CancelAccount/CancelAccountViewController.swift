@@ -77,7 +77,6 @@ final class CancelAccountViewController: UIViewController, View {
     super.viewDidLoad()
 
     setupUI()
-    setupText()
   }
 
   private func setupUI() {
@@ -129,7 +128,7 @@ final class CancelAccountViewController: UIViewController, View {
   }
 
   // swiftlint:disable line_length
-  private func setupText() {
+  private func setupText(name: String) {
 
     let attributedString = NSMutableAttributedString()
 
@@ -159,7 +158,7 @@ final class CancelAccountViewController: UIViewController, View {
       }
     ]
 
-    attributedString.append(NSAttributedString(string: "사용자님,\n탈퇴 전에 확인할 것이 있어요\n\n", attributes: titleAttribute))
+    attributedString.append(NSAttributedString(string: "\(name)님,\n탈퇴 전에 확인할 것이 있어요\n\n", attributes: titleAttribute))
 
     attributedString.append(NSAttributedString(string: "서비스 이용 불가\n", attributes: subtitleAttribute))
 
@@ -193,6 +192,15 @@ final class CancelAccountViewController: UIViewController, View {
       .map { .backButtonTap }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    self.rx.viewDidLoad
+      .map { _ in .setUserInform }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    reactor.state.map { $0.user }.bind { user in
+      self.setupText(name: user?.nickname ?? "사용자")
+    }.disposed(by: disposeBag)
   }
 }
 

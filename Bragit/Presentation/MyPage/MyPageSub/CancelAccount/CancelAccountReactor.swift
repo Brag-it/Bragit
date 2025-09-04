@@ -23,24 +23,22 @@ class CancelAccountReactor: Reactor, Stepper {
     case backButtonTap
     case checkBoxTap
     case cancelButtonTap
+    case setUserInform
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
     case toggleAgree
+    case setUserInform(User?)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State: Then {
     var isAgree: Bool = false
+    var user: User?
   }
 
   init() {
-    //@LocalStorage(location: .nowUser) var id: String?
-//    Task {
-//      let userinfo = try? await userManager.fetchUsersBy(ids: [id ?? ""])
-//      self.initialState = State(userInfo: userinfo?.first)
-//    }
     self.initialState = State()
   }
 
@@ -48,6 +46,11 @@ class CancelAccountReactor: Reactor, Stepper {
   // 사용자 입력 → 상태 변화 신호로 변환
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .setUserInform:
+      @LocalStorage(location: .nowUser) var id: String?
+      return userManager.rxfetchUsersBy(ids: [id ?? ""]).map {
+        .setUserInform($0.first)
+      }
     case .backButtonTap:
       steps.accept(AppStep.dismiss)
       return .empty()
@@ -66,6 +69,10 @@ class CancelAccountReactor: Reactor, Stepper {
     case .toggleAgree:
       return state.with {
         $0.isAgree.toggle()
+      }
+    case .setUserInform(let user):
+      return state.with {
+        $0.user = user
       }
     }
   }
