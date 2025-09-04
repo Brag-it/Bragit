@@ -55,6 +55,122 @@ final class CommentViewController: UIViewController, View {
     $0.hidesWhenStopped = true
   }
 
+  private let commentTextView = UITextView()
+
+  // Use stored lazy properties so we keep a single instance that we can show/hide.
+  private lazy var bottomBar: UIView = {
+    let bar = UIView()
+    bar.backgroundColor = .grayScale50
+    bar.snp.makeConstraints { $0.height.equalTo(54) }
+
+    let lockImageView = UIImageView(image: .unlock).then {
+      $0.contentMode = .scaleAspectFit
+    }
+
+    let textContainer = UIView().then {
+      $0.backgroundColor = .white
+      $0.layer.cornerRadius = 12
+      $0.layer.masksToBounds = true
+    }
+
+    let sendImageView = UIImageView(image: .send).then {
+      $0.contentMode = .scaleAspectFit
+      $0.isUserInteractionEnabled = false
+    }
+
+    let tapOverlay = UIButton(type: .custom)
+    tapOverlay.backgroundColor = .clear
+    tapOverlay.addTarget(self, action: #selector(beginInputFromBottomBar), for: .touchUpInside)
+
+    bar.addSubview(lockImageView)
+    bar.addSubview(textContainer)
+    bar.addSubview(sendImageView)
+    textContainer.addSubview(tapOverlay)
+
+    lockImageView.snp.makeConstraints {
+      $0.leading.equalTo(bar.snp.leading).offset(12)
+      $0.centerY.equalTo(bar.snp.centerY)
+    }
+
+    textContainer.snp.makeConstraints {
+      $0.leading.equalTo(lockImageView.snp.trailing).offset(10)
+      $0.trailing.equalTo(bar.snp.trailing).inset(12)
+      $0.centerY.equalTo(bar.snp.centerY)
+      $0.height.equalTo(42)
+    }
+
+    sendImageView.snp.makeConstraints {
+      $0.trailing.equalTo(bar.snp.trailing).inset(12)
+      $0.centerY.equalTo(textContainer.snp.centerY)
+    }
+
+    tapOverlay.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+    return bar
+  }()
+
+  private lazy var accessoryBar: UIView = {
+    let bar = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 54))
+    bar.backgroundColor = .grayScale50
+
+    let lockImageView = UIImageView(image: .unlock).then {
+      $0.contentMode = .scaleAspectFit
+    }
+
+    let textContainer = UIView().then {
+      $0.backgroundColor = .white
+      $0.layer.cornerRadius = 12
+      $0.layer.masksToBounds = true
+    }
+
+    let sendImageView = UIImageView(image: .send).then {
+      $0.contentMode = .scaleAspectFit
+      $0.isUserInteractionEnabled = true
+    }
+
+    commentTextView.backgroundColor = .clear
+    commentTextView.font = .pretendard(size: 15, weight: .regular)
+    commentTextView.textColor = .grayScale900
+    commentTextView.isScrollEnabled = false
+
+    bar.addSubview(lockImageView)
+    bar.addSubview(textContainer)
+    bar.addSubview(sendImageView)
+    textContainer.addSubview(commentTextView)
+
+    lockImageView.snp.makeConstraints {
+      $0.leading.equalTo(bar.snp.leading).offset(12)
+      $0.centerY.equalTo(bar.snp.centerY)
+    }
+
+    textContainer.snp.makeConstraints {
+      $0.leading.equalTo(lockImageView.snp.trailing).offset(10)
+      $0.trailing.equalTo(bar.snp.trailing).inset(12)
+      $0.centerY.equalTo(bar.snp.centerY)
+      $0.height.equalTo(42)
+    }
+
+    sendImageView.snp.makeConstraints {
+      $0.trailing.equalTo(bar.snp.trailing).inset(12)
+      $0.centerY.equalTo(textContainer.snp.centerY)
+    }
+
+    commentTextView.snp.makeConstraints {
+      $0.edges.equalToSuperview()
+      $0.height.equalTo(42)
+    }
+
+    commentTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 34)
+
+    let tap = UITapGestureRecognizer(target: self, action: #selector(didTapSend))
+    sendImageView.addGestureRecognizer(tap)
+
+    return bar
+  }()
+
+  override var canBecomeFirstResponder: Bool { true }
+  override var inputAccessoryView: UIView? { accessoryBar }
+
   init(reactor: CommentReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
@@ -68,13 +184,10 @@ final class CommentViewController: UIViewController, View {
     super.viewDidLoad()
     title = "댓글"
     view.backgroundColor = .white
-    // if reactor?.currentState.viewer == true {
-    //   MenuView(items: ["수정하기", "삭제하기", "신고하기"])
-    // } else {
-    //   MenuView(items: ["수정하기"])
-    // }
     setupLayout()
+    setupKeyboardObservation()
   }
+
   private func setupLayout() {
     view.addSubview(headerView)
     headerView.addSubview(backButton)
@@ -83,6 +196,7 @@ final class CommentViewController: UIViewController, View {
 
     view.addSubview(tableView)
     view.addSubview(activityIndicator)
+    view.addSubview(bottomBar)
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide)
@@ -107,14 +221,61 @@ final class CommentViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
+    // iOS 16+: 항상 keyboardLayoutGuide를 사용
+    bottomBar.snp.makeConstraints {
+      $0.leading.trailing.equalToSuperview()
+      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+      $0.height.equalTo(54)
+    }
+
     tableView.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom)
-      $0.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
+      $0.leading.trailing.equalToSuperview()
+      $0.bottom.equalTo(bottomBar.snp.top)
     }
 
     activityIndicator.snp.makeConstraints {
       $0.center.equalToSuperview()
     }
+  }
+
+  private func setupKeyboardObservation() {
+    NotificationCenter.default
+      .addObserver(
+        self,
+        selector: #selector(keyboardWillShow(_:)),
+        name: UIResponder.keyboardWillShowNotification,
+        object: nil
+      )
+    NotificationCenter.default
+      .addObserver(
+        self,
+        selector: #selector(keyboardWillHide(_:)),
+        name: UIResponder.keyboardWillHideNotification,
+        object: nil
+      )
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
+  }
+
+  // MARK: - Selectors
+  @objc private func beginInputFromBottomBar() {
+    commentTextView.becomeFirstResponder()
+  }
+
+  @objc private func didTapSend() {
+    commentTextView.resignFirstResponder()
+    // TODO: Send comment action via reactor if needed.
+  }
+
+  @objc private func keyboardWillShow(_ note: Notification) {
+    bottomBar.isHidden = true
+  }
+
+  @objc private func keyboardWillHide(_ note: Notification) {
+    bottomBar.isHidden = false
   }
 
   func bind(reactor: CommentReactor) {
@@ -140,7 +301,7 @@ final class CommentViewController: UIViewController, View {
           cellType: CommentCell.self
         )
       ) { index, row, cell in
-        let nickname = row.user?.nickname ?? "탈퇴한 회원"
+        let nickname = (row.user?.nickname?.isEmpty == false) ? row.user!.nickname! : "탈퇴한 회원"
         let profile = row.user?.profile
         cell.configure(
           nickname: nickname,
@@ -172,8 +333,9 @@ final class CommentViewController: UIViewController, View {
       .observe(on: MainScheduler.instance)
       .bind(with: self) { owner, message in
         let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
-        alert.addAction(.init(title: "확인", style: .default))
-        owner.present(alert, animated: true)
+        owner.present(alert, animated: true) {
+          alert.addAction(.init(title: "확인", style: .default))
+        }
       }
       .disposed(by: disposeBag)
   }
