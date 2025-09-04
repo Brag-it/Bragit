@@ -26,6 +26,9 @@ class MyPageReactor: Reactor, Stepper {
     case loadMyPost
     case loadNextPost
     case goToSetting
+    case goToFollower
+    case goToFollowing
+    case goToFavoriteTag
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -58,6 +61,7 @@ class MyPageReactor: Reactor, Stepper {
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
   // 사용자 입력 → 상태 변화 신호로 변환
+  // swiftlint:disable cyclomatic_complexity
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .setUserInform:
@@ -79,9 +83,9 @@ class MyPageReactor: Reactor, Stepper {
       }
 
       return .merge([
-        .just(.setFollowers(followUsers ?? [])),
+        .just(.setFollowings(followUsers ?? [])),
         .just(.setFavoriteTags(favoriteTags ?? [])),
-        userManager.rxFetchFollowers().map { .setFollowings($0) },
+        userManager.rxFetchFollowers().map { .setFollowers($0) },
         userManager.rxfetchUsersBy(ids: [nowUserId ?? ""]).flatMap { users -> Observable<Mutation> in
           guard let user = users.first else { return .empty() }
           return .of(.setNickName(user.nickname ?? ""), .setProfileImage(user.profile ?? ""))
@@ -108,8 +112,24 @@ class MyPageReactor: Reactor, Stepper {
     case .goToSetting:
       steps.accept(AppStep.setting)
       return .empty()
+    case .goToFollower:
+      Task {
+        let users = try? await userManager.fetchUsersBy(ids: currentState.followers)
+        steps.accept(AppStep.followersList(users ?? []))
+      }
+      return .empty()
+    case .goToFollowing:
+      Task {
+        let users = try? await userManager.fetchUsersBy(ids: currentState.followings)
+        steps.accept(AppStep.followingList(users ?? []))
+      }
+      return .empty()
+    case .goToFavoriteTag:
+      steps.accept(AppStep.favoriteList(currentState.favoriteTags))
+      return .empty()
     }
   }
+  // swiftlint:enable cyclomatic_complexity
 
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
