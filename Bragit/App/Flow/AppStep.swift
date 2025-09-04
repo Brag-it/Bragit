@@ -57,4 +57,7 @@ enum AppStep: Step {
   case report                          // 의견/오류 신고
   case openSource                      // 오픈소스 라이선스
   case cancelAccount                   // 탈퇴하기
+
+  // 태그
+  case tagInform(Tag)     // 태그 정보
 }
