@@ -3,6 +3,8 @@
 //
 //  Created by 이태윤 on 8/25/25.
 //
+import Foundation
+
 import RxFlow
 
 enum AppStep: Step {
@@ -24,8 +26,11 @@ enum AppStep: Step {
 
   // 홈
   case home                            // 메인 피드 루트
-  case feedDetail(id: String)          // 피드 상세
   case searchFeed(query: String?)      // 피드 검색(선택적으로 쿼리 전달)
+
+  // 피드 상세보기
+  case feedDetail(post: Post)          // 피드 상세
+  case comment(id: UUID)               // 댓글
 
   // 관심
   case favorite                        // 관심 피드 루트

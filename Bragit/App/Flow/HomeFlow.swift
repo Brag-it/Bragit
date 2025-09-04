@@ -19,7 +19,7 @@ final class HomeFlow: Flow {
     case .home:
       return showHomeRoot()
     default:
-      return .none
+      return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
   }
 
@@ -32,4 +32,6 @@ final class HomeFlow: Flow {
       withNextStepper: reactor
     ))
   }
+
+ 
 }

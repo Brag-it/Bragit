@@ -31,7 +31,7 @@ final class MyPageFlow: Flow {
     case .cancelAccount:
       return showCancelAccount()
     default:
-      return .none
+      return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
   }
 
