@@ -77,7 +77,7 @@ class DetailPostReactor: Reactor, Stepper {
         from: data
       ) ?? NSAttributedString()
     } catch {
-      print("❌ Unarchive 실패:", error.localizedDescription)
+      print("Unarchive 실패:", error.localizedDescription)
       return NSAttributedString(string: content)
     }
   }
