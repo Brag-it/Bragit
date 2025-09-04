@@ -9,7 +9,7 @@ import SnapKit
 import Then
 import UIKit
 
-// MARK: - 1) 단일 파일 내 분리 타입: UI 전담
+// MARK: UI
 final class UserInfoFormView: UIView {
   // UI
   let descriptionLabel = UILabel()
@@ -308,7 +308,7 @@ final class UserInfoFormView: UIView {
   }
 }
 
-// MARK: - 2) VC 본체(줄 수 최소화)
+// MARK: VC 본체
 final class UserInfoViewController: UIViewController {
   var onNext: ((UserRegistrationInfo) -> Void)?
 
@@ -330,7 +330,7 @@ final class UserInfoViewController: UIViewController {
     formView.mailTextField,
     formView.pwTextField,
     formView.rePwTextField,
-    formView.nicknameTextField,
+    formView.nicknameTextField
   ]
 
   private var keyboardBottomInset: CGFloat = 0
@@ -522,7 +522,7 @@ final class UserInfoViewController: UIViewController {
   @objc private func dismissKeyboard() { view.endEditing(true) }
 }
 
-// MARK: - 3) 같은 파일 내 익스텐션: Validation(본체 줄 수에서 제외)
+// MARK: Validation
 extension UserInfoViewController {
 
   @objc func onMailEditingEnd() {
@@ -652,7 +652,7 @@ class InsetTextField: UITextField {
   }
 }
 
-// MARK: - 4) 같은 파일 내 익스텐션: Delegate(본체 줄 수에서 제외)
+// MARK: Delegate
 extension UserInfoViewController: UITextFieldDelegate {
   public func textFieldDidBeginEditing(_ textField: UITextField) {
     currentFirstResponder = textField

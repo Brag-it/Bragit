@@ -137,7 +137,7 @@ extension ImageUploadViewController {
       .disposed(by: disposeBag)
 
     beLaterButton.rx.tap
-      .do(onNext: { print("[UI] beLaterButton tapped") })
+      .do(onNext: { print("[UI] beLaterButton tapped")})
       .map {
         ImageUploadReactor.Action.tapLater
       }
@@ -145,7 +145,7 @@ extension ImageUploadViewController {
       .disposed(by: disposeBag)
 
     nextButton.rx.tap
-      .do(onNext: { print("[UI] nextButton tapped") })
+      .do(onNext: { print("[UI] nextButton tapped")})
 
       .map { ImageUploadReactor.Action.tapNext }
       .bind(to: reactor.action)

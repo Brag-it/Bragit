@@ -96,8 +96,8 @@ class TagCheckViewController: UIViewController {
     loadTags()
 
     if let data = UserDefaults.standard.data(forKey: "favoriteTags"),
-      let decoded = try? JSONDecoder().decode([String].self, from: data) {
-      self.favoriteTags = decoded
+      let decoded = try? JSONDecoder().decode([Tag].self, from: data) {
+      self.favoriteTags = decoded.map { $0.tag }
     }
     self.reactor = injectReactor
     bind(reactor: injectReactor)
@@ -157,27 +157,34 @@ class TagCheckViewController: UIViewController {
       .withUnretained(self)
       .map { owner, _ in
         let selectedIndexPaths = owner.tagCollectionView.indexPathsForSelectedItems ?? []
-        let chosen =
+        let chosenModels: [Tag] =
           selectedIndexPaths
           .sorted { $0.item < $1.item }
-          .map { owner.tags[$0.item].tag }
-        owner.favoriteTags = chosen
-        if let data = try? JSONEncoder().encode(owner.favoriteTags) {
+          .map { owner.tags[$0.item] }
+        let chosenNames = chosenModels.map { $0.tag }
+        owner.favoriteTags = chosenNames
+
+        if let data = try? JSONEncoder().encode(chosenModels) {
           UserDefaults.standard.set(data, forKey: "favoriteTags")
-          if let saved = UserDefaults.standard.data(forKey: "favoriteTags"),
-             let decoded = try? JSONDecoder().decode([String].self, from: saved) {
-              print("[userDefaults] -> \(decoded)")
-          } else {
-            print("[userDefaults] -> []")
-          }
+          print("[userDefaults(models)] -> \(chosenModels.map { $0.tag })")
         } else {
           UserDefaults.standard.removeObject(forKey: "favoriteTags")
-          print("[userDefaults] -> []")
+          print("[userDefaults(models)] -> []")
         }
+        owner.debugPrintFavoriteTagsFromUserDefaults()
         return TagCheckReactor.Action.tapNext(tags: owner.favoriteTags)
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
+
+  private func debugPrintFavoriteTagsFromUserDefaults() {
+    if let data = UserDefaults.standard.data(forKey: "favoriteTags"),
+      let decoded = try? JSONDecoder().decode([Tag].self, from: data) {
+      print("[UserDefaults.favoriteTags] -> \(decoded.map { $0.tag })")
+    } else {
+      print("[UserDefaults.favoriteTags] -> []")
+    }
   }
 
   private func loadTags() {
@@ -205,7 +212,8 @@ class TagCheckViewController: UIViewController {
 
   private func printFavoriteTags(from collectionView: UICollectionView) {
     let selectedIndexPaths = collectionView.indexPathsForSelectedItems ?? []
-    let chosen = selectedIndexPaths
+    let chosen =
+      selectedIndexPaths
       .sorted { $0.item < $1.item }
       .map { self.tags[$0.item].tag }
     self.favoriteTags = chosen
