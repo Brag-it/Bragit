@@ -18,7 +18,6 @@ class TagCheckViewController: UIViewController {
   private let disposeBag = DisposeBag()
   @Dependency(\.tagManager) private var tagManager
   private var tags: [PopularTag] = []
-  private var selectedTags: Set<String> = []
   var favoriteTags: [String] = []
 
   private let userInfo: UserRegistrationInfo
@@ -47,16 +46,10 @@ class TagCheckViewController: UIViewController {
   }
 
   lazy var tagCollectionView: UICollectionView = {
-    let layout = LeftAlignedFlowLayout()
-    //    layout.minimumInteritemSpacing = 8
-    //    layout.minimumLineSpacing = 10
-    layout.minimumInteritemSpacing = 8
-    layout.minimumLineSpacing = 10
-    layout.scrollDirection = .vertical
-    layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-
+    let layout = makeCollectionViewLayout()
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
     collectionView.backgroundColor = .clear
+    collectionView.allowsMultipleSelection = true
     collectionView.showsVerticalScrollIndicator = false
     collectionView.delegate = self
     collectionView.dataSource = self
@@ -95,7 +88,6 @@ class TagCheckViewController: UIViewController {
     if UserDefaults.standard.data(forKey: "favoriteTags") != nil {
       UserDefaults.standard.removeObject(forKey: "favoriteTags")
       self.favoriteTags = []
-      self.selectedTags = []
     }
 
     view.backgroundColor = .systemBackground
@@ -106,9 +98,7 @@ class TagCheckViewController: UIViewController {
     if let data = UserDefaults.standard.data(forKey: "favoriteTags"),
       let decoded = try? JSONDecoder().decode([String].self, from: data) {
       self.favoriteTags = decoded
-      self.selectedTags = Set(decoded)
     }
-    self.selectedTags = Set(favoriteTags)
     self.reactor = injectReactor
     bind(reactor: injectReactor)
   }
@@ -164,10 +154,27 @@ class TagCheckViewController: UIViewController {
       .disposed(by: disposeBag)
 
     nextButton.rx.tap
-      //      .map { TagCheckReactor.Action.tapNext }
       .withUnretained(self)
       .map { owner, _ in
-        TagCheckReactor.Action.tapNext(tags: Array(owner.selectedTags))
+        let selectedIndexPaths = owner.tagCollectionView.indexPathsForSelectedItems ?? []
+        let chosen =
+          selectedIndexPaths
+          .sorted { $0.item < $1.item }
+          .map { owner.tags[$0.item].tag }
+        owner.favoriteTags = chosen
+        if let data = try? JSONEncoder().encode(owner.favoriteTags) {
+          UserDefaults.standard.set(data, forKey: "favoriteTags")
+          if let saved = UserDefaults.standard.data(forKey: "favoriteTags"),
+             let decoded = try? JSONDecoder().decode([String].self, from: saved) {
+              print("[userDefaults] -> \(decoded)")
+          } else {
+            print("[userDefaults] -> []")
+          }
+        } else {
+          UserDefaults.standard.removeObject(forKey: "favoriteTags")
+          print("[userDefaults] -> []")
+        }
+        return TagCheckReactor.Action.tapNext(tags: owner.favoriteTags)
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
@@ -178,10 +185,16 @@ class TagCheckViewController: UIViewController {
       .observe(on: MainScheduler.instance)
       .subscribe(
         onNext: { [weak self] tags in
-          self?.tags = tags
-          //          self?.tags = tags as! [PopularTag]
-          self?.selectedTags = Set(self?.favoriteTags ?? [])
-          self?.tagCollectionView.reloadData()
+          guard let self else { return }
+          self.tags = tags
+          self.tagCollectionView.reloadData()
+          if !self.favoriteTags.isEmpty {
+            for (idx, tag) in self.tags.enumerated() where self.favoriteTags.contains(tag.tag) {
+              let indexPath = IndexPath(item: idx, section: 0)
+              self.tagCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+            }
+            self.tagCollectionView.reloadData()
+          }
         },
         onError: { error in
           print("[ERROR] 태그 로딩 에러: \(error)")
@@ -189,10 +202,19 @@ class TagCheckViewController: UIViewController {
       )
       .disposed(by: disposeBag)
   }
+
+  private func printFavoriteTags(from collectionView: UICollectionView) {
+    let selectedIndexPaths = collectionView.indexPathsForSelectedItems ?? []
+    let chosen = selectedIndexPaths
+      .sorted { $0.item < $1.item }
+      .map { self.tags[$0.item].tag }
+    self.favoriteTags = chosen
+    print("[favoriteTags] -> \(chosen)")
+  }
 }
 
-extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewDataSource,
-  UICollectionViewDelegateFlowLayout {
+extension TagCheckViewController: UICollectionViewDelegate,
+  UICollectionViewDataSource {
   func collectionView(
     _ collectionView: UICollectionView,
     numberOfItemsInSection section: Int
@@ -200,155 +222,119 @@ extension TagCheckViewController: UICollectionViewDelegate, UICollectionViewData
     return tags.count
   }
 
-  func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+  func collectionView(
+    _ collectionView: UICollectionView,
+    cellForItemAt indexPath: IndexPath
+  ) -> UICollectionViewCell {
     guard
-      let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagButtonCell.identifier, for: indexPath)
+      let cell = collectionView.dequeueReusableCell(
+        withReuseIdentifier: TagButtonCell.identifier,
+        for: indexPath
+      )
         as? TagButtonCell
     else { return UICollectionViewCell() }
     let tag = tags[indexPath.item]
-    let isSelected = selectedTags.contains(tag.tag)
-    cell.configure(with: tag, isSelected: isSelected)
-
+    cell.configure(with: tag)
+    cell.isSelected = collectionView.indexPathsForSelectedItems?.contains(indexPath) == true
     return cell
   }
 
   func collectionView(
     _ collectionView: UICollectionView,
-    layout collectionViewLayout: UICollectionViewLayout,
-    sizeForItemAt indexPath: IndexPath
-  ) -> CGSize {
-    let tag = tags[indexPath.item]
-    let font = UIFont.preferredFont(forTextStyle: .body)
-    let text = tag.tag as NSString
-    let max = CGSize(
-      width: CGFloat.greatestFiniteMagnitude,
-      height: CGFloat.greatestFiniteMagnitude
-    )
-    let rect = text.boundingRect(
-      with: max,
-      options: [.usesLineFragmentOrigin, .usesFontLeading],
-      attributes: [.font: font],
-      context: nil
-    )
-    let width = ceil(rect.width) + 28
-    let height = ceil(rect.height) + 16
-    return CGSize(width: width, height: height)
-  }
+    didSelectItemAt indexPath: IndexPath
+  ) { printFavoriteTags(from: collectionView) }
 
-  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-    let tag = tags[indexPath.item]
-
-    if selectedTags.contains(tag.tag) {
-      selectedTags.remove(tag.tag)
-    } else {
-      selectedTags.insert(tag.tag)
-    }
-
-    self.favoriteTags = Array(self.selectedTags).sorted()
-    if let data = try? JSONEncoder().encode(self.favoriteTags) {
-      UserDefaults.standard.set(data, forKey: "favoriteTags")
-    }
-    print("[favoriteTags] -> \(self.favoriteTags)")
-    collectionView.reloadItems(at: [indexPath])
-  }
+  func collectionView(
+    _ collectionView: UICollectionView,
+    didDeselectItemAt indexPath: IndexPath
+  ) { printFavoriteTags(from: collectionView) }
 }
 
 class TagButtonCell: UICollectionViewCell {
   static let identifier = "TagButtonCell"
+  private let containerView = UIView()
+  private let titleLabel = UILabel()
 
-  private let tagButton = UIButton().then {
-    $0.layer.borderWidth = 1
-    $0.titleLabel?.textAlignment = .center
-    $0.titleLabel?.lineBreakMode = .byWordWrapping
-    $0.isUserInteractionEnabled = false
+  private let enableColor = UIColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 1)
+  private let enableFontColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+  private let disableColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+  private let disableFontColor = UIColor(red: 0.54, green: 0.54, blue: 0.54, alpha: 1)
+  private let disableBorder = UIColor(red: 0.84, green: 0.84, blue: 0.84, alpha: 1)
 
-    var config = UIButton.Configuration.plain()
-    config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14)
-    config.cornerStyle = .capsule
-    $0.configuration = config
+  override var isSelected: Bool {
+    didSet { updateStyle() }
   }
 
   override init(frame: CGRect) {
     super.init(frame: frame)
+    setupHierarchy()
     setupLayout()
+    setupUI()
+    updateStyle()
   }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
+  private func setupHierarchy() {
+    contentView.addSubview(containerView)
+    containerView.addSubview(titleLabel)
+  }
+
   private func setupLayout() {
-    contentView.addSubview(tagButton)
-    tagButton.snp.makeConstraints {
-      $0.edges.equalToSuperview()
+    containerView.snp.makeConstraints { $0.edges.equalToSuperview() }
+    titleLabel.snp.makeConstraints {
+      $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14))
     }
   }
 
-  func configure(with tag: PopularTag, isSelected: Bool) {
-    let tagFont = UIFont.pretendard(size: 15, weight: .medium)
+  private func setupUI() {
+    containerView.layer.borderWidth = 1
+    containerView.layer.cornerRadius = 21
+    containerView.layer.masksToBounds = true
 
-    let enableColor = UIColor(named: "primary100")
-    let enableFontColor = UIColor(named: "grayScale900")
-    let disableBorder = UIColor(named: "grayScale100")
+    titleLabel.textAlignment = .center
+    titleLabel.font = UIFont.pretendard(size: 15, weight: .medium)
+    titleLabel.numberOfLines = 1
+    titleLabel.lineBreakMode = .byTruncatingTail
+    titleLabel.setContentHuggingPriority(.required, for: .horizontal)
+    titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+  }
 
-    let disableFontColor = UIColor(named: "grayScale600")
-
-    tagButton.setTitle(tag.tag, for: .normal)
-    tagButton.titleLabel?.font = tagFont
-
+  private func updateStyle() {
     if isSelected {
-      tagButton.backgroundColor = enableColor
-      tagButton.layer.borderColor = enableColor?.cgColor
-      tagButton.setTitleColor(enableFontColor, for: .normal)
+      containerView.backgroundColor = enableColor
+      containerView.layer.borderColor = enableColor.cgColor
+      titleLabel.textColor = enableFontColor
     } else {
-      tagButton.backgroundColor = nil
-      tagButton.layer.borderColor = disableBorder?.cgColor
-      tagButton.setTitleColor(disableFontColor, for: .normal)
+      containerView.backgroundColor = disableColor
+      containerView.layer.borderColor = disableBorder.cgColor
+      titleLabel.textColor = disableFontColor
     }
   }
+
+  func configure(with tag: PopularTag) { titleLabel.text = tag.tag }
 }
 
-final class LeftAlignedFlowLayout: UICollectionViewFlowLayout {
-  override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-    guard
-      let attributes = super.layoutAttributesForElements(in: rect)?.map({
-        $0.copy() as! UICollectionViewLayoutAttributes
-      })
-    else { return nil }
+private func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
+  let layoutItem = NSCollectionLayoutItem(
+    layoutSize: NSCollectionLayoutSize(
+      widthDimension: .estimated(42),
+      heightDimension: .absolute(42)
+    )
+  )
+  let layoutGroup = NSCollectionLayoutGroup.horizontal(
+    layoutSize: NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1),
+      heightDimension: .absolute(42)
+    ),
+    subitems: [layoutItem]
+  )
+  layoutGroup.interItemSpacing = .fixed(8)
 
-    guard scrollDirection == .vertical,
-      let collectionView = collectionView
-    else { return attributes }
-
-    let contentWidth =
-      collectionView.bounds.width - collectionView.contentInset.left - collectionView.contentInset.right
-    let sectionInsets = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.sectionInset ?? .zero
-    let inter = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.minimumInteritemSpacing ?? 8
-
-    var left = sectionInsets.left
-    var lastY: CGFloat = -CGFloat.greatestFiniteMagnitude
-
-    for attr in attributes where attr.representedElementCategory == .cell {
-      if attr.frame.origin.y >= lastY + attr.frame.height / 2 {
-        left = sectionInsets.left
-        lastY = attr.frame.origin.y
-      }
-
-      var frame = attr.frame
-      if frame.width > contentWidth - sectionInsets.left - sectionInsets.right {
-        frame.size.width = contentWidth - sectionInsets.left - sectionInsets.right
-      }
-      frame.origin.x = left
-      attr.frame = frame.integral
-
-      left = frame.maxX + inter
-      if left + frame.width > contentWidth - sectionInsets.right {
-        left = sectionInsets.left
-        lastY = frame.maxY + minimumLineSpacing
-      }
-    }
-    return attributes
-  }
-
-  override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool { true }
+  let layoutSection = NSCollectionLayoutSection(group: layoutGroup)
+  layoutSection.interGroupSpacing = 10
+  layoutSection.contentInsetsReference = .none
+  return UICollectionViewCompositionalLayout(section: layoutSection)
 }

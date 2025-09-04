@@ -52,16 +52,19 @@ final class ImageUploadReactor: Reactor, Stepper {
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .tapNext:
+      print("[REACTOR] Action .tapNext received")
       if currentState.imageData != nil {
-        print("[DEBUG] 사진 데이터 있음, 크기: \(currentState.imageData!.count) bytes")
+        print("[REACTOR] imageData exists: \(currentState.imageData!.count) bytes")
         return .concat([
-          .just(.setLoading(true)),
+          .just(.setLoading(true))
+          .do(onNext: { _ in print("[REACTOR] setLoading(True) emitted")}),
           uploadProfileImage()
             .catch { error in
-              print("[ERROR] 업로드 실패: \(error)")
+              print("[REACTOR] Upload failed: \(error)")
               return .just(.setError("이미지 업로드 실패: \(error.localizedDescription)"))
             }
             .do { [weak self] mutation in
+              print("[REACTOR] mutation upload: \(mutation)")
               guard let self else { return }
               switch mutation {
               case .setProfileURL(let url):
@@ -69,11 +72,12 @@ final class ImageUploadReactor: Reactor, Stepper {
               default:
                 break
               }
-            },
+            }
+            .do(onCompleted: { print("[REACTOR] upload pipeline completed")}),
           .just(.setLoading(false))
         ])
       } else {
-        print("[DEBUG] 사진 데이터가 없음")
+        print("[REACITOR] 사진 데이터가 없음")
         self.steps.accept(AppStep.signSelectTag(profileURL: nil))
         return .empty()
       }
@@ -119,11 +123,13 @@ final class ImageUploadReactor: Reactor, Stepper {
         return Disposables.create()
       }
 
-      print("[DEBUG] 이미지 업로드, 크기: \(imageData.count) bytes")
+      print("[REACTOR] Starting task on thread: \(Thread.isMainThread ? "main" : "background") bytes")
 
       Task {
         do {
+          print("[UPLOAD] Requesting auth session...")
           let session = try await self.supabase.auth.session
+          print("[UPLOAD] Got session. userId=\(session.user.id)")
           let userId = session.user.id
           print("[DEBUG] 유저 아이디: \(userId)")
 
@@ -140,13 +146,13 @@ final class ImageUploadReactor: Reactor, Stepper {
               options: FileOptions(
                 cacheControl: "3600",
                 contentType: "image/jpeg",
-                upsert: false
+                upsert: true
               )
             )
 
           print("[DEBUG] 리스폰스: \(uploadResponse)")
           let publicURL = try self.supabase.storage
-            .from("profile-images")
+            .from("profile-image")
             .getPublicURL(path: filePath)
 
           print("[DEBUG] URL: \(publicURL.absoluteString)")
