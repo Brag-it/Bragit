@@ -5,20 +5,42 @@
 //  Created by luca on 9/4/25.
 //
 
-import UIKit
-
+import Kingfisher
 import ReactorKit
-import RxSwift
 import RxCocoa
+import RxSwift
 import SnapKit
 import Then
-import Kingfisher
+import UIKit
 
 final class CommentViewController: UIViewController, View {
   typealias Reactor = CommentReactor
   var disposeBag = DisposeBag()
 
   // MARK: UI
+  private let reportAlert = AlertView.makeAlert(style: .reportComment)
+  private let deleteAlert = AlertView.makeAlert(style: .deleteComment)
+
+  private let headerView = UIView()
+
+  private let backButton = UIButton(type: .system).then {
+    $0.setImage(.back, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+
+  private let titleLabel = UILabel().then {
+    $0.text = "댓글"
+    $0.font = UIFont.systemFont(ofSize: 16)
+    $0.textColor = .grayScale900
+    $0.textAlignment = .center
+    $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
+  }
+
+  private let kebabButton = UIButton(type: .system).then {
+    $0.setImage(.kebab, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+
   private let tableView = UITableView(frame: .zero, style: .plain).then {
     $0.register(CommentCell.self, forCellReuseIdentifier: CommentCell.reuseID)
     $0.rowHeight = UITableView.automaticDimension
@@ -45,31 +67,88 @@ final class CommentViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "댓글"
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
+    // if reactor?.currentState.viewer == true {
+    //   MenuView(items: ["수정하기", "삭제하기", "신고하기"])
+    // } else {
+    //   MenuView(items: ["수정하기"])
+    // }
     setupLayout()
-
-    if let reactor = reactor {
-      print("CommentVC with postId: \(reactor.postIdForDebug.uuidString)")
-    }
   }
-
   private func setupLayout() {
+    view.addSubview(headerView)
+    headerView.addSubview(backButton)
+    headerView.addSubview(titleLabel)
+    headerView.addSubview(kebabButton)
+
     view.addSubview(tableView)
     view.addSubview(activityIndicator)
 
-    tableView.snp.makeConstraints {
-      $0.edges.equalTo(view.safeAreaLayoutGuide)
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(58)
     }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
+    titleLabel.snp.makeConstraints {
+      $0.centerX.equalTo(headerView.snp.centerX)
+      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
+      $0.trailing.lessThanOrEqualTo(kebabButton.snp.leading).offset(-20)
+    }
+
+    kebabButton.snp.makeConstraints {
+      $0.trailing.equalToSuperview().inset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
+    tableView.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom)
+      $0.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
+    }
+
     activityIndicator.snp.makeConstraints {
       $0.center.equalToSuperview()
     }
   }
 
   func bind(reactor: CommentReactor) {
+    backButton.rx.tap
+      .map { Reactor.Action.didTapBack }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     // 화면 진입 시 댓글 로드
     rx.viewDidLoad
       .map { Reactor.Action.refresh }
       .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 댓글 목록 바인딩
+    reactor.state
+      .map(\.comments)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .bind(
+        to: tableView.rx.items(
+          cellIdentifier: CommentCell.reuseID,
+          cellType: CommentCell.self
+        )
+      ) { index, row, cell in
+        let nickname = row.user?.nickname ?? "탈퇴한 회원"
+        let profile = row.user?.profile
+        cell.configure(
+          nickname: nickname,
+          profileURLString: profile,
+          date: row.date,
+          content: row.content
+        )
+      }
       .disposed(by: disposeBag)
 
     // 로딩 인디케이터
@@ -78,37 +157,12 @@ final class CommentViewController: UIViewController, View {
       .distinctUntilChanged()
       .observe(on: MainScheduler.instance)
       .bind(with: self) { owner, loading in
-        loading ? owner.activityIndicator.startAnimating() : owner.activityIndicator.stopAnimating()
-        owner.view.isUserInteractionEnabled = !loading
-      }
-      .disposed(by: disposeBag)
-
-    // ViewController에서도 content, date 콘솔 출력
-    reactor.state
-      .map(\.comments)
-      .distinctUntilChanged()
-      .bind(with: self) { _, rows in
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        rows.forEach { row in
-          let dateString = formatter.string(from: row.date)
-          print("ViewController with content: \(row.content), date: \(dateString)")
+        if loading {
+          owner.activityIndicator.startAnimating()
+        } else {
+          owner.activityIndicator.stopAnimating()
         }
-      }
-      .disposed(by: disposeBag)
-
-    // 댓글 바인딩 (커스텀 셀)
-    reactor.state
-      .map(\.comments)
-      .bind(to: tableView.rx.items(cellIdentifier: CommentCell.reuseID, cellType: CommentCell.self)) { _, row, cell in
-        cell.configure(
-          nickname: row.userInfo?.nickname ?? "탈퇴한 유저입니다.",
-          profileURLString: row.userInfo?.profile,
-          date: row.date,
-          content: row.content
-        )
+        owner.view.isUserInteractionEnabled = !loading
       }
       .disposed(by: disposeBag)
 
@@ -126,13 +180,12 @@ final class CommentViewController: UIViewController, View {
 }
 
 final class CommentCell: UITableViewCell {
-
   static let reuseID = "CommentCell"
 
   private let profileImageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
     $0.clipsToBounds = true
-    $0.layer.cornerRadius = 18 // 36x36 원형
+    $0.layer.cornerRadius = 18  // 36x36 원형
     $0.backgroundColor = .secondarySystemBackground
     $0.snp.makeConstraints { $0.size.equalTo(CGSize(width: 36, height: 36)) }
   }
@@ -148,14 +201,6 @@ final class CommentCell: UITableViewCell {
     $0.font = .pretendard(size: 13)
     $0.textColor = .secondaryLabel
     $0.textAlignment = .right
-    $0.setContentCompressionResistancePriority(.required, for: .horizontal)
-    $0.setContentHuggingPriority(.required, for: .horizontal)
-  }
-
-  private let kebabImageView = UIImageView(image: .kebab).then {
-    $0.contentMode = .scaleAspectFit
-    $0.tintColor = .tertiaryLabel
-    $0.snp.makeConstraints { $0.size.equalTo(CGSize(width: 20, height: 20)) }
     $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     $0.setContentHuggingPriority(.required, for: .horizontal)
   }
@@ -188,11 +233,10 @@ final class CommentCell: UITableViewCell {
     headerContainer.addSubview(profileImageView)
     headerContainer.addSubview(nameLabel)
     headerContainer.addSubview(dateLabel)
-    headerContainer.addSubview(kebabImageView)
 
     headerContainer.snp.makeConstraints {
-      $0.top.equalToSuperview().offset(12)
-      $0.leading.trailing.equalToSuperview().inset(16)
+      $0.top.equalToSuperview().offset(16)
+      $0.leading.trailing.equalToSuperview().inset(20)
       $0.bottom.equalTo(profileImageView.snp.bottom)
     }
 
@@ -201,38 +245,38 @@ final class CommentCell: UITableViewCell {
     }
 
     nameLabel.snp.makeConstraints {
-      $0.leading.equalTo(profileImageView.snp.trailing).offset(8)
-      $0.centerY.equalTo(profileImageView.snp.centerY)
-      $0.trailing.lessThanOrEqualTo(dateLabel.snp.leading).offset(-8)
-    }
-
-    kebabImageView.snp.makeConstraints {
-      $0.trailing.equalToSuperview()
+      $0.leading.equalTo(profileImageView.snp.trailing).offset(6)
       $0.centerY.equalTo(profileImageView.snp.centerY)
     }
 
     dateLabel.snp.makeConstraints {
-      $0.trailing.equalTo(kebabImageView.snp.leading).offset(-8)
+      $0.trailing.equalToSuperview().inset(6)
       $0.centerY.equalTo(profileImageView.snp.centerY)
     }
 
     contentLabel.snp.makeConstraints {
-      $0.top.equalTo(headerContainer.snp.bottom).offset(8)
-      $0.leading.trailing.equalToSuperview().inset(16)
-      $0.bottom.equalToSuperview().inset(12)
+      $0.top.equalTo(headerContainer.snp.bottom).offset(10)
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalToSuperview().inset(16)
     }
   }
 
   func configure(nickname: String, profileURLString: String?, date: Date, content: String) {
     nameLabel.text = nickname
+    nameLabel.font = UIFont.pretendard(size: 15, weight: .medium)
+    nameLabel.textColor = .black
 
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "ko_KR")
     formatter.timeZone = .current
-    formatter.dateFormat = "yyyy.MM.dd"
+    formatter.dateFormat = "yyyy.MM.dd"  // 0 패딩 포함
     dateLabel.text = formatter.string(from: date)
+    dateLabel.font = UIFont.pretendard(size: 13, weight: .regular)
+    dateLabel.textColor = .grayScale400
 
     contentLabel.text = content
+    contentLabel.font = UIFont.pretendard(size: 14, weight: .regular)
+    contentLabel.textColor = .grayScale900
 
     if let urlString = profileURLString, let url = URL(string: urlString) {
       profileImageView.kf.setImage(with: url, placeholder: UIImage.profilePerson)

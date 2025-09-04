@@ -15,13 +15,15 @@ import Supabase
 import RxFlow
 
 final class CommentReactor: Reactor, Stepper {
-
+  let initialState: State
+  private let postId: UUID
   @Dependency(\.supabase) var supabase
   let steps = PublishRelay<Step>()
 
   // MARK: Reactor
   enum Action {
     case refresh
+    case didTapBack
   }
 
   enum Mutation {
@@ -34,13 +36,8 @@ final class CommentReactor: Reactor, Stepper {
     var isLoading: Bool = false
     var comments: [CommentRow] = []
     var errorMessage: String?
+    let viewer: Bool
   }
-
-  let initialState: State
-  private let postId: UUID
-
-  // 외부에서 디버그용으로 확인만 가능하게 노출
-  var postIdForDebug: UUID { postId }
 
   // MARK: Model for decoding Comment rows
   struct CommentRow: Codable, Equatable, Hashable {
@@ -54,7 +51,7 @@ final class CommentReactor: Reactor, Stepper {
     let content: String
     let date: Date
     let commenterId: String
-    let userInfo: CommentUser?
+    let user: CommentUser?
 
     enum CodingKeys: String, CodingKey {
       case id
@@ -62,15 +59,13 @@ final class CommentReactor: Reactor, Stepper {
       case content
       case date
       case commenterId = "commenter_id"
-      case userInfo = "User_Info"
+      case user = "User_Info"
     }
   }
 
-  init(postId: UUID) {
+  init(postId: UUID, viewer: Bool = false) {
     self.postId = postId
-    self.initialState = State()
-    // 초기화 시점에 한 번 출력
-    print("CommentReactor init with postId: \(postId.uuidString)")
+    self.initialState = State(viewer: viewer)
   }
 
   func mutate(action: Action) -> Observable<Mutation> {
@@ -87,7 +82,8 @@ final class CommentReactor: Reactor, Stepper {
           formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
           rows.forEach { row in
             let dateString = formatter.string(from: row.date)
-            print("Reactor with content: \(row.content), date: \(dateString)")
+            let nick = row.user?.nickname ?? "탈퇴한 회원"
+            print("Reactor with nick: \(nick), content: \(row.content), date: \(dateString)")
           }
         }
         .map { Mutation.setComments($0) as Mutation }
@@ -97,6 +93,9 @@ final class CommentReactor: Reactor, Stepper {
         }
       let end = Observable.just(Mutation.setLoading(false))
       return .concat([start, request, end])
+    case .didTapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
     }
   }
 
