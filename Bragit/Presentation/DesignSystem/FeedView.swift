@@ -23,7 +23,7 @@ class FeedView: UIView {
       $0.backgroundColor = .white
     }
 
-  private lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
+  lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
 
   override init(frame: CGRect) {
     super.init(frame: frame)

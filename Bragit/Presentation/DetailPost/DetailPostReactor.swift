@@ -55,6 +55,4 @@ class DetailPostReactor: Reactor, Stepper {
   func transform(state: Observable<State>) -> Observable<State> {
     return state.observe(on: MainScheduler.instance)
   }
-
-
 }

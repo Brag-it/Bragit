@@ -40,7 +40,7 @@ final class HomeFlow: Flow {
     let detailPostVC = DetailPostViewController(reactor: reactor)
 
     nav.pushViewController(detailPostVC, animated: true)
-    
+
     return .one(flowContributor: .contribute(
       withNextPresentable: detailPostVC,
       withNextStepper: reactor

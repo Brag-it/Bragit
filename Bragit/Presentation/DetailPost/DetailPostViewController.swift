@@ -28,7 +28,7 @@ class DetailPostViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
-    self.navigationController?.isNavigationBarHidden = true
+    
     setUIConstraints()
     print("넘겨받은 데이터 : \(String(describing: reactor?.post ?? nil))")
   }

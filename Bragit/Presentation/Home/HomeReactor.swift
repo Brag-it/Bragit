@@ -25,6 +25,7 @@ class HomeReactor: Reactor, Stepper {
     case loadPosts
     case loadNextPosts
     case followButtonTapped(Post)
+    case didTapPost(Post)
   }
 
   enum Mutation {
@@ -97,6 +98,9 @@ class HomeReactor: Reactor, Stepper {
         }
         return Disposables.create()
       }
+    case .didTapPost(let post):
+      self.steps.accept(AppStep.feedDetail(post: post))
+      return .empty()
     }
   }
 
