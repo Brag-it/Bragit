@@ -21,6 +21,7 @@ class SettingReactor: Reactor, Stepper {
   enum Action {
     case backButtonTap
     case cancelAccountButtonTap
+    case logoutButtonTap
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -44,6 +45,9 @@ class SettingReactor: Reactor, Stepper {
       return .empty()
     case .cancelAccountButtonTap:
       steps.accept(AppStep.cancelAccount)
+      return .empty()
+    case .logoutButtonTap:
+      steps.accept(AppStep.login)
       return .empty()
     }
   }

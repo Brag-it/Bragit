@@ -19,6 +19,13 @@ final class SettingViewController: UIViewController, View {
 
   private let settingView = SettingView()
 
+  let alert = AlertView(
+    title: "로그아웃하시겠습니까?",
+    message: "로그인 화면으로 돌아갑니다",
+    leftButtonTitle: "예",
+    rightButtonTitle: "아니요"
+  )
+
   init(reactor: SettingReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
@@ -45,6 +52,15 @@ final class SettingViewController: UIViewController, View {
 
     settingView.cancelAccountButton.rx.tap
       .map { .cancelAccountButtonTap }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    settingView.logoutButton.rx.tap
+      .bind { [weak view, alert] in view?.addSubview(alert) }
+      .disposed(by: disposeBag)
+
+    alert.leftTap
+      .map { .logoutButtonTap }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
   }

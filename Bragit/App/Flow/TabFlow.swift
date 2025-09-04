@@ -37,10 +37,10 @@ final class TabFlow: NSObject, Flow, Stepper {
       return presentWriteFlow()
     case .feedDetail(let post):
       return showDetailPost(post: post)
-//    case .comment(let id):
-//      return showComment(id: id)
+//  case .comment(let id):
+//    return showComment(id: id)
     default:
-      return .none
+      return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
   }
 
