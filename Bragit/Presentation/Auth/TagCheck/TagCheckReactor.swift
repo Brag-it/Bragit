@@ -80,6 +80,8 @@ final class TagCheckReactor: Reactor, Stepper {
           let session = try await self.supabase.auth.session
           let userId = session.user.id
 
+          UserDefaults.standard.set(userId.uuidString, forKey: LocalStorageCase.nowUser.rawValue)
+
           let user = User(
             id: userId.uuidString,
             nickname: self.userInfo.nickname,

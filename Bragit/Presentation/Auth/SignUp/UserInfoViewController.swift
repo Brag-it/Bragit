@@ -441,13 +441,13 @@ final class UserInfoViewController: UIViewController {
 
       formView.mailCheckLabel.text = "사용 가능한 이메일입니다"
       formView.mailCheckLabel.textColor = formView.acceptColor
-      formView.mailCheckIcon.image = UIImage(named: "accept")
+      formView.mailCheckIcon.image = .accept
       formView.pwCheckLabel.text = "사용 가능한 비밀번호입니다"
       formView.pwCheckLabel.textColor = formView.acceptColor
-      formView.pwCheckIcon.image = UIImage(named: "accept")
+      formView.pwCheckIcon.image = .accept
       formView.rePwCheckLabel.text = "비밀번호가 일치합니다"
       formView.rePwCheckLabel.textColor = formView.acceptColor
-      formView.rePwCheckIcon.image = UIImage(named: "accept")
+      formView.rePwCheckIcon.image = .accept
 
       mailValid = true
       passwordValid = true
@@ -501,8 +501,8 @@ final class UserInfoViewController: UIViewController {
     okText: String,
     failText: String
   ) {
-    let imageName = okStatus ? "accept" : "reject"
-    let image = UIImage(named: imageName)?.withRenderingMode(.alwaysOriginal)
+    let imageName = okStatus ? UIImage.accept : UIImage.reject
+    let image = imageName.withRenderingMode(.alwaysOriginal)
     icon.image = image
     icon.isHidden = false
     label.text = okStatus ? okText : failText
