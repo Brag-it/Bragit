@@ -28,9 +28,11 @@ class DetailPostViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
-    
+
     setUIConstraints()
-    print("넘겨받은 데이터 : \(String(describing: reactor?.post ?? nil))")
+    print("제목 : \(String(describing: reactor?.currentState.title))")
+    print("내용 : \(String(describing: reactor?.currentState.content))")
+    print("닉네임 : \(String(describing: reactor?.currentState.nickName))")
   }
 
   // UI 설정

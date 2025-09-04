@@ -10,9 +10,11 @@ import ReactorKit
 import RxSwift
 import RxFlow
 import RxRelay
+import Dependencies
 
 class DetailPostReactor: Reactor, Stepper {
   var initialState: State
+  @Dependency(\.userManager) var userManager
   let post: Post
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
@@ -27,10 +29,18 @@ class DetailPostReactor: Reactor, Stepper {
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
+    let title: String          // 제목
+    let content: NSAttributedString  // 내용
+    let nickName: String                // 작성자 닉네임(빈 값 가능)
+    var isLoading: Bool = false         // 로딩 표시
   }
 
   init(post: Post) {
-    self.initialState = State()
+    self.initialState = State(
+      title: post.title,
+      content: DetailPostReactor.unarchivedContent(content: post.content),
+      nickName: post.author?.nickname ?? "탈퇴한 유저 입니다"
+    )
     self.post = post
   }
 
@@ -54,5 +64,21 @@ class DetailPostReactor: Reactor, Stepper {
 
   func transform(state: Observable<State>) -> Observable<State> {
     return state.observe(on: MainScheduler.instance)
+  }
+
+  // 복원
+  static func unarchivedContent(content: String) -> NSAttributedString {
+    guard let data = Data(base64Encoded: content) else {
+      return NSAttributedString(string: content) // fallback
+    }
+    do {
+      return try NSKeyedUnarchiver.unarchivedObject(
+        ofClass: NSAttributedString.self,
+        from: data
+      ) ?? NSAttributedString()
+    } catch {
+      print("❌ Unarchive 실패:", error.localizedDescription)
+      return NSAttributedString(string: content)
+    }
   }
 }
