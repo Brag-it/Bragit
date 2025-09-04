@@ -130,14 +130,12 @@ extension ImageUploadViewController {
   func bind(reactor: ImageUploadReactor) {
 
     imageButton.rx.tap
-      .do(onNext: { print("[UI] imageButton tapped")})
       .bind(with: self) {owner, _ in
         owner.present(owner.imagePicker, animated: true)
       }
       .disposed(by: disposeBag)
 
     beLaterButton.rx.tap
-      .do(onNext: { print("[UI] beLaterButton tapped")})
       .map {
         ImageUploadReactor.Action.tapLater
       }
@@ -145,8 +143,6 @@ extension ImageUploadViewController {
       .disposed(by: disposeBag)
 
     nextButton.rx.tap
-      .do(onNext: { print("[UI] nextButton tapped")})
-
       .map { ImageUploadReactor.Action.tapNext }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)

@@ -56,8 +56,7 @@ final class ImageUploadReactor: Reactor, Stepper {
       if currentState.imageData != nil {
         print("[REACTOR] imageData exists: \(currentState.imageData!.count) bytes")
         return .concat([
-          .just(.setLoading(true))
-          .do(onNext: { _ in print("[REACTOR] setLoading(True) emitted")}),
+          .just(.setLoading(true)),
           uploadProfileImage()
             .catch { error in
               print("[REACTOR] Upload failed: \(error)")
@@ -72,8 +71,7 @@ final class ImageUploadReactor: Reactor, Stepper {
               default:
                 break
               }
-            }
-            .do(onCompleted: { print("[REACTOR] upload pipeline completed")}),
+            },
           .just(.setLoading(false))
         ])
       } else {
