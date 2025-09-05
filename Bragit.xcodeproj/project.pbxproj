@@ -22,6 +22,7 @@
 		E70E4F852E55DAC700CE935E /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F842E55DAC700CE935E /* Dependencies */; };
 		E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F872E55DAEE00CE935E /* LookinServer */; };
 		E70E4F8B2E55DB0A00CE935E /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F8A2E55DB0A00CE935E /* SwiftSoup */; };
+		E746A9292E6A751C00F285E7 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = E746A9282E6A751C00F285E7 /* Lottie */; };
 		E75DA8FA2E616AD700C324D3 /* RichTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = E75DA8F92E616AD700C324D3 /* RichTextKit */; };
 		E7A7368B2E55DCD100E0B9F1 /* Moya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368A2E55DCD100E0B9F1 /* Moya */; };
 		E7A7368D2E55DCD100E0B9F1 /* RxMoya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368C2E55DCD100E0B9F1 /* RxMoya */; };
@@ -81,6 +82,7 @@
 				E70E4F7C2E55DA1100CE935E /* Down in Frameworks */,
 				E70E4F742E55D9CC00CE935E /* RxRelay in Frameworks */,
 				E70E4F6D2E55D99E00CE935E /* Storage in Frameworks */,
+				E746A9292E6A751C00F285E7 /* Lottie in Frameworks */,
 				E70E4F792E55D9E400CE935E /* ReactorKit in Frameworks */,
 				E70E4F652E55D95D00CE935E /* Then in Frameworks */,
 				E70E4F682E55D96B00CE935E /* SnapKit in Frameworks */,
@@ -162,6 +164,7 @@
 				E7A7368A2E55DCD100E0B9F1 /* Moya */,
 				E7A7368C2E55DCD100E0B9F1 /* RxMoya */,
 				E75DA8F92E616AD700C324D3 /* RichTextKit */,
+				E746A9282E6A751C00F285E7 /* Lottie */,
 			);
 			productName = Bragit;
 			productReference = E70E4E882E55D60D00CE935E /* Bragit.app */;
@@ -232,6 +235,7 @@
 				E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */,
 				E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */,
+				E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E70E4E892E55D60D00CE935E /* Products */;
@@ -663,6 +667,14 @@
 				minimumVersion = 2.10.3;
 			};
 		};
+		E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
 		E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/danielsaidi/RichTextKit.git";
@@ -756,6 +768,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
+		};
+		E746A9282E6A751C00F285E7 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
 		};
 		E75DA8F92E616AD700C324D3 /* RichTextKit */ = {
 			isa = XCSwiftPackageProductDependency;

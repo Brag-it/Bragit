@@ -22,7 +22,7 @@ final class HomeView: UIView {
 
   private let logoImageView = UIImageView().then {
     $0.contentMode = .scaleAspectFit
-    $0.image = UIImage(systemName: "crown.fill")
+    $0.image = .headerLogo
   }
 
   let feedView = FeedView()
