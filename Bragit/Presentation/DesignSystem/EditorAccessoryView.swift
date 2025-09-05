@@ -15,25 +15,31 @@ final class EditorAccessoryView: UIView {
   // 볼드체 적용 버튼
   let boldButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "bold"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
   }
 
   // 밑줄 적용 버튼
   let underlineButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "underline"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
   }
 
   // 취소선 적용 버튼
   let strikethroughButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "strikethrough"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
   }
 
   // 이미지 삽입 버튼
   let imageButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "photo"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
+  }
+
+  // 키보드 내리는 버튼
+  let keyboardDismissButton = UIButton(type: .system).then {
+    $0.setImage(UIImage(systemName: "keyboard.chevron.compact.down"), for: .normal)
+    $0.tintColor = .grayScaleBack
   }
 
   // 버튼 수평 스택 뷰
@@ -58,7 +64,7 @@ final class EditorAccessoryView: UIView {
     layer.borderColor = UIColor.systemGray3.cgColor
     layer.borderWidth = 1.0
 
-    [boldButton, underlineButton, strikethroughButton, imageButton].forEach {
+    [boldButton, underlineButton, strikethroughButton, imageButton, keyboardDismissButton].forEach {
       stackView.addArrangedSubview($0)
     }
   }
