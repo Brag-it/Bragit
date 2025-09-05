@@ -250,4 +250,13 @@ class StubPostManager: PostManagerProtocol {
     let newLikes = baseLikes + delta
     return .just(newLikes)
   }
+
+  func deletePost(postId: String) async throws {
+    _ = postId
+  }
+
+  func rxDeletePost(postId: String) -> RxSwift.Observable<Void> {
+    _ = postId
+    return .just(())
+  }
 }

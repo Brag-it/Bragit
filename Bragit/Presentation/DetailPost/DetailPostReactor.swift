@@ -32,12 +32,16 @@ class DetailPostReactor: Reactor, Stepper {
     case didTapFollow
     case didTapEdit
     case didTapReport
+    case didTapDelete
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
     case setIsLike(Bool, Int)
     case setIsFollowed(Bool)
+    case setLoading(Bool)
+    case setDeleted
+    case setError(Error)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -118,9 +122,7 @@ class DetailPostReactor: Reactor, Stepper {
             self.likePosts = ids
           }
           let rollbackCount = max(0, optimisticCount + (willLike ? -1 : +1))
-#if DEBUG
           print("inc_post_like RPC 실패:", error.localizedDescription)
-#endif
           return .just(.setIsLike(!willLike, rollbackCount))
         }
       return optimistic.concat(sync)
@@ -177,6 +179,28 @@ class DetailPostReactor: Reactor, Stepper {
 
     case .didTapReport:
       return .empty()
+
+    case .didTapDelete:
+      #if DEBUG
+      print("[DetailPostReactor] didTapDelete: postId=\(post.id.uuidString)")
+      #endif
+      return Observable.concat([
+        .just(.setLoading(true)),
+        postManager.rxDeletePost(postId: post.id.uuidString)
+          .do{ _ in
+            #if DEBUG
+            print("[DetailPostReactor] delete success")
+            #endif
+          }
+          .map { _ in Mutation.setDeleted }
+          .catch { error in
+            #if DEBUG
+            print("[DetailPostReactor] delete error: \(error.localizedDescription)")
+            #endif
+            return .just(.setError(error))
+          },
+        .just(.setLoading(false))
+      ])
     }
   }
   // swiftlint:enable cyclomatic_complexity
@@ -186,13 +210,24 @@ class DetailPostReactor: Reactor, Stepper {
   func reduce(state: State, mutation: Mutation) -> State {
     var newState = state
     switch mutation {
-
     case .setIsLike(let isLike, let count):
       newState.isLiked = isLike
       newState.likeCount = count
+
     case .setIsFollowed(let isFollowed):
       newState.isfollowed = isFollowed
+
+    case .setLoading(let isLoading):
+      newState.isLoading = isLoading
+
+    case .setDeleted:
+      steps.accept(AppStep.pop)
+      return state
+
+    case .setError(let error):
+      return print(error) == () ? state : state
     }
+
     return newState
   }
 

@@ -46,6 +46,8 @@ protocol PostManagerProtocol {
   func rxAttachTags(postId: String, tagIds: [String]) -> Observable<Void>
   func incrementLike(postId: String, delta: Int) async throws -> Int
   func rxIncrementLike(postId: String, delta: Int) -> Observable<Int>
+  func deletePost(postId: String) async throws
+  func rxDeletePost(postId: String) -> Observable<Void>
 }
 
 class PostManager: PostManagerProtocol {
@@ -464,6 +466,31 @@ class PostManager: PostManagerProtocol {
           observer.onCompleted()
         } catch {
           observer.onError(error)
+        }
+      }
+      return Disposables.create()
+    }
+  }
+
+  // 게시물 삭제
+  func deletePost(postId: String) async throws {
+    _ = try await client
+      .from("Post")
+      .delete()
+      .eq("id", value: postId)
+      .execute()
+  }
+
+  func rxDeletePost(postId: String) -> Observable<Void> {
+    .create { [weak self] observer in
+      guard let self else { observer.onCompleted(); return Disposables.create() }
+      Task {
+        do {
+          try await self.deletePost(postId: postId)
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)  // 0행인 경우도 여기로 떨어짐
         }
       }
       return Disposables.create()

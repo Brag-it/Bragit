@@ -130,6 +130,9 @@ class DetailPostViewController: UIViewController, View {
     print("내용 : \(String(describing: reactor?.currentState.content))")
     print("닉네임 : \(String(describing: reactor?.currentState.nickName))")
     print("보는사람(작성자인지): \(String(describing: reactor?.currentState.viewer))")
+    print("작성자ID: \(String(describing: reactor?.post.author?.id))")
+    print("보는사람ID: \(String(describing: reactor?.nowUser))")
+
   }
 
   // UI 설정
@@ -283,7 +286,8 @@ class DetailPostViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     deleteAlert.rightTap
-      .bind { print("삭제 버튼 누름") }
+      .map { Reactor.Action.didTapDelete }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     selfMenu.itemTap
