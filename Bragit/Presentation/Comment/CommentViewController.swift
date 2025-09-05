@@ -49,6 +49,7 @@ final class CommentViewController: UIViewController, View {
     $0.separatorStyle = .none
     $0.backgroundColor = .systemBackground
     $0.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+    $0.keyboardDismissMode = .onDrag
   }
 
   private let activityIndicator = UIActivityIndicatorView(style: .medium).then {
@@ -57,7 +58,14 @@ final class CommentViewController: UIViewController, View {
 
   private let commentTextView = UITextView()
 
-  // Use stored lazy properties so we keep a single instance that we can show/hide.
+  // 화면 빈 곳 탭 시 키보드 내리기용 제스처
+  private lazy var dismissTapGesture: UITapGestureRecognizer = {
+    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    tap.cancelsTouchesInView = false
+    return tap
+  }()
+
+  // 액세서리 바
   private lazy var bottomBar: UIView = {
     let bar = UIView()
     bar.backgroundColor = .grayScale50
@@ -100,7 +108,7 @@ final class CommentViewController: UIViewController, View {
     }
 
     sendImageView.snp.makeConstraints {
-      $0.trailing.equalTo(bar.snp.trailing).inset(12)
+      $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
       $0.centerY.equalTo(textContainer.snp.centerY)
     }
 
@@ -151,7 +159,7 @@ final class CommentViewController: UIViewController, View {
     }
 
     sendImageView.snp.makeConstraints {
-      $0.trailing.equalTo(bar.snp.trailing).inset(12)
+      $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
       $0.centerY.equalTo(textContainer.snp.centerY)
     }
 
@@ -186,6 +194,7 @@ final class CommentViewController: UIViewController, View {
     view.backgroundColor = .white
     setupLayout()
     setupKeyboardObservation()
+    setupDismissKeyboardGesture()
   }
 
   private func setupLayout() {
@@ -221,10 +230,9 @@ final class CommentViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
-    // iOS 16+: 항상 keyboardLayoutGuide를 사용
     bottomBar.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview()
-      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+      $0.bottom.equalTo(view.keyboardLayoutGuide)
       $0.height.equalTo(54)
     }
 
@@ -256,6 +264,11 @@ final class CommentViewController: UIViewController, View {
       )
   }
 
+  private func setupDismissKeyboardGesture() {
+    // 화면 빈 곳 탭 시 키보드 내리기
+    view.addGestureRecognizer(dismissTapGesture)
+  }
+
   deinit {
     NotificationCenter.default.removeObserver(self)
   }
@@ -268,6 +281,15 @@ final class CommentViewController: UIViewController, View {
   @objc private func didTapSend() {
     commentTextView.resignFirstResponder()
     // TODO: Send comment action via reactor if needed.
+  }
+
+  @objc private func dismissKeyboard() {
+    // accessoryView 내부 first responder까지 포함해 편집 종료
+    if let window = view.window {
+      window.endEditing(true)
+    } else {
+      view.endEditing(true)
+    }
   }
 
   @objc private func keyboardWillShow(_ note: Notification) {
