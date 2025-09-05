@@ -20,6 +20,8 @@ final class AppFlow: Flow {
     guard let step = step as? AppStep else { return .none }
 
     switch step {
+    case .splash:
+      return showSplash()
     case .login:
       // 최초 진입/로그인 화면 요청
       return showLoginFlow()
@@ -31,13 +33,25 @@ final class AppFlow: Flow {
     }
   }
 
+  private func showSplash() -> FlowContributors {
+    let splashVC = SplashViewController()
+
+    window.rootViewController = splashVC
+    window.makeKeyAndVisible()
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: splashVC,
+      withNextStepper: splashVC
+    ))
+  }
+
   private func showLoginFlow() -> FlowContributors {
     let flow = LoginFlow()
     Flows.use(flow, when: .ready) { [weak self] root in
       self?.window.rootViewController = root
       self?.window.makeKeyAndVisible()
     }
-    // LoginFlow 내부에서 .login을 처리해 로그인 화면을 세팅
+
     return .one(flowContributor: .contribute(
       withNextPresentable: flow,
       withNextStepper: OneStepper(withSingleStep: AppStep.login)
@@ -67,5 +81,5 @@ final class AppStepper: Stepper {
   let steps = PublishRelay<Step>()
 
   // 앱 시작시 가장 먼저 보여줄 목적지
-  var initialStep: Step { AppStep.login }
+  var initialStep: Step { AppStep.splash }
 }

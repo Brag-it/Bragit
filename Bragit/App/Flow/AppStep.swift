@@ -9,6 +9,7 @@ import RxFlow
 
 enum AppStep: Step {
   // 공통
+  case splash
   case dismiss                         // 닫기(present)
   case pop                             // 닫기(push)
 
