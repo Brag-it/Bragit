@@ -37,6 +37,7 @@ class FavoriteReactor: Reactor, Stepper {
     case menuTapped(Int)
     case followButtonTapped(Post)
     case goToTagDetail(Tag)
+    case refresh
   }
 
   enum Mutation {
@@ -115,27 +116,21 @@ class FavoriteReactor: Reactor, Stepper {
           return self.tagManager.rxFetchPopularTags().flatMap { [weak self] popularTags -> Observable<Mutation> in
             guard let self = self else { return .empty() }
 
-            let postsStream = self.postManager
-              .rxSearchFeed(tagIDs: popularTags.map { $0.id }, from: 0, to: 10)
-              .map { Mutation.setPosts($0) }
-
             return .concat([
               .just(.setLoading(true)),
               .just(.setPostType(.emptyTag(popularTags))),
-              postsStream,
+              rxSetPost(postType: .emptyTag(popularTags)),
               .just(.setLoading(false))
             ])
           }
         } else {
           // 관심 태그가 있을 경우
           let favoriteTags = self.favoriteTags ?? []
-          let postsStream = self.postManager.rxSearchFeed(tagIDs: favoriteTags.map { $0.id }, from: 0, to: 10)
-            .map { Mutation.setPosts($0) }
 
           return .concat([
             .just(.setLoading(true)),
             .just(.setPostType(.tag(favoriteTags))),
-            postsStream,
+            rxSetPost(postType: .tag(favoriteTags)),
             .just(.setLoading(false))
           ])
         }
@@ -211,6 +206,8 @@ class FavoriteReactor: Reactor, Stepper {
     case .goToTagDetail(let tag):
       self.steps.accept(AppStep.tagInform(tag))
       return .empty()
+    case .refresh:
+      return rxSetPost(postType: currentState.postType)
     }
   }
   // swiftlint:enable cyclomatic_complexity
@@ -275,5 +272,40 @@ class FavoriteReactor: Reactor, Stepper {
           postsStream
         ])
       }
+  }
+
+  private func rxSetPost(postType: PostType) -> Observable<Mutation> {
+    switch postType {
+    case .tag(let tags):
+      let postsStream = self.postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
+        .map { Mutation.setPosts($0) }
+      return .concat([
+        .just(.setLoading(true)),
+        postsStream,
+        .just(.setLoading(false))
+      ])
+    case .emptyTag(let tags):
+      let postsStream = self.postManager
+        .rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
+        .map { Mutation.setPosts($0) }
+
+      return .concat([
+        .just(.setLoading(true)),
+        postsStream,
+        .just(.setLoading(false))
+      ])
+    case .user:
+      return .concat([
+        .just(.setLoading(true)),
+        rxPostTypeChangeToUser(),
+        .just(.setLoading(false))
+      ])
+    case .emptyUser:
+      return .concat([
+        .just(.setLoading(true)),
+        rxPostTypeChangeToEmptyUser(),
+        .just(.setLoading(false))
+      ])
+    }
   }
 }
