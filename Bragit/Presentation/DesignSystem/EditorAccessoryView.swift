@@ -64,17 +64,23 @@ final class EditorAccessoryView: UIView {
     layer.borderColor = UIColor.systemGray3.cgColor
     layer.borderWidth = 1.0
 
-    [boldButton, underlineButton, strikethroughButton, imageButton, keyboardDismissButton].forEach {
+    [boldButton, underlineButton, strikethroughButton, imageButton].forEach {
       stackView.addArrangedSubview($0)
     }
   }
 
   private func setupLayout() {
     addSubview(stackView)
+    addSubview(keyboardDismissButton)
 
     stackView.snp.makeConstraints {
       $0.top.bottom.equalTo(self.safeAreaLayoutGuide).inset(8)
       $0.leading.equalTo(self.safeAreaLayoutGuide).offset(16)
+      $0.trailing.lessThanOrEqualTo(self.keyboardDismissButton.snp.leading).offset(-16)
+    }
+
+    keyboardDismissButton.snp.makeConstraints {
+      $0.top.bottom.equalTo(self.safeAreaLayoutGuide).inset(8)
       $0.trailing.lessThanOrEqualTo(self.safeAreaLayoutGuide).offset(-16)
     }
 
