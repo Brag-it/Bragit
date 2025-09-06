@@ -103,8 +103,7 @@ class FavoriteReactor: Reactor, Stepper {
       return .concat([
         .just(.setLoading(true)),
         .just(.setSelectedTag(tag)),
-        postManager.rxSearchFeed(tagIDs: [tag.id], from: 0, to: 10)
-          .map { .setPosts($0) },
+        rxSetPost(postType: .tag([tag])),
         .just(.setLoading(false))
       ])
     case .menuTapped(let index):
@@ -277,8 +276,16 @@ class FavoriteReactor: Reactor, Stepper {
   private func rxSetPost(postType: PostType) -> Observable<Mutation> {
     switch postType {
     case .tag(let tags):
-      let postsStream = self.postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
-        .map { Mutation.setPosts($0) }
+      let postsStream = {
+        if self.currentState.selectedTag != nil {
+          self.postManager.rxSearchFeed(tagIDs: [self.currentState.selectedTag!.id], from: 0, to: 10)
+            .map { Mutation.setPosts($0) }
+        } else {
+          self.postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
+            .map { Mutation.setPosts($0) }
+        }
+      }()
+
       return .concat([
         .just(.setLoading(true)),
         postsStream,
