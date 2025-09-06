@@ -27,6 +27,8 @@ class HomeReactor: Reactor, Stepper {
     case followButtonTapped(Post)
     case didTapPost(Post)
     case goToTagDetail(Tag)
+    case searchTapped
+
   }
 
   enum Mutation {
@@ -104,6 +106,9 @@ class HomeReactor: Reactor, Stepper {
       return .empty()
     case .goToTagDetail(let tag):
       self.steps.accept(AppStep.tagInform(tag))
+      return .empty()
+    case .searchTapped:
+      steps.accept(AppStep.searchFeed)
       return .empty()
     }
   }

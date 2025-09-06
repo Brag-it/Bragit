@@ -45,6 +45,8 @@ final class TabFlow: NSObject, Flow, Stepper {
       return showComment(id: id)
     case .tagInform(let tag):
       return showTagDetail(tag: tag)
+    case .searchFeed:
+      return showsearchView()
     default:
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
@@ -159,6 +161,19 @@ final class TabFlow: NSObject, Flow, Stepper {
 
     return .one(flowContributor: .contribute(
       withNextPresentable: tagDetailVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  func showsearchView() -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    let reactor = SearchReactor()
+    let searchVC = SearchViewController(reactor: reactor)
+
+    navigation.pushViewController(searchVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: searchVC,
       withNextStepper: reactor
     ))
   }

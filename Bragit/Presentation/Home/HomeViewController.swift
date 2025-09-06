@@ -97,5 +97,10 @@ class HomeViewController: UIViewController, View {
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    homeView.searchButton.rx.tap
+      .map { Reactor.Action.searchTapped }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }

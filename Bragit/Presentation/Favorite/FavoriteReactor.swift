@@ -37,6 +37,7 @@ class FavoriteReactor: Reactor, Stepper {
     case menuTapped(Int)
     case followButtonTapped(Post)
     case goToTagDetail(Tag)
+    case searchTapped
   }
 
   enum Mutation {
@@ -210,6 +211,9 @@ class FavoriteReactor: Reactor, Stepper {
       }
     case .goToTagDetail(let tag):
       self.steps.accept(AppStep.tagInform(tag))
+      return .empty()
+    case .searchTapped:
+      steps.accept(AppStep.searchFeed)
       return .empty()
     }
   }
