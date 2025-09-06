@@ -15,25 +15,31 @@ final class EditorAccessoryView: UIView {
   // 볼드체 적용 버튼
   let boldButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "bold"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
   }
 
   // 밑줄 적용 버튼
   let underlineButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "underline"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
   }
 
   // 취소선 적용 버튼
   let strikethroughButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "strikethrough"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
   }
 
   // 이미지 삽입 버튼
   let imageButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "photo"), for: .normal)
-    $0.tintColor = .label
+    $0.tintColor = .grayScaleBack
+  }
+
+  // 키보드 내리는 버튼
+  let keyboardDismissButton = UIButton(type: .system).then {
+    $0.setImage(UIImage(systemName: "keyboard.chevron.compact.down"), for: .normal)
+    $0.tintColor = .grayScaleBack
   }
 
   // 버튼 수평 스택 뷰
@@ -65,10 +71,16 @@ final class EditorAccessoryView: UIView {
 
   private func setupLayout() {
     addSubview(stackView)
+    addSubview(keyboardDismissButton)
 
     stackView.snp.makeConstraints {
       $0.top.bottom.equalTo(self.safeAreaLayoutGuide).inset(8)
       $0.leading.equalTo(self.safeAreaLayoutGuide).offset(16)
+      $0.trailing.lessThanOrEqualTo(self.keyboardDismissButton.snp.leading).offset(-16)
+    }
+
+    keyboardDismissButton.snp.makeConstraints {
+      $0.top.bottom.equalTo(self.safeAreaLayoutGuide).inset(8)
       $0.trailing.lessThanOrEqualTo(self.safeAreaLayoutGuide).offset(-16)
     }
 

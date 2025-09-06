@@ -21,7 +21,6 @@ final class EditorView: UIView {
     $0.isEditable = true
     $0.isScrollEnabled = true
     $0.showsVerticalScrollIndicator = false
-    $0.keyboardDismissMode = .onDrag
     $0.autocorrectionType = .no
     $0.smartDashesType = .no
     $0.smartQuotesType = .no
