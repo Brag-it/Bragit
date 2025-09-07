@@ -168,6 +168,13 @@ class WriteViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    editorView.accessoryView.keyboardDismissButton.rx.tap
+      .bind { [weak self] in
+        guard let self else { return }
+        view.endEditing(true)
+      }
+      .disposed(by: disposeBag)
+
     titleTextField.rx.text.orEmpty
       .distinctUntilChanged()
       .map { Reactor.Action.updateTitle($0) }
@@ -187,10 +194,10 @@ class WriteViewController: UIViewController, View {
         editorView.applyBold(state.isBoldActive)
         editorView.applyUnderline(state.isUnderlineActive)
         editorView.applyStrikethrough(state.isStrikethroughActive)
-        editorView.accessoryView.boldButton.tintColor = state.isBoldActive ? .systemBlue : .grayScaleBack
-        editorView.accessoryView.underlineButton.tintColor = state.isUnderlineActive ? .systemBlue : .grayScaleBack
+        editorView.accessoryView.boldButton.tintColor = state.isBoldActive ? .information : .grayScaleBack
+        editorView.accessoryView.underlineButton.tintColor = state.isUnderlineActive ? .information : .grayScaleBack
         editorView.accessoryView.strikethroughButton.tintColor = state.isStrikethroughActive ?
-          .systemBlue : .grayScaleBack
+          .information : .grayScaleBack
       }
       .disposed(by: disposeBag)
   }

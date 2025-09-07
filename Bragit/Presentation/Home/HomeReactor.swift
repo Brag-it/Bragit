@@ -27,8 +27,9 @@ class HomeReactor: Reactor, Stepper {
     case followButtonTapped(Post)
     case didTapPost(Post)
     case goToTagDetail(Tag)
+    case refresh
+    case nowPostsRefresh
     case searchTapped
-
   }
 
   enum Mutation {
@@ -53,6 +54,16 @@ class HomeReactor: Reactor, Stepper {
       return .empty()
     }
     switch action {
+    case .refresh:
+      return .concat([
+      .just(.setLoading(true)),
+      postManager
+        .rxFetchMainFeedData(
+          from: 0,
+          to: 10)
+        .map { .setPosts($0) },
+      .just(.setLoading(false))
+    ])
     case .loadPosts:
       return .concat([
         .just(.setLoading(true)),
@@ -107,6 +118,14 @@ class HomeReactor: Reactor, Stepper {
     case .goToTagDetail(let tag):
       self.steps.accept(AppStep.tagInform(tag))
       return .empty()
+    case .nowPostsRefresh:
+      return .concat([
+        .just(.setLoading(true)),
+        postManager
+          .rxFetchPosts(ids: currentState.posts.map { $0.id.uuidString })
+          .map { .setPosts($0) },
+        .just(.setLoading(false))
+      ])
     case .searchTapped:
       steps.accept(AppStep.searchFeed)
       return .empty()

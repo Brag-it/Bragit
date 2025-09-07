@@ -34,6 +34,19 @@ class FavoriteViewController: UIViewController, View {
   }
 
   func bind(reactor: FavoriteReactor) {
+    favoriteView.feedView.refreshRelay
+      .map { .refresh }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    reactor.state.map { $0.isLoading }
+      .distinctUntilChanged()
+      .filter { !$0 }
+      .bind { [weak self] _ in
+        self?.favoriteView.feedView.refreshControl.endRefreshing()
+      }
+      .disposed(by: disposeBag)
+
     // 메뉴 버튼 바인딩
     favoriteView.choiceButton.rx.tap
       .map {
@@ -137,5 +150,9 @@ class FavoriteViewController: UIViewController, View {
       .map { Reactor.Action.searchTapped }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
+
+  func scrollToTop() {
+    favoriteView.feedView.collectionView.setContentOffset(.zero, animated: true)
   }
 }

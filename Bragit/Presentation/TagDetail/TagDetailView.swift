@@ -167,7 +167,7 @@ class TagDetailView: UIView {
     }
 
     let itemsToReconfigure = posts.filter { post in
-      currentPostItemsInSnapshot.contains(where: { $0.id == post.id })
+      currentPostItemsInSnapshot.contains { $0.id == post.id }
     }.compactMap { post -> TagDetailItem? in
       return .post(post)
     }

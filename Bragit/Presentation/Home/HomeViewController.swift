@@ -34,10 +34,15 @@ class HomeViewController: UIViewController, View {
   }
 
   func bind(reactor: HomeReactor) {
+
+    self.rx.viewDidAppear.bind { _ in
+      reactor.action.onNext(.nowPostsRefresh)
+    }.disposed(by: disposeBag)
+
     // 게시글 바인딩
     reactor.state.map { $0.posts }
       .distinctUntilChanged()
-      .bind { [weak homeView] posts in
+      .bind { [homeView] posts in
         @LocalStorage(location: .blockUser) var blockUsers: [String]?
 
         if blockUsers == nil {
@@ -55,7 +60,7 @@ class HomeViewController: UIViewController, View {
           blockUsers!.firstIndex(of: $0.author?.id.rawValue ?? "") == nil
         }
 
-        homeView?.feedView.dataApply(data: posts)
+        homeView.feedView.dataApply(data: posts)
       }
       .disposed(by: disposeBag)
 
@@ -92,9 +97,7 @@ class HomeViewController: UIViewController, View {
       .compactMap { [weak self] indexPath -> Post? in
         return self?.homeView.feedView.dataSource.itemIdentifier(for: indexPath)
       }
-      .map { post in
-        Reactor.Action.didTapPost(post)
-      }
+      .map { post in .didTapPost(post) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -102,5 +105,22 @@ class HomeViewController: UIViewController, View {
       .map { Reactor.Action.searchTapped }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    homeView.feedView.refreshRelay
+      .map { .refresh }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    reactor.state.map { $0.isLoading }
+      .distinctUntilChanged()
+      .filter { !$0 }
+      .bind { [homeView] _ in
+        homeView.feedView.refreshControl.endRefreshing()
+      }
+      .disposed(by: disposeBag)
+  }
+
+  func scrollToTop() {
+    homeView.feedView.collectionView.setContentOffset(.zero, animated: true)
   }
 }

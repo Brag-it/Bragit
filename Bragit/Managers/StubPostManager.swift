@@ -11,6 +11,10 @@ import Supabase
 import RxSwift
 
 class StubPostManager: PostManagerProtocol {
+  func rxFetchPosts(ids: [String]) -> RxSwift.Observable<[Post]> {
+    return .just(Self.samplePosts)
+  }
+
   func rxFetchPostByAuthorId(authorId: String, from: Int, to: Int) -> RxSwift.Observable<[Post]> {
     return .just(Self.samplePosts)
   }
