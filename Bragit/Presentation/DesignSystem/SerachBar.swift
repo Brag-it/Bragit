@@ -54,6 +54,10 @@ final class SearchBar: UIView {
       $0.directionalEdges.equalToSuperview()
       $0.height.equalTo(48)
     }
+
+    textField.snp.makeConstraints {
+      $0.height.equalTo(21)
+    }
   }
 
   required init?(coder: NSCoder) {

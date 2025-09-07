@@ -15,10 +15,13 @@ import RxCocoa
 final class SearchViewController: UIViewController, View {
   var disposeBag = DisposeBag()
 
-  private let heanderView = UIView().then {
-    $0.backgroundColor = .grayScale600
-    $0.layer.cornerRadius = 2
+  private let headerView = UIView()
+
+  private let backButton = UIButton(type: .system).then {
+    $0.setImage(.back, for: .normal)
+    $0.tintColor = .grayScale900
   }
+
   private let searchBar = SearchBar()
 
   private lazy var dataSource = setupDataSource(self.searchResultCollectionView)
@@ -48,19 +51,28 @@ final class SearchViewController: UIViewController, View {
 
   // UI 설정
   private func setUIConstraints() {
-    view.addSubview(heanderView)
-    view.addSubview(searchBar)
+    view.addSubview(headerView)
+    headerView.addSubview(backButton)
+    headerView.addSubview(searchBar)
+
     view.addSubview(searchResultCollectionView)
 
-    heanderView.snp.makeConstraints {
-      $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
-      $0.centerX.equalToSuperview()
-      $0.width.equalTo(48)
-      $0.height.equalTo(4)
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(64)
     }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().inset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.width.equalTo(24)
+    }
+
     searchBar.snp.makeConstraints {
-      $0.top.equalTo(heanderView.snp.bottom).offset(16)
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.leading.equalTo(backButton.snp.trailing).offset(16)
+      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.trailing.equalToSuperview().inset(20)
     }
 
     searchResultCollectionView.snp.makeConstraints {
