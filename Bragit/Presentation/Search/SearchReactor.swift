@@ -24,22 +24,22 @@ class SearchReactor: Reactor, Stepper {
     case viewDidLoad
     case updateText(String)         // 입력중
     case submit                     // 리턴키/ 검색 버튼
-    case changeScope(SearchScope)   // 결과 탭 전환
-    case tapRecent(String)          // 최근결과 탭
-    case deleteRecent(String)       // 최근결과 삭제
-    case clearAllRecent             // 전체 삭제
     case didTapBack
   }
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
     case setText(String)
     case setRecent([String]?)
+    case setResults(tags: [SearchTagItem], posts: [SearchPostItem], users: [SearchUserItem])
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
     var text: String = ""
     var recent: [String]?
+    var tagResults: [SearchTagItem] = []
+    var postResults: [SearchPostItem] = []
+    var userResults: [SearchUserItem] = []
   }
 
   init() {
@@ -61,23 +61,14 @@ class SearchReactor: Reactor, Stepper {
       let trimmed = currentState.text.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmed.isEmpty else { return .empty() }
       saveRecent(trimmed)
-      return .just(.setRecent(recentSearches)) // 저장 후 최신 목록 반영
-
-    case .changeScope:
-      // TODO: 스코프 전환 시 결과 재조회가 필요하면 여기에서 처리
-      return .empty()
-
-    case .tapRecent(let keyword):
-      // 필요 시 바로 검색 트리거를 여기서 이어가도 됨
-      return .from([.setText(keyword)])
-
-    case .deleteRecent(let keyword):
-      removeRecent(keyword)
-      return .just(.setRecent(recentSearches))
-
-    case .clearAllRecent:
-      clearAllRecent()
-      return .just(.setRecent(recentSearches))
+      let search = searchManager.rxSearchAll(searchText: trimmed, page: 0, pageSize: 20)
+        .map { bundle -> Mutation in
+          let tagItems = bundle.tags.map { SearchTagItem(tag: $0.tag) }
+          let postItems = bundle.posts.map { SearchPostItem(post: $0) }
+          let userItems = bundle.users.map { SearchUserItem(user: $0) }
+          return .setResults(tags: tagItems, posts: postItems, users: userItems)
+        }
+      return .concat(search, .just(.setRecent(recentSearches)))
 
     case .didTapBack:
       steps.accept(AppStep.dismiss)
@@ -93,6 +84,10 @@ class SearchReactor: Reactor, Stepper {
       newState.text = text
     case .setRecent(let recent):
       newState.recent = recent
+    case let .setResults(tags, posts, users):
+      newState.tagResults = tags
+      newState.postResults = posts
+      newState.userResults = users
     }
     return newState
   }
@@ -113,15 +108,5 @@ class SearchReactor: Reactor, Stepper {
       list.removeLast(list.count - 20)
     }
     recentSearches = list
-  }
-
-  private func removeRecent(_ keyword: String) {
-    var list = recentSearches ?? []
-    list.removeAll { $0.caseInsensitiveCompare(keyword) == .orderedSame }
-    recentSearches = list
-  }
-
-  private func clearAllRecent() {
-    recentSearches = []
   }
 }
