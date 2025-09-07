@@ -136,6 +136,11 @@ final class SearchViewController: UIViewController, View {
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    backButton.rx.tap
+      .map { SearchReactor.Action.didTapBack }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 
   // 리스트 형태

@@ -20,6 +20,7 @@ class SearchReactor: Reactor, Stepper {
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
+    case didTapBack
     case updateSearchText(String)
     case didTapSearchButton
     case loadNextPage
@@ -53,6 +54,10 @@ class SearchReactor: Reactor, Stepper {
   // 사용자 입력 → 상태 변화 신호로 변환
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .didTapBack:
+      steps.accept(AppStep.dismiss)
+      return .empty()
+
     case .updateSearchText(let text):
       return .just(.setSearchText(text))
 

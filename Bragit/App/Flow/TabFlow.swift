@@ -170,7 +170,9 @@ final class TabFlow: NSObject, Flow, Stepper {
     let reactor = SearchReactor()
     let searchVC = SearchViewController(reactor: reactor)
 
-    navigation.pushViewController(searchVC, animated: true)
+    searchVC.modalPresentationStyle = .fullScreen
+    searchVC.modalTransitionStyle = .crossDissolve
+    navigation.present(searchVC, animated: true)
 
     return .one(flowContributor: .contribute(
       withNextPresentable: searchVC,
