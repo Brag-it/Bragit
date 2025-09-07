@@ -9,7 +9,17 @@ import Foundation
 
 struct Post: Identifiable, Codable, Hashable {
   static func == (lhs: Post, rhs: Post) -> Bool {
-    lhs.id == rhs.id
+    lhs.id == rhs.id &&
+    lhs.title == rhs.title &&
+    lhs.thumbnailImage == rhs.thumbnailImage &&
+    lhs.author == rhs.author &&
+    lhs.date == rhs.date &&
+    lhs.tags == rhs.tags &&
+    lhs.content == rhs.content &&
+    lhs.like == rhs.like &&
+    lhs.reports == rhs.reports &&
+    lhs.commentCount == rhs.commentCount &&
+    lhs.description == rhs.description
   }
 
   func hash(into hasher: inout Hasher) {

@@ -48,6 +48,7 @@ protocol PostManagerProtocol {
   func rxIncrementLike(postId: String, delta: Int) -> Observable<Int>
   func deletePost(postId: String) async throws
   func rxDeletePost(postId: String) -> Observable<Void>
+  func rxFetchPosts(ids: [String]) -> Observable<[Post]>
 }
 
 class PostManager: PostManagerProtocol {
@@ -493,6 +494,34 @@ class PostManager: PostManagerProtocol {
           observer.onError(error)  // 0행인 경우도 여기로 떨어짐
         }
       }
+      return Disposables.create()
+    }
+  }
+
+  // id에 맞는 게시글들 가져오기
+  func rxFetchPosts(ids: [String]) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          let posts: [Post] = try await self.client
+            .from("Post")
+            .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
+            .in("id", values: ids)
+            .order("date", ascending: false)
+            .execute()
+            .value
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
       return Disposables.create()
     }
   }

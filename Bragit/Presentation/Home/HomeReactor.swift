@@ -28,6 +28,7 @@ class HomeReactor: Reactor, Stepper {
     case didTapPost(Post)
     case goToTagDetail(Tag)
     case refresh
+    case nowPostsRefresh
   }
 
   enum Mutation {
@@ -116,6 +117,14 @@ class HomeReactor: Reactor, Stepper {
     case .goToTagDetail(let tag):
       self.steps.accept(AppStep.tagInform(tag))
       return .empty()
+    case .nowPostsRefresh:
+      return .concat([
+        .just(.setLoading(true)),
+        postManager
+          .rxFetchPosts(ids: currentState.posts.map { $0.id.uuidString })
+          .map { .setPosts($0) },
+        .just(.setLoading(false))
+      ])
     }
   }
 

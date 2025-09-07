@@ -35,6 +35,10 @@ class HomeViewController: UIViewController, View {
 
   func bind(reactor: HomeReactor) {
 
+    self.rx.viewDidAppear.bind { _ in
+      reactor.action.onNext(.nowPostsRefresh)
+    }.disposed(by: disposeBag)
+
     // 게시글 바인딩
     reactor.state.map { $0.posts }
       .distinctUntilChanged()
