@@ -37,17 +37,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     let appStepper = AppStepper()
     coordinator.coordinate(flow: appFlow, with: appStepper)
 
-    // TODO: 로그인한 유저 UUID 등록하기
-    // example
-    // nowUser의 set은 UserDefaults를 사용해야함
-    UserDefaults.standard.set("e2f38754-f46b-4e3d-9347-b1ce68dc57ba", forKey: LocalStorageCase.nowUser.rawValue)
-    @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
-    // 태그 테스트 코드
-    favoriteTags = [
-      Tag(id: "6910eac9-eb3b-4ed0-9126-29f9dfa8ce40", tag: "test", count: 0),
-      Tag(id: "0d84179f-3d0f-49a4-b80f-8a2fca52fc76", tag: "test2", count: 0)
-    ]
-
     setBlockUsers()
     setFollowUser()
   }
