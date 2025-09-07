@@ -8,8 +8,8 @@ import UIKit
 
 enum SearchMode {
   case recent                // 최근 검색
-  case typingSuggestions     // 입력 중 → 연관 검색어
-  case results               // 검색 완료 → 결과
+  case typingSuggestions     // 입력 중
+  case results               // 결과
 }
 
 enum SearchScope {
