@@ -58,12 +58,18 @@ final class CommentViewController: UIViewController, View {
 
   private let commentTextView = UITextView()
 
+  // 전송 버튼을 별도로 선언 (Rx 바인딩을 위해)
+  private let sendButton = UIButton(type: .custom)
+
   // 화면 빈 곳 탭 시 키보드 내리기용 제스처
   private lazy var dismissTapGesture: UITapGestureRecognizer = {
-    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    let tap = UITapGestureRecognizer()
     tap.cancelsTouchesInView = false
     return tap
   }()
+
+  // bottomBar의 탭 버튼
+  private let bottomBarTapButton = UIButton(type: .custom)
 
   // 액세서리 바
   private lazy var bottomBar: UIView = {
@@ -86,14 +92,12 @@ final class CommentViewController: UIViewController, View {
       $0.isUserInteractionEnabled = false
     }
 
-    let tapOverlay = UIButton(type: .custom)
-    tapOverlay.backgroundColor = .clear
-    tapOverlay.addTarget(self, action: #selector(beginInputFromBottomBar), for: .touchUpInside)
+    bottomBarTapButton.backgroundColor = .clear
 
     bar.addSubview(lockImageView)
     bar.addSubview(textContainer)
     bar.addSubview(sendImageView)
-    textContainer.addSubview(tapOverlay)
+    textContainer.addSubview(bottomBarTapButton)
 
     lockImageView.snp.makeConstraints {
       $0.leading.equalTo(bar.snp.leading).offset(12)
@@ -112,7 +116,7 @@ final class CommentViewController: UIViewController, View {
       $0.centerY.equalTo(textContainer.snp.centerY)
     }
 
-    tapOverlay.snp.makeConstraints { $0.edges.equalToSuperview() }
+    bottomBarTapButton.snp.makeConstraints { $0.edges.equalToSuperview() }
 
     return bar
   }()
@@ -144,6 +148,7 @@ final class CommentViewController: UIViewController, View {
     bar.addSubview(lockImageView)
     bar.addSubview(textContainer)
     bar.addSubview(sendImageView)
+    bar.addSubview(sendButton)
     textContainer.addSubview(commentTextView)
 
     lockImageView.snp.makeConstraints {
@@ -163,15 +168,18 @@ final class CommentViewController: UIViewController, View {
       $0.centerY.equalTo(textContainer.snp.centerY)
     }
 
+    // 전송 버튼을 sendImageView 위에 투명하게 올림
+    sendButton.snp.makeConstraints {
+      $0.center.equalTo(sendImageView)
+      $0.size.equalTo(CGSize(width: 44, height: 44))
+    }
+
     commentTextView.snp.makeConstraints {
       $0.edges.equalToSuperview()
       $0.height.equalTo(42)
     }
 
     commentTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 34)
-
-    let tap = UITapGestureRecognizer(target: self, action: #selector(didTapSend))
-    sendImageView.addGestureRecognizer(tap)
 
     return bar
   }()
@@ -194,7 +202,7 @@ final class CommentViewController: UIViewController, View {
     view.backgroundColor = .white
     setupLayout()
     setupKeyboardObservation()
-    setupDismissKeyboardGesture()
+    view.addGestureRecognizer(dismissTapGesture)
   }
 
   private func setupLayout() {
@@ -248,59 +256,26 @@ final class CommentViewController: UIViewController, View {
   }
 
   private func setupKeyboardObservation() {
-    NotificationCenter.default
-      .addObserver(
-        self,
-        selector: #selector(keyboardWillShow(_:)),
-        name: UIResponder.keyboardWillShowNotification,
-        object: nil
-      )
-    NotificationCenter.default
-      .addObserver(
-        self,
-        selector: #selector(keyboardWillHide(_:)),
-        name: UIResponder.keyboardWillHideNotification,
-        object: nil
-      )
-  }
+    // Rx로 키보드 이벤트 처리
+    NotificationCenter.default.rx
+      .notification(UIResponder.keyboardWillShowNotification)
+      .subscribe(onNext: { [weak self] _ in
+        self?.bottomBar.isHidden = true
+      })
+      .disposed(by: disposeBag)
 
-  private func setupDismissKeyboardGesture() {
-    // 화면 빈 곳 탭 시 키보드 내리기
-    view.addGestureRecognizer(dismissTapGesture)
-  }
-
-  deinit {
-    NotificationCenter.default.removeObserver(self)
-  }
-
-  // MARK: - Selectors
-  @objc private func beginInputFromBottomBar() {
-    commentTextView.becomeFirstResponder()
-  }
-
-  @objc private func didTapSend() {
-    commentTextView.resignFirstResponder()
-    // TODO: Send comment action via reactor if needed.
-  }
-
-  @objc private func dismissKeyboard() {
-    // accessoryView 내부 first responder까지 포함해 편집 종료
-    if let window = view.window {
-      window.endEditing(true)
-    } else {
-      view.endEditing(true)
-    }
-  }
-
-  @objc private func keyboardWillShow(_ note: Notification) {
-    bottomBar.isHidden = true
-  }
-
-  @objc private func keyboardWillHide(_ note: Notification) {
-    bottomBar.isHidden = false
+    NotificationCenter.default.rx
+      .notification(UIResponder.keyboardWillHideNotification)
+      .subscribe(onNext: { [weak self] _ in
+        self?.bottomBar.isHidden = false
+      })
+      .disposed(by: disposeBag)
   }
 
   func bind(reactor: CommentReactor) {
+    // MARK: - Input (Actions)
+
+    // 뒤로가기 버튼
     backButton.rx.tap
       .map { Reactor.Action.didTapBack }
       .bind(to: reactor.action)
@@ -311,6 +286,38 @@ final class CommentViewController: UIViewController, View {
       .map { Reactor.Action.refresh }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    // bottomBar 탭 -> 키보드 올리기
+    bottomBarTapButton.rx.tap
+      .subscribe(onNext: { [weak self] in
+        self?.commentTextView.becomeFirstResponder()
+      })
+      .disposed(by: disposeBag)
+
+    // 전송 버튼 탭
+    sendButton.rx.tap
+      .withLatestFrom(commentTextView.rx.text.orEmpty)
+      .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+      .map { Reactor.Action.sendComment($0) }
+      .do(onNext: { [weak self] _ in
+        self?.commentTextView.text = ""
+        self?.commentTextView.resignFirstResponder()
+      })
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 화면 빈 곳 탭 -> 키보드 내리기
+    dismissTapGesture.rx.event
+      .subscribe(onNext: { [weak self] _ in
+        if let window = self?.view.window {
+          window.endEditing(true)
+        } else {
+          self?.view.endEditing(true)
+        }
+      })
+      .disposed(by: disposeBag)
+
+    // MARK: - Output (State)
 
     // 댓글 목록 바인딩
     reactor.state
@@ -355,14 +362,24 @@ final class CommentViewController: UIViewController, View {
       .observe(on: MainScheduler.instance)
       .bind(with: self) { owner, message in
         let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
-        owner.present(alert, animated: true) {
-          alert.addAction(.init(title: "확인", style: .default))
-        }
+        alert.addAction(.init(title: "확인", style: .default))
+        owner.present(alert, animated: true)
       }
+      .disposed(by: disposeBag)
+
+    // 댓글 전송 성공 시 텍스트뷰 초기화
+    reactor.state
+      .map(\.commentSent)
+      .filter { $0 }
+      .observe(on: MainScheduler.instance)
+      .subscribe(onNext: { [weak self] _ in
+        self?.commentTextView.text = ""
+      })
       .disposed(by: disposeBag)
   }
 }
 
+// MARK: - CommentCell은 그대로 유지
 final class CommentCell: UITableViewCell {
   static let reuseID = "CommentCell"
 
