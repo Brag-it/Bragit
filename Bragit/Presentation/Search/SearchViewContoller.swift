@@ -26,14 +26,6 @@ final class SearchViewController: UIViewController, View {
 
   private lazy var dataSource = setupDataSource(self.searchResultCollectionView)
 
-  private lazy var searchResultCollectionView = UICollectionView(
-    frame: .zero,
-    collectionViewLayout: createLayout()).then {
-      $0.backgroundColor = .white
-      $0.showsVerticalScrollIndicator = false
-      $0.keyboardDismissMode = .onDrag
-    }
-
   init(reactor: SearchReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
@@ -55,8 +47,6 @@ final class SearchViewController: UIViewController, View {
     headerView.addSubview(backButton)
     headerView.addSubview(searchBar)
 
-    view.addSubview(searchResultCollectionView)
-
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide)
       $0.leading.trailing.equalToSuperview()
@@ -74,110 +64,18 @@ final class SearchViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
       $0.trailing.equalToSuperview().inset(20)
     }
-
-    searchResultCollectionView.snp.makeConstraints {
-      $0.top.equalTo(searchBar.snp.bottom)
-      $0.leading.trailing.bottom.equalToSuperview()
-    }
   }
 
   func bind(reactor: SearchReactor) {
-    let textField = searchBar.textField
-    // 15자 제한
-    textField.rx.controlEvent(.editingChanged)
-      .withLatestFrom(textField.rx.text.orEmpty)
-      .map { [weak textField] raw -> String in
-        guard let textField = textField else { return String(raw.prefix(15)) }
-        if textField.markedTextRange != nil { return raw }
-        // 15자 초과시 애니메이션
-        if raw.count > 15 {
-          UIImpactFeedbackGenerator(style: .light).impactOccurred()
-          textField.shake()
-        }
-        // 잘라내고 UI 반영
-        let clamped = String(raw.prefix(15))
-        if textField.text != clamped { textField.text = clamped }
-        return clamped
-      }
-      .distinctUntilChanged()
-      .map(SearchReactor.Action.updateSearchText)
-      .bind(to: reactor.action)
-      .disposed(by: disposeBag)
-
-    let searchTrigger = Observable.merge(
-      searchBar.searchButton.rx.tap.asObservable(),
-      searchBar.textField.rx.controlEvent(.editingDidEndOnExit).asObservable()
-    )
-
-    searchTrigger
-      .map { SearchReactor.Action.didTapSearchButton }
-      .bind(to: reactor.action)
-      .disposed(by: disposeBag)
-
-    // 바닥 감지 후 다음 페이지 로드
-    searchResultCollectionView.rx.reachedBottom()
-      .map { SearchReactor.Action.loadNextPage }
-      .bind(to: reactor.action)
-      .disposed(by: disposeBag)
-
-    reactor.state
-      .map(\.searchResult)
-      .distinctUntilChanged()
-      .bind { [weak self] tag in
-        guard let self else { return }
-        applySnapshot(tag)
-      }
-      .disposed(by: disposeBag)
-
-    searchResultCollectionView.rx.itemSelected
-      .compactMap { [weak self] indexPath -> SearchReactor.Action? in
-        guard let tag = self?.dataSource.itemIdentifier(for: indexPath) else { return nil }
-        return .selectResult(tag)
-      }
-      .bind(to: reactor.action)
-      .disposed(by: disposeBag)
-
     backButton.rx.tap
       .map { SearchReactor.Action.didTapBack }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
-  }
 
-  // 리스트 형태
-  private func createLayout() -> UICollectionViewCompositionalLayout {
-    var config = UICollectionLayoutListConfiguration(appearance: .plain)
-    config.showsSeparators = false       // 구분선 안 보이게
-    config.backgroundColor = .white      // 배경색
-    return UICollectionViewCompositionalLayout.list(using: config)
-  }
-
-  private func applySnapshot(_ results: [String]) {
-    var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
-    snapshot.appendSections([0])
-    snapshot.appendItems(results, toSection: 0)
-    dataSource.apply(snapshot, animatingDifferences: true)
-  }
-
-  private func setupDataSource(
-    _ collectionView: UICollectionView
-  ) -> UICollectionViewDiffableDataSource<Int, String> {
-    let registration = UICollectionView.CellRegistration<UICollectionViewListCell, String> { cell, _, tags in
-      var content = cell.defaultContentConfiguration()
-      content.image = .hashTag
-      content.imageProperties.tintColor = .grayScale900
-      content.imageProperties.reservedLayoutSize = CGSize(width: 20, height: 20)
-
-      content.text = tags
-      content.textProperties.font = .pretendard(size: 15)
-      content.textProperties.color = .grayScale900
-      content.imageToTextPadding = 8
-      cell.contentConfiguration = content
-    }
-
-    return UICollectionViewDiffableDataSource<Int, String>(
-      collectionView: collectionView
-    ) { collectionView, indexPath, item in
-      collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
-    }
+    rx.viewDidAppear
+      .take(1)
+      .map { _ in SearchReactor.Action.viewDidLoad }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
