@@ -53,6 +53,7 @@ final class CommentReactor: Reactor, Stepper {
     let content: String
     let date: Date
     let commenterId: String?  // null/빈 값 허용
+    let profile: String?
     let user: CommentUser?  // 조인 결과가 없을 수 있음
 
     enum CodingKeys: String, CodingKey {
@@ -61,6 +62,7 @@ final class CommentReactor: Reactor, Stepper {
       case content
       case date
       case commenterId = "commenter_id"
+      case profile
       case user = "User_Info"
     }
   }
@@ -188,11 +190,6 @@ final class CommentReactor: Reactor, Stepper {
           // 현재 유저 ID 가져오기
           let userId = try await self.supabase.auth.session.user.id
 
-          // struct UserInfoResponse: Decodable {
-          //   let id: UUID
-          //   let nickname: String
-          // }
-
           // 유저 닉네임 가져오기
           let userInfo: User = try await self.supabase
             .from("User_Info")
@@ -208,21 +205,14 @@ final class CommentReactor: Reactor, Stepper {
           dateFormatter.locale = Locale(identifier: "ko_KR")
           dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
-          // print("테스트 댓글입니다.")
-          // print("id: \(newCommentId.uuidString)")
-          // print("post_id: \(self.postId.uuidString)")
-          // print("content: \(content)")
-          // print("date: \(dateFormatter.string(from: currentDate))")
-          // print("nickname: \(userInfo.nickname ?? "nickname error")")
-          // print("user_id: \(userInfo.id)")
-
           // 댓글 전송
           let newComment = Comment(
             id: newCommentId,
-            post_id: self.postId,
-            commenter_id: userInfo.id,
+            postId: self.postId,
+            commenterId: userInfo.id,
             content: content,
-            date: currentDate
+            date: currentDate,
+            profile: userInfo.profile ?? ""
           )
 
           try await self.supabase

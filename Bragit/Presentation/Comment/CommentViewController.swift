@@ -145,6 +145,11 @@ final class CommentViewController: UIViewController, View {
     commentTextView.textColor = .grayScale900
     commentTextView.isScrollEnabled = false
 
+    commentTextView.returnKeyType = .send
+    commentTextView.enablesReturnKeyAutomatically = true
+
+    commentTextView.delegate = self
+
     bar.addSubview(lockImageView)
     bar.addSubview(textContainer)
     bar.addSubview(sendImageView)
@@ -330,10 +335,10 @@ final class CommentViewController: UIViewController, View {
         )
       ) { _, row, cell in
         let nickname = (row.user?.nickname?.isEmpty == false) ? row.user!.nickname! : "탈퇴한 회원"
-        let profile = row.user?.profile
+        let profileURL = row.user?.profile ?? row.profile
         cell.configure(
           nickname: nickname,
-          profileURLString: profile,
+          profileURLString: profileURL,
           date: row.date,
           content: row.content
         )
@@ -483,5 +488,21 @@ final class CommentCell: UITableViewCell {
     } else {
       profileImageView.image = UIImage.profilePerson
     }
+  }
+}
+
+extension CommentViewController: UITextViewDelegate {
+  func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+    if text == "\n" {
+      let currentText = textView.text ?? ""
+      let trimmedText = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !trimmedText.isEmpty {
+        reactor?.action.onNext(.sendComment(trimmedText))
+        textView.text = ""
+        textView.resignFirstResponder()
+      }
+      return false
+    }
+    return true
   }
 }

@@ -9,8 +9,18 @@ import Foundation
 
 struct Comment: Encodable {
   let id: UUID
-  let post_id: UUID
-  let commenter_id: String
+  let postId: UUID
+  let commenterId: String
   let content: String
   let date: Date
+  let profile: String
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case postId = "post_id"
+    case commenterId = "commenter_id"
+    case content
+    case date
+    case profile
+  }
 }
