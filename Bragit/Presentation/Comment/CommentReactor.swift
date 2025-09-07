@@ -185,21 +185,50 @@ final class CommentReactor: Reactor, Stepper {
 
       let task = Task {
         do {
-          // 현재 유저 ID 가져오기 (예시 - 실제 구현에 맞게 수정 필요)
+          // 현재 유저 ID 가져오기
           let userId = try await self.supabase.auth.session.user.id
 
-          // 댓글 전송
-          let newComment = [
-            "post_id": self.postId.uuidString,
-            "content": content,
-            "commenter_id": userId.uuidString,
-            "date": ISO8601DateFormatter().string(from: Date())
-          ]
+          struct UserInfoResponse: Decodable {
+            let id: UUID
+            let nickname: String
+          }
 
-          try await self.supabase
-            .from("Comment")
-            .insert(newComment)
+          // 유저 닉네임 가져오기
+          let userInfo: UserInfoResponse = try await self.supabase
+            .from("User_Info")
+            .select("id, nickname")
+            .eq("id", value: userId.uuidString)
+            .single()
             .execute()
+            .value
+
+          let newCommentId = UUID()
+          let currentDate = Date()
+
+          let dateFormatter = DateFormatter()
+          dateFormatter.locale = Locale(identifier: "ko_KR")
+          dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+
+          print("테스트 댓글입니다.")
+          print("id: \(newCommentId.uuidString)")
+          print("post_id: \(self.postId.uuidString)")
+          print("content: \(content)")
+          print("date: \(dateFormatter.string(from: currentDate))")
+          print("nickname: \(userInfo.nickname)")
+          print("user_id: \(userInfo.id.uuidString)")
+
+          // 댓글 전송
+          // let newComment = [
+          //   "post_id": self.postId.uuidString,
+          //   "content": content,
+          //   "commenter_id": userId.uuidString,
+          //   "date": ISO8601DateFormatter().string(from: Date())
+          // ]
+         
+          // try await self.supabase
+          //   .from("Comment")
+          //   .insert(newComment)
+          //   .execute()
 
           observer.onNext(())
           observer.onCompleted()
