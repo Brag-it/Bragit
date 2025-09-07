@@ -36,11 +36,6 @@ final class CommentViewController: UIViewController, View {
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
-  private let kebabButton = UIButton(type: .system).then {
-    $0.setImage(.kebab, for: .normal)
-    $0.tintColor = .grayScale900
-  }
-
   private let tableView = UITableView(frame: .zero, style: .plain).then {
     $0.register(CommentCell.self, forCellReuseIdentifier: CommentCell.reuseID)
     $0.rowHeight = UITableView.automaticDimension
@@ -213,7 +208,6 @@ final class CommentViewController: UIViewController, View {
     view.addSubview(headerView)
     headerView.addSubview(backButton)
     headerView.addSubview(titleLabel)
-    headerView.addSubview(kebabButton)
 
     view.addSubview(tableView)
     view.addSubview(activityIndicator)
@@ -234,12 +228,6 @@ final class CommentViewController: UIViewController, View {
       $0.centerX.equalTo(headerView.snp.centerX)
       $0.centerY.equalTo(headerView.snp.centerY)
       $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
-      $0.trailing.lessThanOrEqualTo(kebabButton.snp.leading).offset(-20)
-    }
-
-    kebabButton.snp.makeConstraints {
-      $0.trailing.equalToSuperview().inset(20)
-      $0.centerY.equalTo(headerView.snp.centerY)
     }
 
     bottomBar.snp.makeConstraints {
@@ -410,6 +398,11 @@ final class CommentCell: UITableViewCell {
     $0.setContentHuggingPriority(.required, for: .horizontal)
   }
 
+  private let kebabButton = UIButton(type: .system).then {
+    $0.setImage(.kebab, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+
   private let contentLabel = UILabel().then {
     $0.font = .pretendard(size: 15)
     $0.textColor = .label
@@ -437,6 +430,7 @@ final class CommentCell: UITableViewCell {
 
     headerContainer.addSubview(profileImageView)
     headerContainer.addSubview(nameLabel)
+    headerContainer.addSubview(kebabButton)
     headerContainer.addSubview(dateLabel)
 
     headerContainer.snp.makeConstraints {
@@ -454,8 +448,13 @@ final class CommentCell: UITableViewCell {
       $0.centerY.equalTo(profileImageView.snp.centerY)
     }
 
+    kebabButton.snp.makeConstraints {
+      $0.trailing.equalToSuperview()
+      $0.centerY.equalTo(profileImageView.snp.centerY)
+    }
+
     dateLabel.snp.makeConstraints {
-      $0.trailing.equalToSuperview().inset(6)
+      $0.trailing.equalTo(kebabButton.snp.leading).offset(-6)
       $0.centerY.equalTo(profileImageView.snp.centerY)
     }
 
