@@ -53,7 +53,6 @@ final class CommentReactor: Reactor, Stepper {
     let content: String
     let date: Date
     let commenterId: String?  // null/빈 값 허용
-    let profile: String?
     let user: CommentUser?  // 조인 결과가 없을 수 있음
 
     enum CodingKeys: String, CodingKey {
@@ -62,7 +61,6 @@ final class CommentReactor: Reactor, Stepper {
       case content
       case date
       case commenterId = "commenter_id"
-      case profile
       case user = "User_Info"
     }
   }
@@ -159,7 +157,6 @@ final class CommentReactor: Reactor, Stepper {
       }
       let task = Task {
         do {
-          // 작성자 정보(User_Info)까지 LEFT JOIN으로 가져오기
           let rows: [CommentRow] = try await self.supabase
             .from("Comment")
             .select("id, post_id, content, date, commenter_id, User_Info!left(nickname, profile)")
@@ -211,14 +208,15 @@ final class CommentReactor: Reactor, Stepper {
             postId: self.postId,
             commenterId: userInfo.id,
             content: content,
-            date: currentDate,
-            profile: userInfo.profile ?? ""
+            date: currentDate
           )
 
+          print("[Comment] Sending...")
           try await self.supabase
             .from("Comment")
             .insert(newComment)
             .execute()
+          print("[Comment] Success!")
 
           observer.onNext(())
           observer.onCompleted()

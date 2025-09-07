@@ -13,7 +13,6 @@ struct Comment: Encodable {
   let commenterId: String
   let content: String
   let date: Date
-  let profile: String
 
   enum CodingKeys: String, CodingKey {
     case id
@@ -21,6 +20,5 @@ struct Comment: Encodable {
     case commenterId = "commenter_id"
     case content
     case date
-    case profile
   }
 }

@@ -323,7 +323,7 @@ final class CommentViewController: UIViewController, View {
         )
       ) { _, row, cell in
         let nickname = (row.user?.nickname?.isEmpty == false) ? row.user!.nickname! : "탈퇴한 회원"
-        let profileURL = row.user?.profile ?? row.profile
+        let profileURL = row.user?.profile
         cell.configure(
           nickname: nickname,
           profileURLString: profileURL,
