@@ -11,7 +11,6 @@ import ReactorKit
 import RxSwift
 import RxCocoa
 
-// swiftlint:disable type_body_length
 final class PreviewViewController: UIViewController, View {
   var disposeBag = DisposeBag()
 
@@ -497,7 +496,6 @@ final class PreviewViewController: UIViewController, View {
     dataSource.apply(snapshot, animatingDifferences: false)
   }
 }
-// swiftlint:enable type_body_length
 
 extension PreviewViewController: PHPickerViewControllerDelegate {
   func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
