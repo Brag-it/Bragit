@@ -168,7 +168,6 @@ final class CommentViewController: UIViewController, View {
       $0.centerY.equalTo(textContainer.snp.centerY)
     }
 
-    // 전송 버튼을 sendImageView 위에 투명하게 올림
     sendButton.snp.makeConstraints {
       $0.center.equalTo(sendImageView)
       $0.size.equalTo(CGSize(width: 44, height: 44))

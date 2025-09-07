@@ -188,15 +188,15 @@ final class CommentReactor: Reactor, Stepper {
           // 현재 유저 ID 가져오기
           let userId = try await self.supabase.auth.session.user.id
 
-          struct UserInfoResponse: Decodable {
-            let id: UUID
-            let nickname: String
-          }
+          // struct UserInfoResponse: Decodable {
+          //   let id: UUID
+          //   let nickname: String
+          // }
 
           // 유저 닉네임 가져오기
-          let userInfo: UserInfoResponse = try await self.supabase
+          let userInfo: User = try await self.supabase
             .from("User_Info")
-            .select("id, nickname")
+            .select("*")
             .eq("id", value: userId.uuidString)
             .single()
             .execute()
@@ -204,7 +204,6 @@ final class CommentReactor: Reactor, Stepper {
 
           let newCommentId = UUID()
           let currentDate = Date()
-
           let dateFormatter = DateFormatter()
           dateFormatter.locale = Locale(identifier: "ko_KR")
           dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
@@ -214,21 +213,10 @@ final class CommentReactor: Reactor, Stepper {
           print("post_id: \(self.postId.uuidString)")
           print("content: \(content)")
           print("date: \(dateFormatter.string(from: currentDate))")
-          print("nickname: \(userInfo.nickname)")
-          print("user_id: \(userInfo.id.uuidString)")
+          print("nickname: \(userInfo.nickname ?? "nickname error")")
+          print("user_id: \(userInfo.id)")
 
           // 댓글 전송
-          // let newComment = [
-          //   "post_id": self.postId.uuidString,
-          //   "content": content,
-          //   "commenter_id": userId.uuidString,
-          //   "date": ISO8601DateFormatter().string(from: Date())
-          // ]
-         
-          // try await self.supabase
-          //   .from("Comment")
-          //   .insert(newComment)
-          //   .execute()
 
           observer.onNext(())
           observer.onCompleted()
