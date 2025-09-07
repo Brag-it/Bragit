@@ -155,17 +155,28 @@ final class PostCell: UICollectionViewCell {
 
     @LocalStorage(location: .followUser) var favoriteUsers: [String]?
     @LocalStorage(location: .nowUser) var myId: String?
+    @LocalStorage(location: .likePosts) var likePosts: [String]?
 
-    if data.author == nil || data.author?.nickname == "탈퇴한 유저입니다." || data.author?.id == myId ?? "" {
+    if data.author == nil || data.author?.nickname == "탈퇴한 유저입니다." || data.author?.id == myId?.lowercased() ?? "" {
       followButton.isHidden = true
     } else {
       followButton.isHidden = false
     }
 
-    if favoriteUsers != nil && favoriteUsers!.contains(data.author!.id) {
+    if favoriteUsers != nil && favoriteUsers!.contains(data.author?.id ?? "") {
       followButton.isSelected = true
     } else {
       followButton.isSelected = false
+    }
+
+    if likePosts != nil && likePosts!.contains(data.id.uuidString) {
+      favoriteImageView.image? = UIImage(resource: .favoriteFilled)
+        .withRenderingMode(.alwaysOriginal)
+        .withTintColor(.systemDanger)
+    } else {
+      favoriteImageView.image? = UIImage(resource: .favorite)
+        .withRenderingMode(.alwaysOriginal)
+        .withTintColor(.systemGray)
     }
   }
 

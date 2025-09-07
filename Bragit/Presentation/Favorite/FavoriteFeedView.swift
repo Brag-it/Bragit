@@ -21,6 +21,8 @@ final class FavoriteFeedView: UIView {
   let tagDidTap = PublishRelay<Tag>()
   let postTagDidTap = PublishRelay<Tag>()
   let followDidTap = PublishRelay<Post>()
+  let refreshRelay = PublishRelay<Void>()
+  let refreshControl = UIRefreshControl()
   private let disposeBag = DisposeBag()
 
   private var postType: FavoriteReactor.PostType = .tag([])
@@ -31,6 +33,7 @@ final class FavoriteFeedView: UIView {
     collectionViewLayout: makeCollectionViewLayout()).then {
       $0.showsVerticalScrollIndicator = false
       $0.backgroundColor = .white
+      $0.refreshControl = refreshControl
     }
 
   private lazy var dataSource = makeFavoriteCollectionViewDataSource(self.collectionView)
@@ -42,6 +45,10 @@ final class FavoriteFeedView: UIView {
     collectionView.snp.makeConstraints {
       $0.edges.equalToSuperview()
     }
+
+    refreshControl.rx.controlEvent(.valueChanged)
+      .bind(to: refreshRelay)
+      .disposed(by: disposeBag)
   }
 
   required init?(coder: NSCoder) {

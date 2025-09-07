@@ -17,11 +17,14 @@ final class MyPageProfileCell: UICollectionViewCell {
 
   var disposeBag = DisposeBag()
 
+  let profileImageTap = UITapGestureRecognizer()
+
   private let profileImageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
     $0.layer.cornerRadius = 24
     $0.clipsToBounds = true
     $0.image = .profilePerson
+    $0.isUserInteractionEnabled = true
   }
 
   let editNickNameButton = UIButton().then {
@@ -61,6 +64,7 @@ final class MyPageProfileCell: UICollectionViewCell {
     followerView.addGestureRecognizer(followerTap)
     followingView.addGestureRecognizer(followingTap)
     favoriteTagsView.addGestureRecognizer(favoriteTagsTap)
+    profileImageView.addGestureRecognizer(profileImageTap)
   }
 
   required init?(coder: NSCoder) {
@@ -109,5 +113,10 @@ final class MyPageProfileCell: UICollectionViewCell {
     followingView.setNumber(number: String(profile.followingCount))
     favoriteTagsView.setNumber(number: String(profile.favoriteTagCount))
     profileImageView.kf.setImage(with: URL(string: profile.profileImage), placeholder: UIImage.profilePerson)
+  }
+
+  func setProfileImage(image: UIImage) {
+    profileImageView.kf.cancelDownloadTask()
+    profileImageView.image = image
   }
 }

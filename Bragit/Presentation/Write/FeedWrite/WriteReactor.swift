@@ -78,7 +78,6 @@ class WriteReactor: Reactor, Stepper {
     case .strikethroughTapped:
       return .just(.setStrikethroughActive(!currentState.isStrikethroughActive))
     }
-
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영

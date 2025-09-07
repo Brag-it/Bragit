@@ -26,6 +26,9 @@ class HomeReactor: Reactor, Stepper {
     case loadNextPosts
     case followButtonTapped(Post)
     case didTapPost(Post)
+    case goToTagDetail(Tag)
+    case refresh
+    case nowPostsRefresh
   }
 
   enum Mutation {
@@ -44,12 +47,22 @@ class HomeReactor: Reactor, Stepper {
   init() {
     self.initialState = State()
   }
-
+  // swiftlint:disable cyclomatic_complexity
   func mutate(action: Action) -> Observable<Mutation> {
     if currentState.isLoading {
       return .empty()
     }
     switch action {
+    case .refresh:
+      return .concat([
+      .just(.setLoading(true)),
+      postManager
+        .rxFetchMainFeedData(
+          from: 0,
+          to: 10)
+        .map { .setPosts($0) },
+      .just(.setLoading(false))
+    ])
     case .loadPosts:
       return .concat([
         .just(.setLoading(true)),
@@ -101,8 +114,20 @@ class HomeReactor: Reactor, Stepper {
     case .didTapPost(let post):
       self.steps.accept(AppStep.feedDetail(post: post))
       return .empty()
+    case .goToTagDetail(let tag):
+      self.steps.accept(AppStep.tagInform(tag))
+      return .empty()
+    case .nowPostsRefresh:
+      return .concat([
+        .just(.setLoading(true)),
+        postManager
+          .rxFetchPosts(ids: currentState.posts.map { $0.id.uuidString })
+          .map { .setPosts($0) },
+        .just(.setLoading(false))
+      ])
     }
   }
+  // swiftlint:enable cyclomatic_complexity
 
   func reduce(state: State, mutation: Mutation) -> State {
     switch mutation {

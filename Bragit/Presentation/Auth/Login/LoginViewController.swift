@@ -26,6 +26,10 @@ final class LoginViewController: UIViewController, View {
     $0.setTitle("Next", for: .normal)
   }
 
+  private let logo = UIImageView().then {
+    $0.image = .loginLogo
+  }
+
   // MARK: UI
   // 버튼은 어차피 나중에 api로 제공되니 임시로 넣은 것
   let googleButton = UIButton(type: .system).then {
@@ -95,6 +99,7 @@ final class LoginViewController: UIViewController, View {
       $0.distribution = .fill
     }
 
+    view.addSubview(logo)
     view.addSubview(stack)
     view.addSubview(signUpButton)
     mailButton.titleLabel?.font = loginFont
@@ -104,6 +109,12 @@ final class LoginViewController: UIViewController, View {
       $0.snp.makeConstraints {
         $0.height.equalTo(48)
       }
+    }
+
+    logo.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide).inset(40)
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.height.equalTo(358)
     }
 
     nextButton.snp.makeConstraints {

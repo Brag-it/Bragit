@@ -281,8 +281,8 @@ final class CommentViewController: UIViewController, View {
 
     // bottomBar 탭 -> 키보드 올리기
     bottomBarTapButton.rx.tap
-      .subscribe { [weak self] in
-        self?.commentTextView.becomeFirstResponder()
+      .bind(with: self) { owner, _ in
+        owner.commentTextView.becomeFirstResponder()
       }
       .disposed(by: disposeBag)
 

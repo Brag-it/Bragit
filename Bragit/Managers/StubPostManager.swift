@@ -11,6 +11,10 @@ import Supabase
 import RxSwift
 
 class StubPostManager: PostManagerProtocol {
+  func rxFetchPosts(ids: [String]) -> RxSwift.Observable<[Post]> {
+    return .just(Self.samplePosts)
+  }
+
   func rxFetchPostByAuthorId(authorId: String, from: Int, to: Int) -> RxSwift.Observable<[Post]> {
     return .just(Self.samplePosts)
   }
@@ -237,6 +241,26 @@ class StubPostManager: PostManagerProtocol {
 
   func rxAttachTags(postId: String, tagIds: [String]) -> RxSwift.Observable<Void> {
     _ = (postId, tagIds)
+    return .just(())
+  }
+
+  func incrementLike(postId: String, delta: Int) async throws -> Int {
+    let baseLikes = 50
+    return baseLikes + delta
+  }
+
+  func rxIncrementLike(postId: String, delta: Int) -> RxSwift.Observable<Int> {
+    let baseLikes = 50
+    let newLikes = baseLikes + delta
+    return .just(newLikes)
+  }
+
+  func deletePost(postId: String) async throws {
+    _ = postId
+  }
+
+  func rxDeletePost(postId: String) -> RxSwift.Observable<Void> {
+    _ = postId
     return .just(())
   }
 }

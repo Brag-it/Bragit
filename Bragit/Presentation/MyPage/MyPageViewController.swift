@@ -43,7 +43,7 @@ class MyPageViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    reactor.state.bind { [weak myPageView] in
+    reactor.state.bind { [myPageView] in
       let profile = Profile(
         nickName: $0.nickName,
         profileImage: $0.profileImage,
@@ -52,7 +52,7 @@ class MyPageViewController: UIViewController, View {
         favoriteTagCount: $0.favoriteTags.count
       )
 
-      myPageView?.dataApply(profile: profile, posts: $0.posts)
+      myPageView.dataApply(profile: profile, posts: $0.posts)
     }.disposed(by: disposeBag)
 
     myPageView.editNicknameTap.bind { [weak self] in
@@ -76,8 +76,10 @@ class MyPageViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // TODO: 태그 클릭 이벤트
-    //myPageView.tagDidTap.bind
+    myPageView.tagDidTap
+      .map { tag in .goToTagDetail(tag) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
     myPageView.followerTap
       .bind { reactor.action.onNext(.goToFollower) }
@@ -90,5 +92,28 @@ class MyPageViewController: UIViewController, View {
     myPageView.favoriteTagTap
       .bind { reactor.action.onNext(.goToFavoriteTag) }
       .disposed(by: disposeBag)
+
+    myPageView.profileImageTap
+      .bind(with: self) { owner, _ in
+        owner.myPageView.imagePicker.delegate = owner
+        owner.present(owner.myPageView.imagePicker, animated: true)
+      }
+      .disposed(by: disposeBag)
+  }
+}
+
+extension MyPageViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+  func imagePickerController(
+    _ picker: UIImagePickerController,
+    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+    picker.dismiss(animated: true)
+
+    guard let image = info[.editedImage] as? UIImage else {
+      return
+    }
+
+    reactor?.action.onNext(.registImage(image))
+    myPageView.profileImageDidChange.accept(image)
+    myPageView.imagePicker.delegate = nil
   }
 }

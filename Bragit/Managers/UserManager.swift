@@ -25,6 +25,9 @@ protocol UserManagerProtocol {
   func rxChangeNickName(nickName: String) -> Single<Void>
   func updateLastUploaded(userId: String, at date: Date) async throws
   func rxUpdateLastUploaded(userId: String, at date: Date) -> Observable<Void>
+  func rxGetProfileURL() -> Observable<String>
+  func rxProfileImageUpload(image: Data) -> Observable<Void>
+  func rxUpdateUserProfileImage(imageURLstring: String) -> Single<Void>
 }
 
 class UserManager: UserManagerProtocol {
@@ -310,5 +313,123 @@ class UserManager: UserManagerProtocol {
       return Disposables.create()
     }
   }
-}
 
+  // 프로필 사진 업로드
+  func rxProfileImageUpload(image: Data) -> Observable<Void> {
+    Observable.create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      print("[REACTOR] Starting task on thread: \(Thread.isMainThread ? "main" : "background") bytes")
+      Task {
+        do {
+          print("[UPLOAD] Requesting auth session...")
+          let session = try await self.client.auth.session
+          print("[UPLOAD] Got session. userId=\(session.user.id)")
+          let userId = session.user.id
+          print("[DEBUG] 유저 아이디: \(userId)")
+
+          let fileName = "\(userId.uuidString).jpg"  // 파일 이름
+          let filePath = "profiles/\(fileName)"  // 'profile-image/profiles/파일.jpg'(버킷/폴더/파일)
+          print("[DEBUG] 파일 경로: \(filePath)")
+
+          print("[DEBUG] 버킷에 업로드 중")
+          _ = try await self.client.storage
+            .from("profile-image")
+            .upload(
+              filePath,
+              data: image,
+              options: FileOptions(
+                cacheControl: "3600",
+                contentType: "image/jpeg",
+                upsert: true
+              )
+            )
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          print("[ERROR] Image upload error: \(error)")
+          print("[ERROR] 에러 타입: \(type(of: error))")
+          if let storageError = error as? StorageError {
+            print("[ERROR] 스토리지 에러: \(storageError)")
+          }
+          observer.onError(error)
+        }
+      }
+      return Disposables.create()
+    }
+  }
+
+  // 프로필 사진 URL 가져오기
+  func rxGetProfileURL() -> Observable<String> {
+    Observable.create { [weak self] observer in
+      guard let self = self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+      print("[REACTOR] Starting task on thread: \(Thread.isMainThread ? "main" : "background") bytes")
+      Task {
+        do {
+          print("[UPLOAD] Requesting auth session...")
+          let session = try await self.client.auth.session
+          print("[UPLOAD] Got session. userId=\(session.user.id)")
+          let userId = session.user.id
+          print("[DEBUG] 유저 아이디: \(userId)")
+
+          let fileName = "\(userId.uuidString).jpg"  // 파일 이름
+          let filePath = "profiles/\(fileName)"  // 'profile-image/profiles/파일.jpg'(버킷/폴더/파일)
+
+          let publicURL = try self.client.storage
+            .from("profile-image")
+            .getPublicURL(path: filePath)
+
+          print("[DEBUG] URL: \(publicURL.absoluteString)")
+          observer.onNext(publicURL.absoluteString)
+          observer.onCompleted()
+
+        } catch {
+          print("[ERROR] Image upload error: \(error)")
+          print("[ERROR] 에러 타입: \(type(of: error))")
+          if let storageError = error as? StorageError {
+            print("[ERROR] 스토리지 에러: \(storageError)")
+          }
+          observer.onCompleted()
+        }
+      }
+      return Disposables.create()
+    }
+  }
+
+  // 유저 프로필 업데이트
+  func rxUpdateUserProfileImage(imageURLstring: String) -> Single<Void> {
+    Single.create { [weak self] observer in
+      guard let self = self, let userId = self.userId else {
+        observer(.failure(
+          NSError(
+            domain: "UserManagerError",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "User not logged in"]
+          )
+        ))
+        return Disposables.create()
+      }
+      Task { [weak self] in
+        do {
+          guard let self = self else { return }
+          try await self.client
+            .from("User_Info")
+            .update(["profile": imageURLstring])
+            .eq("id", value: userId)
+            .execute()
+          observer(.success(()))
+        } catch {
+          print(error)
+          observer(.failure(error))
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+}

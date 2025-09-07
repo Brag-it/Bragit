@@ -43,6 +43,8 @@ final class TabFlow: NSObject, Flow, Stepper {
       return showDetailPost(post: post)
     case .comment(let id):
       return showComment(id: id)
+    case .tagInform(let tag):
+      return showTagDetail(tag: tag)
     default:
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
@@ -147,14 +149,46 @@ final class TabFlow: NSObject, Flow, Stepper {
       withNextStepper: reactor
     ))
   }
+
+  func showTagDetail(tag: Tag) -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    let reactor = TagDetailReactor(tag: tag)
+    let tagDetailVC = TagDetailViewController(reactor: reactor)
+
+    navigation.pushViewController(tagDetailVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: tagDetailVC,
+      withNextStepper: reactor
+    ))
+  }
 }
 
 extension TabFlow: UITabBarControllerDelegate {
   func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
-    guard let index = tabBarController.viewControllers?.firstIndex(where: { $0 == viewController }), index == 2 else {
+    guard let index = tabBarController.viewControllers?.firstIndex(of: viewController) else {
       return true
     }
-    steps.accept(AppStep.writeFeed)
-    return false
+
+    if index == 0 && tabBarController.selectedIndex == 0 {
+      if let nav = viewController as? UINavigationController,
+        let homeVC = nav.viewControllers.first as? HomeViewController {
+        homeVC.scrollToTop()
+      }
+    }
+
+    if index == 1 && tabBarController.selectedIndex == 1 {
+      if let nav = viewController as? UINavigationController,
+        let favoriteVC = nav.viewControllers.first as? FavoriteViewController {
+        favoriteVC.scrollToTop()
+      }
+    }
+
+    if index == 2 {
+      steps.accept(AppStep.writeFeed)
+      return false
+    }
+
+    return true
   }
 }

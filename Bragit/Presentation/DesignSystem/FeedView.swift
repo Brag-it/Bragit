@@ -10,17 +10,22 @@ import UIKit
 import Then
 import SnapKit
 import RxRelay
+import RxSwift
 
 class FeedView: UIView {
 
   let followDidTap = PublishRelay<Post>()
   let tagDidTap = PublishRelay<Tag>()
+  let refreshRelay = PublishRelay<Void>()
+  let refreshControl = UIRefreshControl()
+  let disposeBag = DisposeBag()
 
   lazy var collectionView = UICollectionView(
     frame: .zero,
     collectionViewLayout: makeCollectionViewLayout()).then {
       $0.showsVerticalScrollIndicator = false
       $0.backgroundColor = .white
+      $0.refreshControl = refreshControl
     }
 
   lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
@@ -32,6 +37,10 @@ class FeedView: UIView {
     collectionView.snp.makeConstraints {
       $0.top.leading.bottom.trailing.equalToSuperview()
     }
+
+    refreshControl.rx.controlEvent(.valueChanged)
+      .bind(to: refreshRelay)
+      .disposed(by: disposeBag)
   }
 
   required init?(coder: NSCoder) {
