@@ -193,7 +193,7 @@ final class CommentReactor: Reactor, Stepper {
             "post_id": self.postId.uuidString,
             "content": content,
             "commenter_id": userId.uuidString,
-            "date": ISO8601DateFormatter().string(from: Date()),
+            "date": ISO8601DateFormatter().string(from: Date())
           ]
 
           try await self.supabase

@@ -259,16 +259,16 @@ final class CommentViewController: UIViewController, View {
     // Rx로 키보드 이벤트 처리
     NotificationCenter.default.rx
       .notification(UIResponder.keyboardWillShowNotification)
-      .subscribe(onNext: { [weak self] _ in
+      .subscribe { [weak self] _ in
         self?.bottomBar.isHidden = true
-      })
+      }
       .disposed(by: disposeBag)
 
     NotificationCenter.default.rx
       .notification(UIResponder.keyboardWillHideNotification)
-      .subscribe(onNext: { [weak self] _ in
+      .subscribe { [weak self] _ in
         self?.bottomBar.isHidden = false
-      })
+      }
       .disposed(by: disposeBag)
   }
 
@@ -289,9 +289,9 @@ final class CommentViewController: UIViewController, View {
 
     // bottomBar 탭 -> 키보드 올리기
     bottomBarTapButton.rx.tap
-      .subscribe(onNext: { [weak self] in
+      .subscribe { [weak self] in
         self?.commentTextView.becomeFirstResponder()
-      })
+      }
       .disposed(by: disposeBag)
 
     // 전송 버튼 탭
@@ -299,22 +299,22 @@ final class CommentViewController: UIViewController, View {
       .withLatestFrom(commentTextView.rx.text.orEmpty)
       .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
       .map { Reactor.Action.sendComment($0) }
-      .do(onNext: { [weak self] _ in
+      .do { [weak self] _ in
         self?.commentTextView.text = ""
         self?.commentTextView.resignFirstResponder()
-      })
+      }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     // 화면 빈 곳 탭 -> 키보드 내리기
     dismissTapGesture.rx.event
-      .subscribe(onNext: { [weak self] _ in
+      .subscribe { [weak self] _ in
         if let window = self?.view.window {
           window.endEditing(true)
         } else {
           self?.view.endEditing(true)
         }
-      })
+      }
       .disposed(by: disposeBag)
 
     // MARK: - Output (State)
@@ -329,7 +329,7 @@ final class CommentViewController: UIViewController, View {
           cellIdentifier: CommentCell.reuseID,
           cellType: CommentCell.self
         )
-      ) { index, row, cell in
+      ) { _, row, cell in
         let nickname = (row.user?.nickname?.isEmpty == false) ? row.user!.nickname! : "탈퇴한 회원"
         let profile = row.user?.profile
         cell.configure(
@@ -372,9 +372,9 @@ final class CommentViewController: UIViewController, View {
       .map(\.commentSent)
       .filter { $0 }
       .observe(on: MainScheduler.instance)
-      .subscribe(onNext: { [weak self] _ in
+      .subscribe { [weak self] _ in
         self?.commentTextView.text = ""
-      })
+      }
       .disposed(by: disposeBag)
   }
 }
