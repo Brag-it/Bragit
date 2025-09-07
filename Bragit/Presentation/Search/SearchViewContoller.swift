@@ -158,9 +158,14 @@ final class SearchViewController: UIViewController, View {
   ) -> UICollectionViewDiffableDataSource<Int, String> {
     let registration = UICollectionView.CellRegistration<UICollectionViewListCell, String> { cell, _, tags in
       var content = cell.defaultContentConfiguration()
-      content.text = "# " + tags
+      content.image = .hashTag
+      content.imageProperties.tintColor = .grayScale900
+      content.imageProperties.reservedLayoutSize = CGSize(width: 20, height: 20)
+
+      content.text = tags
       content.textProperties.font = .pretendard(size: 15)
       content.textProperties.color = .grayScale900
+      content.imageToTextPadding = 8
       cell.contentConfiguration = content
     }
 
