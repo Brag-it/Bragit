@@ -11,6 +11,7 @@ import SnapKit
 import Then
 import RxRelay
 import RxSwift
+import Kingfisher
 
 enum MyPageItem: Hashable {
   case userInfo(Profile)
@@ -22,6 +23,8 @@ final class MyPageView: UIView {
   let followerTap = PublishRelay<Void>()
   let followingTap = PublishRelay<Void>()
   let favoriteTagTap = PublishRelay<Void>()
+  let profileImageTap = PublishRelay<Void>()
+  let profileImageDidChange = PublishRelay<UIImage>()
 
   let editNicknameTap = PublishRelay<Void>()
   var disposeBag = DisposeBag()
@@ -52,11 +55,16 @@ final class MyPageView: UIView {
 
   private lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
 
+  let imagePicker = UIImagePickerController().then {
+    $0.allowsEditing = true
+  }
+
   override init(frame: CGRect) {
     super.init(frame: frame)
     backgroundColor = .white
 
     setupUI()
+    bindProfileImageChange()
   }
 
   required init?(coder: NSCoder) {
@@ -87,6 +95,19 @@ final class MyPageView: UIView {
       $0.top.equalTo(headerView.snp.bottom)
       $0.leading.trailing.bottom.equalTo(self.safeAreaLayoutGuide)
     }
+  }
+
+  private func bindProfileImageChange() {
+    profileImageDidChange
+      .asDriver(onErrorDriveWith: .empty())
+      .drive { [weak self] image in
+        guard let self = self, let cell = self.collectionView.cellForItem(
+          at: IndexPath(item: 0, section: 0)) as? MyPageProfileCell else {
+          return
+        }
+        cell.setProfileImage(image: image)
+      }
+      .disposed(by: disposeBag)
   }
 
   func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
@@ -132,6 +153,7 @@ final class MyPageView: UIView {
         cell.followerTap.rx.event.map { _ in }.bind(to: followerTap).disposed(by: cell.disposeBag)
         cell.followingTap.rx.event.map { _ in }.bind(to: followingTap).disposed(by: cell.disposeBag)
         cell.favoriteTagsTap.rx.event.map { _ in }.bind(to: favoriteTagTap).disposed(by: cell.disposeBag)
+        cell.profileImageTap.rx.event.map { _ in }.bind(to: profileImageTap).disposed(by: cell.disposeBag)
       }
 
       let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in
