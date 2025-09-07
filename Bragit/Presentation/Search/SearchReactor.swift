@@ -14,10 +14,7 @@ import RxRelay
 
 class SearchReactor: Reactor, Stepper {
   var initialState: State
-  @Dependency(\.tagManager) var tagManager
-  @Dependency(\.userManager) var userManager
-  @Dependency(\.postManager) var postManager
-
+  @Dependency(\.searchManager) var searchManager
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
   @LocalStorage(location: .recentSearches) var recentSearches: [String]?
