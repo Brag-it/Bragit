@@ -208,15 +208,27 @@ final class CommentReactor: Reactor, Stepper {
           dateFormatter.locale = Locale(identifier: "ko_KR")
           dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
-          print("테스트 댓글입니다.")
-          print("id: \(newCommentId.uuidString)")
-          print("post_id: \(self.postId.uuidString)")
-          print("content: \(content)")
-          print("date: \(dateFormatter.string(from: currentDate))")
-          print("nickname: \(userInfo.nickname ?? "nickname error")")
-          print("user_id: \(userInfo.id)")
+          // print("테스트 댓글입니다.")
+          // print("id: \(newCommentId.uuidString)")
+          // print("post_id: \(self.postId.uuidString)")
+          // print("content: \(content)")
+          // print("date: \(dateFormatter.string(from: currentDate))")
+          // print("nickname: \(userInfo.nickname ?? "nickname error")")
+          // print("user_id: \(userInfo.id)")
 
           // 댓글 전송
+          let newComment = Comment(
+            id: newCommentId,
+            post_id: self.postId,
+            commenter_id: userInfo.id,
+            content: content,
+            date: currentDate
+          )
+
+          try await self.supabase
+            .from("Comment")
+            .insert(newComment)
+            .execute()
 
           observer.onNext(())
           observer.onCompleted()
