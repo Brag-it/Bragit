@@ -355,7 +355,7 @@ final class PreviewViewController: UIViewController, View {
   }
 
   func applySnapshot(from state: PreviewReactor.State) {
-    var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+    var snapshot = NSDiffableDataSourceSnapshot<PreviewSection, Item>()
     snapshot.appendSections([.title, .thumbnails, .description, .tags])
 
     // 제목
@@ -376,7 +376,7 @@ final class PreviewViewController: UIViewController, View {
   // swiftlint:disable cyclomatic_complexity
   private func setupDataSource(
     _ collectionView: UICollectionView
-  ) -> UICollectionViewDiffableDataSource<Section, Item> {
+  ) -> UICollectionViewDiffableDataSource<PreviewSection, Item> {
     // 제목 셀 설정
     let titleRegistration = UICollectionView.CellRegistration<TitleCell, Item> { cell, _, item in
       guard case let .title(titleItem) = item else { return }
@@ -417,10 +417,10 @@ final class PreviewViewController: UIViewController, View {
     }
 
     // 데이터 소스 생성
-    let dataSource = UICollectionViewDiffableDataSource<Section, Item>(
+    let dataSource = UICollectionViewDiffableDataSource<PreviewSection, Item>(
       collectionView: collectionView
     ) { collectionView, indexPath, item in
-      let section = Section.allCases[indexPath.section]
+      let section = PreviewSection.allCases[indexPath.section]
       switch section {
       case .title:
         return collectionView.dequeueConfiguredReusableCell(using: titleRegistration, for: indexPath, item: item)
@@ -442,7 +442,7 @@ final class PreviewViewController: UIViewController, View {
       elementKind: UICollectionView.elementKindSectionHeader
     ) { [weak self] header, _, indexPath in
       guard let self, let reactor = self.reactor else { return }
-      let section = Section.allCases[indexPath.section]
+      let section = PreviewSection.allCases[indexPath.section]
       header.configure(section: section)
       // 태그 섹션에서만 + 버튼 활성화
       guard section == .tags else { return }
@@ -476,7 +476,7 @@ final class PreviewViewController: UIViewController, View {
 
   // 이미지 추가후 처음 셀로 스크롤
   private func scrollToFirstThumbnailIfNeeded() {
-    guard let thumbnailsSection = Section.allCases.firstIndex(of: .thumbnails) else { return }
+    guard let thumbnailsSection = PreviewSection.allCases.firstIndex(of: .thumbnails) else { return }
     let items = priviewCollectionView.numberOfItems(inSection: thumbnailsSection)
     guard items > 1 else { return }
     let indexPath = IndexPath(item: 0, section: thumbnailsSection)

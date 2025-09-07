@@ -6,7 +6,7 @@
 //
 import UIKit
 
-enum Section: CaseIterable {
+enum PreviewSection: CaseIterable {
   case title
   case thumbnails
   case description
