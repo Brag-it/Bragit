@@ -47,7 +47,7 @@ class HomeReactor: Reactor, Stepper {
   init() {
     self.initialState = State()
   }
-
+  // swiftlint:disable cyclomatic_complexity
   func mutate(action: Action) -> Observable<Mutation> {
     if currentState.isLoading {
       return .empty()
@@ -127,6 +127,7 @@ class HomeReactor: Reactor, Stepper {
       ])
     }
   }
+  // swiftlint:enable cyclomatic_complexity
 
   func reduce(state: State, mutation: Mutation) -> State {
     switch mutation {
