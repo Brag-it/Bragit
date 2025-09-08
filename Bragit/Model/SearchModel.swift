@@ -24,6 +24,7 @@ enum SearchSection: Int, CaseIterable {
   case tagResults      // 태그 결과
   case postResults     // 게시글 결과
   case userResults     // 사용자 결과
+  case emptyResults
 }
 
 enum SearchRow: Hashable {
@@ -32,6 +33,7 @@ enum SearchRow: Hashable {
   case tag(SearchTagItem)
   case post(SearchPostItem)
   case user(SearchUserItem)
+  case empty
 }
 
 // MARK: - Models
