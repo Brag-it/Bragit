@@ -5,42 +5,41 @@
 //  Created by luca on 9/4/25.
 //
 
-import Foundation
-
-import ReactorKit
-import RxSwift
-import RxRelay
 import Dependencies
-import Supabase
+import Foundation
+import ReactorKit
 import RxFlow
+import RxRelay
+import RxSwift
+import Supabase
 
 final class CommentReactor: Reactor, Stepper {
-
+  let initialState: State
+  private let postId: UUID
   @Dependency(\.supabase) var supabase
   let steps = PublishRelay<Step>()
 
   // MARK: Reactor
   enum Action {
     case refresh
+    case didTapBack
+    case sendComment(String)
   }
 
   enum Mutation {
     case setLoading(Bool)
     case setComments([CommentRow])
     case setError(String?)
+    case setCommentSent(Bool)
   }
 
   struct State {
     var isLoading: Bool = false
     var comments: [CommentRow] = []
     var errorMessage: String?
+    let viewer: Bool
+    var commentSent: Bool = false
   }
-
-  let initialState: State
-  private let postId: UUID
-
-  // 외부에서 디버그용으로 확인만 가능하게 노출
-  var postIdForDebug: UUID { postId }
 
   // MARK: Model for decoding Comment rows
   struct CommentRow: Codable, Equatable, Hashable {
@@ -53,8 +52,8 @@ final class CommentReactor: Reactor, Stepper {
     let postId: UUID
     let content: String
     let date: Date
-    let commenterId: String
-    let userInfo: CommentUser?
+    let commenterId: String?  // null/빈 값 허용
+    let user: CommentUser?  // 조인 결과가 없을 수 있음
 
     enum CodingKeys: String, CodingKey {
       case id
@@ -62,15 +61,13 @@ final class CommentReactor: Reactor, Stepper {
       case content
       case date
       case commenterId = "commenter_id"
-      case userInfo = "User_Info"
+      case user = "User_Info"
     }
   }
 
-  init(postId: UUID) {
+  init(postId: UUID, viewer: Bool = false) {
     self.postId = postId
-    self.initialState = State()
-    // 초기화 시점에 한 번 출력
-    print("CommentReactor init with postId: \(postId.uuidString)")
+    self.initialState = State(viewer: viewer)
   }
 
   func mutate(action: Action) -> Observable<Mutation> {
@@ -87,7 +84,8 @@ final class CommentReactor: Reactor, Stepper {
           formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
           rows.forEach { row in
             let dateString = formatter.string(from: row.date)
-            print("Reactor with content: \(row.content), date: \(dateString)")
+            let nick = row.user?.nickname?.isEmpty == false ? row.user!.nickname! : "탈퇴한 회원"
+            print("Reactor with nick: \(nick), content: \(row.content), date: \(dateString)")
           }
         }
         .map { Mutation.setComments($0) as Mutation }
@@ -97,6 +95,36 @@ final class CommentReactor: Reactor, Stepper {
         }
       let end = Observable.just(Mutation.setLoading(false))
       return .concat([start, request, end])
+
+    case .didTapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
+
+    case .sendComment(let content):
+      // 댓글 전송 처리
+      let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !trimmedContent.isEmpty else {
+        return .empty()
+      }
+
+      let start = Observable.just(Mutation.setLoading(true))
+      let send = rxSendComment(content: trimmedContent)
+        .flatMap { [weak self] _ -> Observable<Mutation> in
+          guard let self else { return .empty() }
+          // 댓글 전송 성공 후 목록 새로고침
+          return self.rxFetchComments(postId: self.postId)
+            .map { Mutation.setComments($0) }
+            .catch { error in
+              let msg = (error as NSError).localizedDescription
+              return .just(.setError(msg))
+            }
+        }
+      let setSent = Observable.just(Mutation.setCommentSent(true))
+      let resetSent = Observable.just(Mutation.setCommentSent(false))
+        .delay(.milliseconds(100), scheduler: MainScheduler.instance)
+      let end = Observable.just(Mutation.setLoading(false))
+
+      return .concat([start, send, setSent, resetSent, end])
     }
   }
 
@@ -110,6 +138,8 @@ final class CommentReactor: Reactor, Stepper {
       newState.comments = rows
     case .setError(let message):
       newState.errorMessage = message
+    case .setCommentSent(let sent):
+      newState.commentSent = sent
     }
     return newState
   }
@@ -127,10 +157,9 @@ final class CommentReactor: Reactor, Stepper {
       }
       let task = Task {
         do {
-          // 작성자 정보(User_Info)까지 조인해서 가져오기
           let rows: [CommentRow] = try await self.supabase
             .from("Comment")
-            .select("id, post_id, content, date, commenter_id, User_Info(nickname, profile)")
+            .select("id, post_id, content, date, commenter_id, User_Info!left(nickname, profile)")
             .eq("post_id", value: postId)
             .order("date", ascending: true)
             .execute()
@@ -145,5 +174,57 @@ final class CommentReactor: Reactor, Stepper {
       return Disposables.create { task.cancel() }
     }
   }
-}
 
+  private func rxSendComment(content: String) -> Observable<Void> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      let task = Task {
+        do {
+          // 현재 유저 ID 가져오기
+          let userId = try await self.supabase.auth.session.user.id
+
+          // 유저 닉네임 가져오기
+          let userInfo: User = try await self.supabase
+            .from("User_Info")
+            .select("*")
+            .eq("id", value: userId.uuidString)
+            .single()
+            .execute()
+            .value
+
+          let newCommentId = UUID()
+          let currentDate = Date()
+          let dateFormatter = DateFormatter()
+          dateFormatter.locale = Locale(identifier: "ko_KR")
+          dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+
+          // 댓글 전송
+          let newComment = Comment(
+            id: newCommentId,
+            postId: self.postId,
+            commenterId: userInfo.id,
+            content: content,
+            date: currentDate
+          )
+
+          print("[Comment] Sending...")
+          try await self.supabase
+            .from("Comment")
+            .insert(newComment)
+            .execute()
+          print("[Comment] Success!")
+
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+      return Disposables.create { task.cancel() }
+    }
+  }
+}
