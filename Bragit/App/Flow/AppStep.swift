@@ -35,6 +35,8 @@ enum AppStep: Step {
   case feedDetail(post: Post)          // 피드 상세
   case comment(id: UUID)               // 댓글
 
+  case userProfile(user: User)         // 타 유저 프로필 보기
+
   // 관심
   case favorite                        // 관심 피드 루트
 

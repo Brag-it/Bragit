@@ -47,6 +47,8 @@ final class TabFlow: NSObject, Flow, Stepper {
       return showTagDetail(tag: tag)
     case .searchFeed:
       return showsearchView()
+    case .userProfile(let user):
+      return showUserProfile(user: user)
     default:
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
@@ -176,6 +178,19 @@ final class TabFlow: NSObject, Flow, Stepper {
 
     return .one(flowContributor: .contribute(
       withNextPresentable: searchVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  func showUserProfile(user: User) -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    let reactor = UserProfileReactor(user: user)
+    let userProfileVC = UserProfileViewCotnroller(reactor: reactor)
+
+    navigation.pushViewController(userProfileVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: userProfileVC,
       withNextStepper: reactor
     ))
   }
