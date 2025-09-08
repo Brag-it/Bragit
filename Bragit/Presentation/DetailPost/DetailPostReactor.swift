@@ -66,7 +66,7 @@ class DetailPostReactor: Reactor, Stepper {
       content: DetailPostReactor.unarchivedContent(content: post.content),
       nickName: post.author?.nickname ?? "탈퇴한 유저 입니다",
       profileImage: post.author?.profile ?? nil,
-      viewer: post.author?.id == nowUser,
+      viewer: post.author?.id.lowercased() == nowUser?.lowercased(),
       isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
       likeCount: post.like,
       isfollowed: followUser?.contains { $0 == post.author?.id } ?? false
