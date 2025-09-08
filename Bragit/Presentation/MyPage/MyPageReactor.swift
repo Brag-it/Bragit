@@ -5,12 +5,15 @@
 //  Created by 이태윤 on 8/26/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxSwift
 import RxFlow
 import RxRelay
 import Then
 import Dependencies
+import Kingfisher
 
 class MyPageReactor: Reactor, Stepper {
   var initialState: State
@@ -30,6 +33,7 @@ class MyPageReactor: Reactor, Stepper {
     case goToFollowing
     case goToFavoriteTag
     case goToTagDetail(Tag)
+    case registImage(UIImage)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -131,6 +135,14 @@ class MyPageReactor: Reactor, Stepper {
     case .goToTagDetail(let tag):
       self.steps.accept(AppStep.tagInform(tag))
       return .empty()
+    case .registImage(let image):
+      return userManager.rxProfileImageUpload(image: image.jpegData(compressionQuality: 0.8) ?? Data())
+        .flatMap { _ in self.userManager.rxGetProfileURL() }
+        .flatMap { url in
+          self.userManager.rxUpdateUserProfileImage(imageURLstring: url)
+            .asObservable()
+            .map { _ in Mutation.setProfileImage(url) }
+        }
     }
   }
   // swiftlint:enable cyclomatic_complexity
@@ -171,6 +183,7 @@ class MyPageReactor: Reactor, Stepper {
       }
     case .setProfileImage(let profileImage):
       return state.with {
+        KingfisherManager.shared.cache.removeImage(forKey: profileImage)
         $0.profileImage = profileImage
       }
     }
