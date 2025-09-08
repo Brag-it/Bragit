@@ -27,6 +27,7 @@ final class CommentReactor: Reactor, Stepper {
     case didTapBack
     case sendComment(String)
     case didTapKebab(IndexPath)
+    case deleteComment(IndexPath)
   }
 
   enum Mutation {
@@ -112,9 +113,7 @@ final class CommentReactor: Reactor, Stepper {
     case .sendComment(let content):
       // 댓글 전송 처리
       let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard !trimmedContent.isEmpty else {
-        return .empty()
-      }
+      guard !trimmedContent.isEmpty else { return .empty() }
 
       let start = Observable.just(Mutation.setLoading(true))
       let send = rxSendComment(content: trimmedContent)
@@ -137,6 +136,37 @@ final class CommentReactor: Reactor, Stepper {
 
     case .didTapKebab(_):
       return .empty()
+
+    case .deleteComment(let indexPath):
+      let comments = currentState.comments
+      guard indexPath.row >= 0, indexPath.row < comments.count
+      else {
+        return .just(.setError("[Delete Comment] 인덱스 에러"))
+      }
+      let target = comments[indexPath.row]
+
+      if let ownerId = target.commenterId,
+        let currentUserId = storedUserId,
+        ownerId != currentUserId {
+        return .just(.setError("[Delete Comment] 삭제 권한 없음"))
+      }
+
+      let start = Observable.just(Mutation.setLoading(true))
+      let delete = rxDeleteComment(commentId: target.id)
+      let refresh = rxFetchComments(postId: postId)
+        .map { Mutation.setComments($0) as Mutation }
+        .catch { error in
+          let message = (error as NSError).localizedDescription
+          return .just(.setError(message))
+        }
+      let end = Observable.just(Mutation.setLoading(false))
+
+      return .concat([
+        start,
+        delete.map { _ in Mutation.setError(nil) },
+        refresh,
+        end
+      ])
     }
   }
 
@@ -201,7 +231,9 @@ final class CommentReactor: Reactor, Stepper {
           // 현재 유저 ID 가져오기
           guard let userId = self.storedUserId, userId.isEmpty == false else {
             throw NSError(
-              domain: "CommentReactor", code: -1, userInfo: [NSLocalizedDescriptionKey: "로그인 필요"]
+              domain: "CommentReactor",
+              code: -1,
+              userInfo: [NSLocalizedDescriptionKey: "로그인 필요"]
             )
           }
 
@@ -227,6 +259,32 @@ final class CommentReactor: Reactor, Stepper {
             .execute()
           print("[Comment] Success!")
 
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+      return Disposables.create { task.cancel() }
+    }
+  }
+
+  private func rxDeleteComment(commentId: UUID) -> Observable<Void> {
+    .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      let task = Task {
+        do {
+          print("[Comment] 삭제될 댓글 Id: \(commentId.uuidString)")
+          try await self.supabase
+            .from("Comment")
+            .delete()
+            .eq("id", value: commentId)
+            .execute()
+          print("[Comment] 삭제 성공")
           observer.onNext(())
           observer.onCompleted()
         } catch {

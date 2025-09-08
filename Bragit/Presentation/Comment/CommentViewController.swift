@@ -68,6 +68,9 @@ final class CommentViewController: UIViewController, View {
   // bottomBar의 탭 버튼
   private let bottomBarTapButton = UIButton(type: .custom)
 
+  private var menuTargetIndexPath: IndexPath?
+  private var deleteIndexPath: IndexPath?
+
   // 바텀
   private lazy var bottomBar: UIView = {
     let bar = UIView()
@@ -320,7 +323,16 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // MARK: - Output (State)
+    deleteAlert.rightTap
+      .compactMap { [weak self] in self?.deleteIndexPath }
+      .do { [weak self] _ in self?.deleteIndexPath = nil }
+      .map { Reactor.Action.deleteComment($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    deleteAlert.leftTap
+      .bind { [weak self] in self?.deleteIndexPath = nil }
+      .disposed(by: disposeBag)
 
     // 댓글 목록 바인딩
     reactor.state
@@ -362,6 +374,9 @@ final class CommentViewController: UIViewController, View {
             let currentUserId = reactor.currentState.currentUserId
             let commenterId = row.commenterId
             let isSelf = (currentUserId != nil && commenterId != nil && currentUserId == commenterId)
+            guard self.tableView.indexPath(for: cell) != nil else { return }
+            guard let indexPath = self.tableView.indexPath(for: cell) else { return }
+            self.menuTargetIndexPath = indexPath
 
             if isSelf {
               self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
@@ -370,6 +385,16 @@ final class CommentViewController: UIViewController, View {
             }
           }
           .disposed(by: cell.disposeBag)
+      }
+      .disposed(by: disposeBag)
+
+    commentSelfMenu.itemTap
+      .compactMap { $0 }
+      .bind(with: self) { owner, index in
+        guard index == 0 else { return }
+        guard let target = owner.menuTargetIndexPath else { return }
+        owner.deleteIndexPath = target
+        owner.deleteAlert.show(in: owner.view)
       }
       .disposed(by: disposeBag)
 
