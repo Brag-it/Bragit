@@ -65,13 +65,16 @@ final class CommentViewController: UIViewController, View {
     return tap
   }()
 
-  // bottomBar의 탭 버튼
   private let bottomBarTapButton = UIButton(type: .custom)
-
   private var menuTargetIndexPath: IndexPath?
   private var deleteIndexPath: IndexPath?
 
-  // 바텀
+  // 하단 안전영역(홈 인디케이터) + 키보드 둥근 모서리 뒤 배경 색 채움용
+  private let bottomSafeAreaBackground = UIView().then {
+    $0.backgroundColor = .grayScale50
+    $0.isUserInteractionEnabled = false
+  }
+
   private lazy var bottomBar: UIView = {
     let bar = UIView()
     bar.backgroundColor = .grayScale50
@@ -96,75 +99,23 @@ final class CommentViewController: UIViewController, View {
       $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
-    bottomBarTapButton.backgroundColor = .clear
-
-    bar.addSubview(lockImageView)
-    bar.addSubview(textContainer)
-    bar.addSubview(sendImageView)
-    textContainer.addSubview(bottomBarTapButton)
-
-    lockImageView.snp.makeConstraints {
-      $0.leading.equalTo(bar.snp.leading).offset(12)
-      $0.centerY.equalTo(bar.snp.centerY)
-      $0.size.equalTo(CGSize(width: 20, height: 20))
-    }
-
-    textContainer.snp.makeConstraints {
-      $0.leading.equalTo(lockImageView.snp.trailing).offset(10)
-      $0.trailing.equalTo(bar.snp.trailing).inset(12)
-      $0.centerY.equalTo(bar.snp.centerY)
-      $0.height.equalTo(42)
-    }
-
-    sendImageView.snp.makeConstraints {
-      $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
-      $0.centerY.equalTo(textContainer.snp.centerY)
-      $0.size.equalTo(CGSize(width: 20, height: 20))
-    }
-
-    bottomBarTapButton.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-    return bar
-  }()
-
-  private lazy var accessoryBar: UIView = {
-    let bar = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 54))
-    bar.backgroundColor = .grayScale50
-
-    let lockImageView = UIImageView(image: .unlock).then {
-      $0.contentMode = .scaleAspectFit
-      $0.setContentHuggingPriority(.required, for: .horizontal)
-      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
-    }
-
-    let textContainer = UIView().then {
-      $0.backgroundColor = .white
-      $0.layer.cornerRadius = 12
-      $0.layer.masksToBounds = true
-    }
-
-    let sendImageView = UIImageView(image: .send).then {
-      $0.contentMode = .scaleAspectFit
-      $0.isUserInteractionEnabled = true
-      $0.setContentHuggingPriority(.required, for: .horizontal)
-      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
-    }
-
     commentTextView.backgroundColor = .clear
     commentTextView.font = .pretendard(size: 15, weight: .regular)
     commentTextView.textColor = .grayScale900
     commentTextView.isScrollEnabled = false
-
     commentTextView.returnKeyType = .send
     commentTextView.enablesReturnKeyAutomatically = true
-
     commentTextView.delegate = self
+
+    sendButton.backgroundColor = .clear
+    bottomBarTapButton.backgroundColor = .white
 
     bar.addSubview(lockImageView)
     bar.addSubview(textContainer)
     bar.addSubview(sendImageView)
     bar.addSubview(sendButton)
     textContainer.addSubview(commentTextView)
+    textContainer.addSubview(bottomBarTapButton)
 
     lockImageView.snp.makeConstraints {
       $0.leading.equalTo(bar.snp.leading).offset(12)
@@ -195,12 +146,10 @@ final class CommentViewController: UIViewController, View {
       $0.height.equalTo(42)
     }
 
+    bottomBarTapButton.snp.makeConstraints { $0.edges.equalToSuperview() }
     commentTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 34)
     return bar
   }()
-
-  override var canBecomeFirstResponder: Bool { true }
-  override var inputAccessoryView: UIView? { accessoryBar }
 
   init(reactor: CommentReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -216,15 +165,16 @@ final class CommentViewController: UIViewController, View {
     title = "댓글"
     view.backgroundColor = .white
     setupLayout()
-    setupKeyboardObservation()
     view.addGestureRecognizer(dismissTapGesture)
-    commentTextView.inputAccessoryView = accessoryBar
   }
 
   private func setupLayout() {
     view.addSubview(headerView)
     headerView.addSubview(backButton)
     headerView.addSubview(titleLabel)
+
+    // 배경을 먼저 추가(바 아래에 깔리도록)
+    view.addSubview(bottomSafeAreaBackground)
 
     view.addSubview(tableView)
     view.addSubview(activityIndicator)
@@ -249,36 +199,27 @@ final class CommentViewController: UIViewController, View {
 
     bottomBar.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview()
-      $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
+      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
       $0.height.equalTo(54)
+    }
+
+    // 홈 인디케이터 영역 + 키보드 둥근 모서리 뒤까지 동일 색으로 채움
+    // 핵심: top을 safeArea가 아니라 bottomBar의 bottom에 맞춤
+    bottomSafeAreaBackground.snp.makeConstraints {
+      $0.leading.trailing.equalToSuperview()
+      $0.top.equalTo(bottomBar.snp.bottom)
+      $0.bottom.equalTo(view.snp.bottom)
     }
 
     tableView.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom)
       $0.leading.trailing.equalToSuperview()
-      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+      $0.bottom.equalTo(bottomBar.snp.top)
     }
 
     activityIndicator.snp.makeConstraints {
       $0.center.equalToSuperview()
     }
-  }
-
-  private func setupKeyboardObservation() {
-    // Rx로 키보드 이벤트 처리
-    NotificationCenter.default.rx
-      .notification(UIResponder.keyboardWillShowNotification)
-      .subscribe { [weak self] _ in
-        self?.bottomBar.isHidden = true
-      }
-      .disposed(by: disposeBag)
-
-    NotificationCenter.default.rx
-      .notification(UIResponder.keyboardWillHideNotification)
-      .subscribe { [weak self] _ in
-        self?.bottomBar.isHidden = false
-      }
-      .disposed(by: disposeBag)
   }
 
   func bind(reactor: CommentReactor) {
@@ -306,7 +247,8 @@ final class CommentViewController: UIViewController, View {
     // 전송 버튼 탭
     sendButton.rx.tap
       .withLatestFrom(commentTextView.rx.text.orEmpty)
-      .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
       .map { Reactor.Action.sendComment($0) }
       .do { [weak self] _ in
         self?.commentTextView.text = ""
@@ -317,9 +259,8 @@ final class CommentViewController: UIViewController, View {
 
     // 화면 빈 곳 탭 -> 키보드 내리기
     dismissTapGesture.rx.event
-      .subscribe { [weak self] _ in
-        // MARK: 키보드 내릴 때 사용
-        self?.commentTextView.resignFirstResponder()
+      .bind(with: self) { owner, _ in
+        owner.view.endEditing(true)
       }
       .disposed(by: disposeBag)
 
@@ -426,7 +367,7 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // 댓글 전송 성공 시 텍스트뷰 초기화
+    // 댓글 전송 성공 시 텍스트뷰 초기화 및 스크롤
     reactor.state
       .map(\.commentSent)
       .filter { $0 }
@@ -434,7 +375,7 @@ final class CommentViewController: UIViewController, View {
       .subscribe { [weak self] _ in
         self?.commentTextView.text = ""
         if let tableView = self?.tableView,
-          tableView.numberOfRows(inSection: 0) > 0 {
+           tableView.numberOfRows(inSection: 0) > 0 {
           tableView.scrollToRow(
             at: IndexPath(row: 0, section: 0),
             at: .top,
