@@ -335,7 +335,8 @@ final class CommentViewController: UIViewController, View {
           cellIdentifier: CommentCell.reuseID,
           cellType: CommentCell.self
         )
-      ) { _, row, cell in
+      ) { [weak self] _, row, cell in
+        guard let self else { return }
         let nickname = (row.user?.nickname?.isEmpty == false) ? row.user!.nickname! : "탈퇴한 회원"
         let profileURL = row.user?.profile
         cell.configure(
@@ -344,6 +345,34 @@ final class CommentViewController: UIViewController, View {
           date: row.date,
           content: row.content
         )
+
+        // 케밥 버튼 탭 시 메뉴 표시 (표시만, 동작 바인딩 없음)
+        cell.kebabTap
+          .bind { [weak self, weak cell] in
+            guard let self, let cell else { return }
+
+            // 버튼의 프레임을 view 좌표계로 변환
+            let buttonFrameInView = cell.kebabButton.convert(cell.kebabButton.bounds, to: self.view)
+
+            let menuWidth: CGFloat = 120
+            let spacing: CGFloat = 8
+
+            let originX = buttonFrameInView.maxX - menuWidth
+            let originY = buttonFrameInView.maxY + spacing
+            let sourcePoint = CGPoint(x: originX, y: originY)
+
+            // 작성자 여부 판별
+            let currentUserId = reactor.currentState.currentUserId
+            let commenterId = row.commenterId
+            let isSelf = (currentUserId != nil && commenterId != nil && currentUserId == commenterId)
+
+            if isSelf {
+              self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
+            } else {
+              self.commentOtherMenu.show(in: self.view, sourcePoint: sourcePoint)
+            }
+          }
+          .disposed(by: cell.disposeBag)
       }
       .disposed(by: disposeBag)
 
