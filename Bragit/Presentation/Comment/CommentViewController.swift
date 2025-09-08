@@ -336,7 +336,9 @@ final class CommentViewController: UIViewController, View {
 
     // 댓글 목록 바인딩
     reactor.state
-      .map(\.comments)
+      .map { state in
+        state.comments.sorted { $0.date > $1.date }
+      }
       .distinctUntilChanged()
       .observe(on: MainScheduler.instance)
       .bind(
@@ -431,6 +433,14 @@ final class CommentViewController: UIViewController, View {
       .observe(on: MainScheduler.instance)
       .subscribe { [weak self] _ in
         self?.commentTextView.text = ""
+        if let tableView = self?.tableView,
+          tableView.numberOfRows(inSection: 0) > 0 {
+          tableView.scrollToRow(
+            at: IndexPath(row: 0, section: 0),
+            at: .top,
+            animated: true
+          )
+        }
       }
       .disposed(by: disposeBag)
   }
