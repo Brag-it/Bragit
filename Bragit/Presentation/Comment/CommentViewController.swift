@@ -54,8 +54,6 @@ final class CommentViewController: UIViewController, View {
   }
 
   private let commentTextView = UITextView()
-
-  // 전송 버튼을 별도로 선언 (Rx 바인딩을 위해)
   private let sendButton = UIButton(type: .custom)
 
   // 화면 빈 곳 탭 시 키보드 내리기용 제스처
@@ -173,9 +171,7 @@ final class CommentViewController: UIViewController, View {
     headerView.addSubview(backButton)
     headerView.addSubview(titleLabel)
 
-    // 배경을 먼저 추가(바 아래에 깔리도록)
     view.addSubview(bottomSafeAreaBackground)
-
     view.addSubview(tableView)
     view.addSubview(activityIndicator)
     view.addSubview(bottomBar)
@@ -203,7 +199,6 @@ final class CommentViewController: UIViewController, View {
       $0.height.equalTo(54)
     }
 
-    // 홈 인디케이터 영역 + 키보드 둥근 모서리 뒤까지 동일 색으로 채움
     bottomSafeAreaBackground.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview()
       $0.top.equalTo(bottomBar.snp.bottom)
@@ -222,9 +217,7 @@ final class CommentViewController: UIViewController, View {
   }
 
   func bind(reactor: CommentReactor) {
-    // MARK: - Input (Actions)
-
-    // 뒤로가기 버튼
+    // 뒤로가기
     backButton.rx.tap
       .map { Reactor.Action.didTapBack }
       .bind(to: reactor.action)
@@ -263,26 +256,22 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    // 삭제 확인
     deleteAlert.rightTap
-      .compactMap { [weak self] (_: Void) -> IndexPath? in
-        self?.deleteIndexPath
-      }
-      .do { [weak self] (_: IndexPath) in self?.deleteIndexPath = nil }
-      .map { (indexPath: IndexPath) -> Reactor.Action in
-        Reactor.Action.deleteComment(indexPath)
-      }
+      .compactMap { [weak self] in self?.deleteIndexPath }
+      .do { [weak self] _ in self?.deleteIndexPath = nil }
+      .map { Reactor.Action.deleteComment($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // 삭제 취소
     deleteAlert.leftTap
       .bind { [weak self] in self?.deleteIndexPath = nil }
       .disposed(by: disposeBag)
 
     // 댓글 목록 바인딩
     reactor.state
-      .map { state in
-        state.comments.sorted { $0.date > $1.date }
-      }
+      .map { $0.comments.sorted { $0.date > $1.date } }
       .distinctUntilChanged()
       .observe(on: MainScheduler.instance)
       .bind(
@@ -290,8 +279,8 @@ final class CommentViewController: UIViewController, View {
           cellIdentifier: CommentCell.reuseID,
           cellType: CommentCell.self
         )
-      ) { [weak self] _, row, cell in
-        guard let self else { return }
+      ) { [weak self, weak reactor] _, row, cell in
+        guard let self, let reactor else { return }
         let nickname = (row.user?.nickname?.isEmpty == false) ? row.user!.nickname! : "탈퇴한 회원"
         let profileURL = row.user?.profile
         cell.configure(
@@ -306,19 +295,17 @@ final class CommentViewController: UIViewController, View {
           .bind { [weak self, weak cell] in
             guard let self, let cell else { return }
 
-            // 버튼의 프레임을 view 좌표계로 변환
+            // 버튼 위치 기준 메뉴 표시 위치 계산
             let buttonFrameInView = cell.kebabButton.convert(cell.kebabButton.bounds, to: self.view)
-
             let menuWidth: CGFloat = 120
             let spacing: CGFloat = 8
-
-            let originX = buttonFrameInView.maxX - menuWidth
-            let originY = buttonFrameInView.maxY + spacing
-            let sourcePoint = CGPoint(x: originX, y: originY)
+            let sourcePoint = CGPoint(
+              x: buttonFrameInView.maxX - menuWidth,
+              y: buttonFrameInView.maxY + spacing
+            )
 
             guard let indexPath = self.tableView.indexPath(for: cell) else { return }
             self.menuTargetIndexPath = indexPath
-            print("[VC] kebab tapped at indexPath:", indexPath)
 
             // 작성자 여부 판별
             let currentUserId = reactor.currentState.currentUserId
@@ -335,59 +322,36 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // 내 댓글 메뉴 - 삭제하기
+    // 본인 댓글 삭제 메뉴
     commentSelfMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
-        guard index == 0 else { return }
-        guard let target = owner.menuTargetIndexPath else { return }
-        print("[VC] self menu delete tapped at indexPath:", target)
+        guard index == 0, let target = owner.menuTargetIndexPath else { return }
         owner.deleteIndexPath = target
         owner.deleteAlert.show(in: owner.view)
       }
       .disposed(by: disposeBag)
 
-    // 다른 사용자 댓글 메뉴 - 신고하기
+    // 남 댓글 신고 메뉴
     commentOtherMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
-        print("[VC] other menu itemTap index:", index as Any)
-        guard index == 0 else { return }
-        guard let target = owner.menuTargetIndexPath else {
-          print("[VC] menuTargetIndexPath is nil")
-          return
-        }
-        print("[VC] report alert will show for indexPath:", target)
+        guard index == 0, owner.menuTargetIndexPath != nil else { return }
         owner.reportAlert.show(in: owner.view)
       }
       .disposed(by: disposeBag)
 
-    // 신고 알럿 - 확인
+    // 신고 확인
     reportAlert.rightTap
-      .compactMap { [weak self] (_: Void) -> IndexPath? in
-        guard let indexPath = self?.menuTargetIndexPath else {
-          print("[VC] reportAlert.rightTap but menuTargetIndexPath is nil")
-          return nil
-        }
-        print("[VC] reportAlert.rightTap indexPath:", indexPath)
-        return indexPath
-      }
-      .do(onNext: { [weak self] (_: IndexPath) in
-        self?.menuTargetIndexPath = nil
-      })
-      .map { (indexPath: IndexPath) -> Reactor.Action in
-        print("[VC] dispatch Reactor.Action.reportComment:", indexPath)
-        return Reactor.Action.reportComment(indexPath)
-      }
+      .compactMap { [weak self] in self?.menuTargetIndexPath }
+      .do { [weak self] _ in self?.menuTargetIndexPath = nil }
+      .map { Reactor.Action.reportComment($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // 신고 알럿 - 취소
+    // 신고 취소
     reportAlert.leftTap
-      .bind { [weak self] in
-        print("[VC] reportAlert.leftTap (cancel)")
-        self?.menuTargetIndexPath = nil
-      }
+      .bind { [weak self] in self?.menuTargetIndexPath = nil }
       .disposed(by: disposeBag)
 
     // 로딩 인디케이터
@@ -424,7 +388,7 @@ final class CommentViewController: UIViewController, View {
       .subscribe { [weak self] _ in
         self?.commentTextView.text = ""
         if let tableView = self?.tableView,
-           tableView.numberOfRows(inSection: 0) > 0 {
+          tableView.numberOfRows(inSection: 0) > 0 {
           tableView.scrollToRow(
             at: IndexPath(row: 0, section: 0),
             at: .top,
@@ -436,17 +400,18 @@ final class CommentViewController: UIViewController, View {
   }
 }
 
-// MARK: - CommentCell은 그대로 유지
+// MARK: - CommentCell
 final class CommentCell: UITableViewCell {
   static let reuseID = "CommentCell"
 
   var disposeBag = DisposeBag()
   var kebabTap: ControlEvent<Void> { kebabButton.rx.tap }
   var kebabButtonFrameInCell: CGRect { kebabButton.frame }
+
   private let profileImageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
     $0.clipsToBounds = true
-    $0.layer.cornerRadius = 18  // 36x36 원형
+    $0.layer.cornerRadius = 18
     $0.backgroundColor = .secondarySystemBackground
     $0.snp.makeConstraints { $0.size.equalTo(CGSize(width: 36, height: 36)) }
   }
@@ -484,7 +449,6 @@ final class CommentCell: UITableViewCell {
     selectionStyle = .none
     backgroundColor = .clear
     contentView.backgroundColor = .clear
-
     setupLayout()
   }
 
@@ -507,9 +471,7 @@ final class CommentCell: UITableViewCell {
       $0.bottom.equalTo(profileImageView.snp.bottom)
     }
 
-    profileImageView.snp.makeConstraints {
-      $0.top.leading.equalToSuperview()
-    }
+    profileImageView.snp.makeConstraints { $0.top.leading.equalToSuperview() }
 
     nameLabel.snp.makeConstraints {
       $0.leading.equalTo(profileImageView.snp.trailing).offset(6)
@@ -541,7 +503,7 @@ final class CommentCell: UITableViewCell {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "ko_KR")
     formatter.timeZone = .current
-    formatter.dateFormat = "yyyy.MM.dd"  // 0 패딩 포함
+    formatter.dateFormat = "yyyy.MM.dd"
     dateLabel.text = formatter.string(from: date)
     dateLabel.font = UIFont.pretendard(size: 13, weight: .regular)
     dateLabel.textColor = .grayScale400
@@ -556,6 +518,7 @@ final class CommentCell: UITableViewCell {
       profileImageView.image = UIImage.profilePerson
     }
   }
+
   override func prepareForReuse() {
     super.prepareForReuse()
     disposeBag = DisposeBag()
