@@ -39,6 +39,7 @@ class FavoriteReactor: Reactor, Stepper {
     case goToTagDetail(Tag)
     case refresh
     case searchTapped
+    case didTapPost(Post)
   }
 
   enum Mutation {
@@ -210,6 +211,9 @@ class FavoriteReactor: Reactor, Stepper {
       return rxSetPost(postType: currentState.postType)
     case .searchTapped:
       steps.accept(AppStep.searchFeed)
+      return .empty()
+    case .didTapPost(let post):
+      self.steps.accept(AppStep.feedDetail(post: post))
       return .empty()
     }
   }
