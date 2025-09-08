@@ -315,6 +315,7 @@ final class UserInfoViewController: UIViewController {
   // 초기 상태
   private let initialMail: String?
   private var isAppleLogin: Bool { initialMail?.isEmpty == false }
+  private let refreshToken: String?
 
   // 검증 상태
   fileprivate var mailValid = false
@@ -336,7 +337,7 @@ final class UserInfoViewController: UIViewController {
   private var keyboardBottomInset: CGFloat = 0
   private weak var currentFirstResponder: UITextField?
 
-  init(initialMail: String?) {
+  init(initialMail: String?, refreshToken: String?) {
     //    self.initialMail = initialMail
     if let space = initialMail?.trimmingCharacters(
       in: .whitespacesAndNewlines
@@ -345,6 +346,7 @@ final class UserInfoViewController: UIViewController {
     } else {
       self.initialMail = nil
     }
+    self.refreshToken = refreshToken
     super.init(nibName: nil, bundle: nil)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -514,7 +516,8 @@ final class UserInfoViewController: UIViewController {
       mail: formView.mailTextField.text ?? "",
       password: isAppleLogin ? nil : formView.pwTextField.text,
       nickname: formView.nicknameTextField.text ?? "",
-      isAppleLogin: isAppleLogin
+      isAppleLogin: isAppleLogin,
+      refreshToken: refreshToken
     )
     onNext?(info)
   }

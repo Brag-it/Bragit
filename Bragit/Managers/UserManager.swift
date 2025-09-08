@@ -28,6 +28,7 @@ protocol UserManagerProtocol {
   func rxGetProfileURL() -> Observable<String>
   func rxProfileImageUpload(image: Data) -> Observable<Void>
   func rxUpdateUserProfileImage(imageURLstring: String) -> Single<Void>
+  func rxCancelAccount() -> Single<Void>
 }
 
 class UserManager: UserManagerProtocol {
@@ -422,6 +423,48 @@ class UserManager: UserManagerProtocol {
             .update(["profile": imageURLstring])
             .eq("id", value: userId)
             .execute()
+          observer(.success(()))
+        } catch {
+          print(error)
+          observer(.failure(error))
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
+  // 탈퇴하기
+  func rxCancelAccount() -> Single<Void> {
+    
+    Single.create { [weak self] observer in
+      guard let self = self, let userId = self.userId else {
+        observer(.failure(
+          NSError(
+            domain: "UserManagerError",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "User not logged in"]
+          )
+        ))
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          try await self.client
+            .from("User_Info")
+            .delete()
+            .eq("id", value: userId)
+            .execute()
+
+          try await self.client
+            .functions
+            .invoke(
+              "delete-user",
+              options: FunctionInvokeOptions(
+                body: ["userId": userId.lowercased()]
+              )
+            )
           observer(.success(()))
         } catch {
           print(error)

@@ -205,6 +205,8 @@ extension LoginViewController:
     guard
       let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
       let tokenData = credential.identityToken,
+      let authCodeData = credential.authorizationCode,
+      let authCode = String(data: authCodeData, encoding: .utf8),
       let idToken = String(data: tokenData, encoding: .utf8),
       let reactor,
       let nonce = reactor.currentState.appleNonce
@@ -215,7 +217,7 @@ extension LoginViewController:
     let rawMail = credential.email?.trimmingCharacters(in: .whitespacesAndNewlines)
     if let rawMail, !rawMail.isEmpty { KeychainMailStore.save(rawMail) }
     let mail = (rawMail?.isEmpty == false) ? rawMail : KeychainMailStore.load()
-    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce, mail: mail))
+    reactor.action.onNext(.tapApple(idToken: idToken, nonce: nonce, mail: mail, authCode: authCode))
   }
 
   func authorizationController(
@@ -237,7 +239,10 @@ extension LoginViewController:
     guard let idTokenData = credential.identityToken, let idToken = String(data: idTokenData, encoding: .utf8) else {
       return
     }
-    reactor.action.onNext(.tapApple(idToken: idToken, nonce: hashedNonce, mail: initialMail))
+    guard
+      let authCodeData = credential.authorizationCode,
+      let authCode = String(data: authCodeData, encoding: .utf8) else { return }
+    reactor.action.onNext(.tapApple(idToken: idToken, nonce: hashedNonce, mail: initialMail, authCode: authCode))
   }
 }
 

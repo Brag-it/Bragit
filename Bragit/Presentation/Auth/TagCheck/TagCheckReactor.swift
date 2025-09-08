@@ -88,11 +88,11 @@ final class TagCheckReactor: Reactor, Stepper {
             profile: profileURL,
             provider: self.userInfo.isAppleLogin ? "apple" : "mail",
             signDate: Date(),
-            latestUploaded: nil
+            latestUploaded: nil,
+            refreshToken: self.userInfo.refreshToken
           )
 
           try await self.saveUserInfo(user)
-
           observer.onNext(.setRegistrationComplete(true))
           observer.onNext(.setLoading(false))
           observer.onCompleted()

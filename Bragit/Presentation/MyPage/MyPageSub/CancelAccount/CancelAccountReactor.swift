@@ -11,11 +11,13 @@ import RxFlow
 import RxRelay
 import Then
 import Dependencies
+import Functions
 
 class CancelAccountReactor: Reactor, Stepper {
   var initialState: State
   let steps = PublishRelay<Step>()
   @Dependency(\.userManager) var userManager
+  @Dependency(\.supabase) private var supabase
 
   private let disposeBag = DisposeBag()
   // 사용자 액션 정의 (사용자의 의도)
@@ -42,6 +44,11 @@ class CancelAccountReactor: Reactor, Stepper {
     self.initialState = State()
   }
 
+  struct Response: Decodable {
+    var success: Bool
+    var message: String
+  }
+
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
   // 사용자 입력 → 상태 변화 신호로 변환
   func mutate(action: Action) -> Observable<Mutation> {
@@ -57,8 +64,34 @@ class CancelAccountReactor: Reactor, Stepper {
     case .checkBoxTap:
       return .just(.toggleAgree)
     case .cancelButtonTap:
+      @LocalStorage(location: .nowUser) var id: String?
+      return userManager.rxfetchUsersBy(ids: [id ?? ""])
+        .flatMap { [weak self] users -> Single<Void> in
+          guard let self = self, let user = users.first, let refreshToken = user.refreshToken else {
+            return .just(())
+          }
 
-      return .empty()
+          return Single.create { single in
+            let task = Task {
+              do {
+                _ = try await self.supabase.functions
+                  .invoke(
+                    "apple-revoke",
+                    options: FunctionInvokeOptions(body: ["refresh_token": refreshToken])
+                  )
+                single(.success(()))
+              } catch {
+                single(.failure(error))
+              }
+            }
+            return Disposables.create { task.cancel() }
+          }
+        }
+        .flatMap { self.userManager.rxCancelAccount() }
+        .flatMap { _ -> Observable<Mutation> in
+          self.steps.accept(AppStep.login)
+          return .empty()
+        }
     }
   }
 
