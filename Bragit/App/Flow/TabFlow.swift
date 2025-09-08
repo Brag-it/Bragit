@@ -168,17 +168,15 @@ final class TabFlow: NSObject, Flow, Stepper {
   }
 
   func showsearchView() -> FlowContributors {
-    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
-    let reactor = SearchReactor()
-    let searchVC = SearchViewController(reactor: reactor)
-
-    searchVC.modalPresentationStyle = .fullScreen
-    searchVC.modalTransitionStyle = .crossDissolve
-    navigation.present(searchVC, animated: true)
-
+    let flow = SearchFlow() // 모달로 띄울 전용 플로우
+    Flows.use(flow, when: .ready) { [weak self] root in
+      root.modalPresentationStyle = .fullScreen
+      root.modalTransitionStyle = .crossDissolve
+      self?.rootViewController.present(root, animated: true)
+    }
     return .one(flowContributor: .contribute(
-      withNextPresentable: searchVC,
-      withNextStepper: reactor
+      withNextPresentable: flow,
+      withNextStepper: OneStepper(withSingleStep: AppStep.searchFeed)
     ))
   }
 
