@@ -130,19 +130,27 @@ final class SearchViewController: UIViewController, View {
   private func createLayout() -> UICollectionViewCompositionalLayout {
     UICollectionViewCompositionalLayout { [weak self] sectionIndex, _ in
       guard let self else { return nil }
-      let section = self.dataSource.snapshot().sectionIdentifiers[sectionIndex]
+      let sections = self.dataSource.snapshot().sectionIdentifiers
+      guard sectionIndex < sections.count else { return nil }
+      let section = sections[sectionIndex]
       return self.layout(for: section)
     }
   }
 
   private func layout(for section: SearchSection) -> NSCollectionLayoutSection {
     switch section {
-    case .recent: return recentSectionLayout()
-    case .suggestions: return typingtagSectionLayout()
-    case .tagResults: return tagSectionLayout()
-    case .postResults: return postSectionLayout()
-    case .userResults: return userSectionLayout()
-    case .emptyResults: return emptySectionLayout()
+    case .recent:
+      return recentSectionLayout()
+    case .suggestions:
+      return typingtagSectionLayout()
+    case .tagResults:
+      return tagSectionLayout()
+    case .postResults:
+      return postSectionLayout()
+    case .userResults:
+      return userSectionLayout()
+    case .emptyResults:
+      return emptySectionLayout()
     }
   }
 
@@ -298,18 +306,27 @@ final class SearchViewController: UIViewController, View {
     return section
   }
 
+  // 검색결과 없을 때
   private func emptySectionLayout() -> NSCollectionLayoutSection {
+    let headerSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(50)
+    )
+    let header = NSCollectionLayoutBoundarySupplementaryItem(
+      layoutSize: headerSize,
+      elementKind: UICollectionView.elementKindSectionHeader,
+      alignment: .top
+    )
+
     let itemSize = NSCollectionLayoutSize(
       widthDimension: .fractionalWidth(1.0),
       heightDimension: .fractionalHeight(1.0)
     )
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
-    let groupSize = NSCollectionLayoutSize(
-      widthDimension: .fractionalWidth(1.0),
-      heightDimension: .fractionalHeight(1.0)
-    )
-    let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+    let group = NSCollectionLayoutGroup.vertical(layoutSize: itemSize, subitems: [item])
     let section = NSCollectionLayoutSection(group: group)
+    header.pinToVisibleBounds = true
+    section.boundarySupplementaryItems = [header]
     section.contentInsets = .zero
     return section
   }
@@ -339,7 +356,6 @@ final class SearchViewController: UIViewController, View {
     dataSource.apply(snapshot, animatingDifferences: true)
   }
 
-  // MARK: - DataSource Helpers
   private struct Registrations {
     let recent: UICollectionView.CellRegistration<RecentCell, String>
     let suggestion: UICollectionView.CellRegistration<UICollectionViewListCell, String>
@@ -407,10 +423,8 @@ final class SearchViewController: UIViewController, View {
       elementKind: UICollectionView.elementKindSectionHeader
     ) { [weak self] header, _, indexPath in
       guard let self, let reactor = self.reactor else { return }
-      guard SearchSection(rawValue: indexPath.section) != nil else { return }
-      // Header → Reactor
+
       header.selected
-        .distinctUntilChanged()
         .map { tab -> SearchReactor.Action in
           switch tab {
           case .tag: return .changeScope(.tag)
@@ -424,7 +438,6 @@ final class SearchViewController: UIViewController, View {
       // Reactor → Header
       reactor.state
         .map(\.scope)
-        .distinctUntilChanged()
         .map { scope -> SearchHeaderView.Tab in
           switch scope {
           case .tag: return .tag
@@ -433,9 +446,9 @@ final class SearchViewController: UIViewController, View {
           }
         }
         .observe(on: MainScheduler.instance)
-        .subscribe(onNext: { [weak header] tab in
+        .subscribe { [weak header] tab in
           header?.selected.accept(tab)
-        })
+        }
         .disposed(by: header.disposeBag)
     }
 
@@ -453,42 +466,45 @@ final class SearchViewController: UIViewController, View {
 
   private func makeCellProvider(
     with regs: Registrations) -> UICollectionViewDiffableDataSource<SearchSection, SearchRow>.CellProvider {
-    return { collectionView, indexPath, row in
-      switch row {
-      case .recentKeyword(let keyword):
-        return collectionView.dequeueConfiguredReusableCell(using: regs.recent, for: indexPath, item: keyword)
-      case .suggestion(let text):
-        return collectionView.dequeueConfiguredReusableCell(using: regs.suggestion, for: indexPath, item: text)
-      case .tag(let item):
-        return collectionView.dequeueConfiguredReusableCell(using: regs.tag, for: indexPath, item: item.tag)
-      case .post(let item):
-        return collectionView.dequeueConfiguredReusableCell(using: regs.post, for: indexPath, item: item)
-      case .user(let item):
-        return collectionView.dequeueConfiguredReusableCell(using: regs.user, for: indexPath, item: item)
-      case .empty:
-        return collectionView.dequeueConfiguredReusableCell(using: regs.empty, for: indexPath, item: ())
+      return { collectionView, indexPath, row in
+        switch row {
+        case .recentKeyword(let keyword):
+          return collectionView.dequeueConfiguredReusableCell(using: regs.recent, for: indexPath, item: keyword)
+        case .suggestion(let text):
+          return collectionView.dequeueConfiguredReusableCell(using: regs.suggestion, for: indexPath, item: text)
+        case .tag(let item):
+          return collectionView.dequeueConfiguredReusableCell(using: regs.tag, for: indexPath, item: item.tag)
+        case .post(let item):
+          return collectionView.dequeueConfiguredReusableCell(using: regs.post, for: indexPath, item: item)
+        case .user(let item):
+          return collectionView.dequeueConfiguredReusableCell(using: regs.user, for: indexPath, item: item)
+        case .empty:
+          return collectionView.dequeueConfiguredReusableCell(using: regs.empty, for: indexPath, item: ())
+        }
       }
     }
-  }
 
   private func makeSupplementaryProvider(
     with regs: Registrations
   ) -> UICollectionViewDiffableDataSource<SearchSection, SearchRow>.SupplementaryViewProvider {
-    return { collectionView, _, indexPath in
-      guard let sectionKind = SearchSection(rawValue: indexPath.section) else { return nil }
+    return { [weak self] collectionView, _, indexPath in
+      guard let self else { return nil }
+      let sectionKind = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
       switch sectionKind {
       case .recent:
         return collectionView.dequeueConfiguredReusableSupplementary(using: regs.recentHeader, for: indexPath)
       case .tagResults, .postResults, .userResults:
         return collectionView.dequeueConfiguredReusableSupplementary(using: regs.searchHeader, for: indexPath)
-      case .suggestions, .emptyResults:
+      case .suggestions:
         return nil
+      case .emptyResults:
+        return collectionView.dequeueConfiguredReusableSupplementary(using: regs.searchHeader, for: indexPath)
       }
     }
   }
 
   private func setupDataSource(_ collectionView: UICollectionView)
-    -> UICollectionViewDiffableDataSource<SearchSection, SearchRow> {
+  -> UICollectionViewDiffableDataSource<SearchSection, SearchRow> {
     let regs = makeRegistrations()
     let dataSource = UICollectionViewDiffableDataSource<SearchSection, SearchRow>(
       collectionView: collectionView,
@@ -526,26 +542,29 @@ final class SearchViewController: UIViewController, View {
   ) {
     switch scope {
     case .tag:
-      snapshot.appendSections([.tagResults])
       if tags.isEmpty {
-        snapshot.appendItems([.empty], toSection: .tagResults)
+        snapshot.appendSections([.emptyResults])
+        snapshot.appendItems([.empty], toSection: .emptyResults)
       } else {
+        snapshot.appendSections([.tagResults])
         snapshot.appendItems(tags.map { .tag($0) }, toSection: .tagResults)
       }
 
     case .post:
-      snapshot.appendSections([.postResults])
       if posts.isEmpty {
-        snapshot.appendItems([.empty], toSection: .postResults)
+        snapshot.appendSections([.emptyResults])
+        snapshot.appendItems([.empty], toSection: .emptyResults)
       } else {
+        snapshot.appendSections([.postResults])
         snapshot.appendItems(posts.map { .post($0) }, toSection: .postResults)
       }
 
     case .user:
-      snapshot.appendSections([.userResults])
       if users.isEmpty {
-        snapshot.appendItems([.empty], toSection: .userResults)
+        snapshot.appendSections([.emptyResults])
+        snapshot.appendItems([.empty], toSection: .emptyResults)
       } else {
+        snapshot.appendSections([.userResults])
         snapshot.appendItems(users.map { .user($0) }, toSection: .userResults)
       }
     }

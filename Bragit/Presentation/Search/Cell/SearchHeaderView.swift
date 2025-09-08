@@ -56,14 +56,14 @@ final class SearchHeaderView: UICollectionReusableView {
     let stack = UIStackView(arrangedSubviews: buttons).then {
       $0.axis = .horizontal
       $0.alignment = .center
-      $0.distribution = .equalSpacing
+      $0.distribution = .fillEqually
     }
 
     addSubview(stack)
     addSubview(indicator)
 
     stack.snp.makeConstraints {
-      $0.top.equalToSuperview().inset(14)
+      $0.top.equalToSuperview()
       $0.leading.trailing.equalToSuperview().inset(10)
       $0.height.equalTo(49)
     }
