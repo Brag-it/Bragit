@@ -16,6 +16,7 @@ class UserProfileViewCotnroller: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     self.navigationController?.navigationBar.isHidden = true
+    view.backgroundColor = .red
   }
 
   init(reactor: UserProfileReactor) {

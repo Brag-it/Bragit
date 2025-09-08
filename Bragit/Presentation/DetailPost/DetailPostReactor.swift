@@ -33,6 +33,7 @@ class DetailPostReactor: Reactor, Stepper {
     case didTapEdit
     case didTapReport
     case didTapDelete
+    case didTapUserProfile
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -181,9 +182,6 @@ class DetailPostReactor: Reactor, Stepper {
       return .empty()
 
     case .didTapDelete:
-      #if DEBUG
-      print("[DetailPostReactor] didTapDelete: postId=\(post.id.uuidString)")
-      #endif
       return Observable.concat([
         .just(.setLoading(true)),
         postManager.rxDeletePost(postId: post.id.uuidString)
@@ -201,6 +199,22 @@ class DetailPostReactor: Reactor, Stepper {
           },
         .just(.setLoading(false))
       ])
+    case .didTapUserProfile:
+      guard let authorId = post.author?.id, !authorId.isEmpty else {
+        return .empty()
+      }
+
+      return userManager
+        .rxfetchUsersBy(ids: [authorId])
+        .compactMap { $0.first }
+        .do { [weak self] user in
+          self?.steps.accept(AppStep.userProfile(user: user))
+        }
+        .flatMap { _ in Observable<Mutation>.empty() }
+        .catch { error in
+          print("fetch user failed:", error)
+          return .empty()
+        }
     }
   }
   // swiftlint:enable cyclomatic_complexity
