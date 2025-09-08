@@ -94,7 +94,7 @@ final class SearchViewController: UIViewController, View {
       $0.leading.trailing.bottom.equalToSuperview()
     }
   }
-
+  // swiftlint:disable cyclomatic_complexity
   func bind(reactor: SearchReactor) {
     rx.viewDidAppear
       .take(1)
@@ -119,6 +119,13 @@ final class SearchViewController: UIViewController, View {
       textField.rx.controlEvent(.editingDidEndOnExit).asObservable(),
       searchBar.searchButton.rx.tap.asObservable()
     )
+
+    // 텍스트 상태
+    reactor.state
+      .map(\.text)
+      .distinctUntilChanged()
+      .bind(to: textField.rx.text)
+      .disposed(by: disposeBag)
 
     submitTrigger
       .map { SearchReactor.Action.submit }
@@ -214,6 +221,7 @@ final class SearchViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
   }
+  // swiftlint:enable cyclomatic_complexity
 
   private func createLayout() -> UICollectionViewCompositionalLayout {
     let layout = UICollectionViewCompositionalLayout { [weak self] sectionIndex, _ in

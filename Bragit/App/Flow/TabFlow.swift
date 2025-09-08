@@ -27,7 +27,7 @@ final class TabFlow: NSObject, Flow, Stepper {
     super.init()
     rootViewController.delegate = self
   }
-
+  // swiftlint:disable cyclomatic_complexity
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
     switch step {
@@ -53,7 +53,7 @@ final class TabFlow: NSObject, Flow, Stepper {
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
   }
-
+  // swiftlint:enable cyclomatic_complexity
   func dismiss() -> FlowContributors {
     guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
     navigation.dismiss(animated: true)
