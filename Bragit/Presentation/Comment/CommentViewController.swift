@@ -60,6 +60,7 @@ final class CommentViewController: UIViewController, View {
   private lazy var dismissTapGesture: UITapGestureRecognizer = {
     let tap = UITapGestureRecognizer()
     tap.cancelsTouchesInView = false
+    tap.delegate = self
     return tap
   }()
 
@@ -144,8 +145,15 @@ final class CommentViewController: UIViewController, View {
       $0.height.equalTo(42)
     }
 
-    bottomBarTapButton.snp.makeConstraints { $0.edges.equalToSuperview() }
+    bottomBarTapButton.snp.makeConstraints {
+      $0.top.bottom.leading.equalToSuperview()
+      $0.trailing.equalTo(sendImageView.snp.leading).offset(-8)
+    }
+
     commentTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 34)
+
+    bar.bringSubviewToFront(sendButton)
+
     return bar
   }()
 
@@ -536,6 +544,16 @@ extension CommentViewController: UITextViewDelegate {
         textView.resignFirstResponder()
       }
       return false
+    }
+    return true
+  }
+}
+
+extension CommentViewController: UIGestureRecognizerDelegate {
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+    if gestureRecognizer === dismissTapGesture {
+      if touch.view is UIControl { return false }
+      if touch.view?.isDescendant(of: bottomBar) == true { return false }
     }
     return true
   }

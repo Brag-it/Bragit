@@ -8,17 +8,17 @@
 // 1. VC가 .tapApple(idToken, nonce) 액션 전송
 // 2. Supabase 교환(AuthService) -> 세션(uid/email)
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
+// 아 리액트 어렵다
 
 import CryptoKit
-import Foundation
-
 import Dependencies
+import Foundation
+import Functions
 import ReactorKit
 import RxFlow
 import RxRelay
 import RxSwift
 import Supabase
-import Functions
 
 final class LoginReactor: Reactor, Stepper {
 
@@ -119,6 +119,23 @@ final class LoginReactor: Reactor, Stepper {
 
           print("[apple]: \(session.user.email as Any), \(mail as Any)")
 
+          // 1) Apple이 준 이메일이 있고, Supabase Auth의 기본 email이 비어 있다면
+          //    user_metadata에 이메일 저장
+          if session.user.email == nil || session.user.email?.isEmpty == true,
+            let mail, !mail.isEmpty {
+            do {
+              try await self.supabase.auth.update(
+                user: UserAttributes(
+                  data: ["email": AnyJSON.string(mail)]
+                )
+              )
+              print("[apple]: user_metadata email backfilled")
+            } catch {
+              print("[apple]: failed to backfill user_metadata email: \(error)")
+            }
+          }
+
+          // 2) 가입 여부 확인
           let users: [User] = try await self.supabase
             .from("User_Info")
             .select()
@@ -129,7 +146,6 @@ final class LoginReactor: Reactor, Stepper {
           if users.first != nil {
             await MainActor.run { self.steps.accept(AppStep.home) }
           } else {
-            //            let email = mail
             await MainActor.run { self.steps.accept(AppStep.signup(initialMail: mail, refreshToken: refreshToken)) }
           }
           observer.onCompleted()
