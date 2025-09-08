@@ -14,7 +14,7 @@ struct User: Codable, Hashable {
   let provider: String
   let signDate: Date?
   let latestUploaded: Date?
-  let refresh_token: String?
+  let refreshToken: String?
 
   enum CodingKeys: String, CodingKey {
     case id
@@ -23,6 +23,6 @@ struct User: Codable, Hashable {
     case provider
     case signDate = "sign_date"
     case latestUploaded = "latest_uploaded"
-    case refresh_token = "apple_refresh_token"
+    case refreshToken = "apple_refresh_token"
   }
 }

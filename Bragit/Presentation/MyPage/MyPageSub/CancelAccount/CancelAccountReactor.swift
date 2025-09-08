@@ -67,7 +67,7 @@ class CancelAccountReactor: Reactor, Stepper {
       @LocalStorage(location: .nowUser) var id: String?
       return userManager.rxfetchUsersBy(ids: [id ?? ""])
         .flatMap { [weak self] users -> Single<Void> in
-          guard let self = self, let user = users.first, let refreshToken = user.refresh_token else {
+          guard let self = self, let user = users.first, let refreshToken = user.refreshToken else {
             return .just(())
           }
 
