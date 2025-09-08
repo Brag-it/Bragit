@@ -182,7 +182,9 @@ class DetailPostReactor: Reactor, Stepper {
       return .empty()
 
     case .didTapReport:
-      return .empty()
+      return postManager.rxIncrementReports(postId: post.id)
+        .flatMap { _ in Observable<Mutation>.empty() }
+        .catch { _ in Observable<Mutation>.empty() }
 
     case .didTapDelete:
       return Observable.concat([
