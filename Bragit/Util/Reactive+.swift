@@ -75,3 +75,18 @@ extension Reactive where Base: UIViewController {
     return ControlEvent(events: source)
   }
 }
+
+extension Reactive where Base: UIImageView {
+  // 이미지뷰 탭 이벤트 방출 유틸
+  var tap: ControlEvent<Void> {
+    base.isUserInteractionEnabled = true
+    let gesture = UITapGestureRecognizer()
+    base.addGestureRecognizer(gesture)
+
+    let source = gesture.rx.event
+      .filter { $0.state == .ended }
+      .map { _ in () }
+
+    return ControlEvent(events: source)
+  }
+}

@@ -145,8 +145,8 @@ class DetailPostViewController: UIViewController, View {
     titleView.addSubview(uploadDateLabel)
     titleView.addSubview(titleLabel)
     titleView.addSubview(profileImage)
-    titleView.addSubview(followButton)
     titleView.addSubview(nickNameLabel)
+    titleView.addSubview(followButton)
     titleView.addSubview(dividerView)
 
     view.addSubview(bottomView)
@@ -326,6 +326,11 @@ class DetailPostViewController: UIViewController, View {
           differentMenu.show(in: view, sourcePoint: sourcePoint)
         }
       }
+      .disposed(by: disposeBag)
+
+    profileImage.rx.tap
+      .map { Reactor.Action.didTapUserProfile }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     followButton.rx.tap
