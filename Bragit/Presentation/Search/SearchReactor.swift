@@ -168,7 +168,7 @@ class SearchReactor: Reactor, Stepper {
   }
 
   func transform(state: Observable<State>) -> Observable<State> {
-    state.observe(on: MainScheduler.instance)
+    return state.observe(on: MainScheduler.instance)
   }
 
   private func saveRecent(_ raw: String) {
