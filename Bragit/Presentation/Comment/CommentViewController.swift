@@ -249,14 +249,14 @@ final class CommentViewController: UIViewController, View {
 
     bottomBar.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview()
-      $0.bottom.equalTo(view.keyboardLayoutGuide)
+      $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
       $0.height.equalTo(54)
     }
 
     tableView.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom)
       $0.leading.trailing.equalToSuperview()
-      $0.bottom.equalTo(bottomBar.snp.top)
+      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
     }
 
     activityIndicator.snp.makeConstraints {
