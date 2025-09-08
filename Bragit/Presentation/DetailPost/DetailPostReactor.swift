@@ -178,25 +178,22 @@ class DetailPostReactor: Reactor, Stepper {
       return .empty()
 
     case .didTapReport:
-      return .empty()
+      return postManager.rxIncrementReports(postId: post.id)
+        .flatMap { _ in Observable<Mutation>.empty() }
+        .catch { _ in Observable<Mutation>.empty() }
 
     case .didTapDelete:
-      #if DEBUG
       print("[DetailPostReactor] didTapDelete: postId=\(post.id.uuidString)")
-      #endif
+
       return Observable.concat([
         .just(.setLoading(true)),
         postManager.rxDeletePost(postId: post.id.uuidString)
-          .do{ _ in
-            #if DEBUG
+          .do { _ in
             print("[DetailPostReactor] delete success")
-            #endif
           }
           .map { _ in Mutation.setDeleted }
           .catch { error in
-            #if DEBUG
             print("[DetailPostReactor] delete error: \(error.localizedDescription)")
-            #endif
             return .just(.setError(error))
           },
         .just(.setLoading(false))
