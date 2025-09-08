@@ -187,16 +187,8 @@ class DetailPostReactor: Reactor, Stepper {
       return Observable.concat([
         .just(.setLoading(true)),
         postManager.rxDeletePost(postId: post.id.uuidString)
-          .do{ _ in
-            #if DEBUG
-            print("[DetailPostReactor] delete success")
-            #endif
-          }
           .map { _ in Mutation.setDeleted }
           .catch { error in
-            #if DEBUG
-            print("[DetailPostReactor] delete error: \(error.localizedDescription)")
-            #endif
             return .just(.setError(error))
           },
         .just(.setLoading(false))

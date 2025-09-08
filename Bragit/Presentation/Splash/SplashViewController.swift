@@ -48,7 +48,7 @@ final class SplashViewController: UIViewController, Stepper {
         self.animationView.loadAnimation(from: dot)
         DispatchQueue.main.async {
           self.view.layoutIfNeeded()
-          self.animationView.play { [weak self] finished in
+          self.animationView.play { [weak self] _ in
             guard let self = self else { return }
             UIView.animate(withDuration: 0.18, delay: 0.0, options: [.curveEaseInOut], animations: {
               self.animationView.alpha = 0.0
@@ -59,12 +59,12 @@ final class SplashViewController: UIViewController, Stepper {
             })
           }
         }
-      case .failure(let error):
+      case .failure(_):
         if let anim = LottieAnimation.named("splash") {
           self.animationView.animation = anim
           DispatchQueue.main.async {
             self.view.layoutIfNeeded()
-            self.animationView.play { [weak self] finished in
+            self.animationView.play { [weak self] _ in
               guard let self = self else { return }
               UIView.animate(withDuration: 0.18, delay: 0.0, options: [.curveEaseInOut], animations: {
                 self.animationView.alpha = 0.0
@@ -76,9 +76,9 @@ final class SplashViewController: UIViewController, Stepper {
             }
           }
         } else {
-          if let path = Bundle.main.path(forResource: "splash", ofType: "lottie") {
+          if Bundle.main.path(forResource: "splash", ofType: "lottie") != nil {
           } else {
-            print("🔎 Not found via Bundle.path(forResource:ofType:)")
+            print("Not found via Bundle.path(forResource:ofType:)")
           }
         }
       }
