@@ -68,7 +68,7 @@ final class CommentViewController: UIViewController, View {
   // bottomBar의 탭 버튼
   private let bottomBarTapButton = UIButton(type: .custom)
 
-  // 액세서리 바
+  // 바텀
   private lazy var bottomBar: UIView = {
     let bar = UIView()
     bar.backgroundColor = .grayScale50
@@ -193,7 +193,6 @@ final class CommentViewController: UIViewController, View {
     }
 
     commentTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 34)
-
     return bar
   }()
 
@@ -216,6 +215,7 @@ final class CommentViewController: UIViewController, View {
     setupLayout()
     setupKeyboardObservation()
     view.addGestureRecognizer(dismissTapGesture)
+    commentTextView.inputAccessoryView = accessoryBar
   }
 
   private func setupLayout() {
@@ -315,11 +315,8 @@ final class CommentViewController: UIViewController, View {
     // 화면 빈 곳 탭 -> 키보드 내리기
     dismissTapGesture.rx.event
       .subscribe { [weak self] _ in
-        if let window = self?.view.window {
-          window.endEditing(true)
-        } else {
-          self?.view.endEditing(true)
-        }
+        // MARK: 키보드 내릴 때 사용
+        self?.commentTextView.resignFirstResponder()
       }
       .disposed(by: disposeBag)
 
