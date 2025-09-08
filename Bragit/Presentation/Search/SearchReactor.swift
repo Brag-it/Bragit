@@ -24,6 +24,9 @@ class SearchReactor: Reactor, Stepper {
     case viewDidLoad
     case updateText(String)         // 입력중
     case submit                     // 리턴키/ 검색 버튼
+    case clearAllRecent
+    case deleteRecent(String)
+    case changeScope(SearchScope)
     case didTapBack
   }
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -31,6 +34,8 @@ class SearchReactor: Reactor, Stepper {
     case setText(String)
     case setRecent([String]?)
     case setResults(tags: [SearchTagItem], posts: [SearchPostItem], users: [SearchUserItem])
+    case setScope(SearchScope)
+    case setMode(SearchMode)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -40,6 +45,8 @@ class SearchReactor: Reactor, Stepper {
     var tagResults: [SearchTagItem] = []
     var postResults: [SearchPostItem] = []
     var userResults: [SearchUserItem] = []
+    var scope: SearchScope = .tag
+    var mode: SearchMode = .recent
   }
 
   init() {
@@ -51,12 +58,18 @@ class SearchReactor: Reactor, Stepper {
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .viewDidLoad:
-      return .just(.setRecent(recentSearches))
+      return .concat([
+        .just(.setRecent(recentSearches)),
+        .just(.setMode(.recent))
+      ])
 
     case .updateText(let raw):
       let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-      return .just(.setText(trimmed))
-
+      let nextMode: SearchMode = trimmed.isEmpty ? .recent : .typingSuggestions
+      return .concat([
+        .just(.setText(trimmed)),
+        .just(.setMode(nextMode))
+      ])
     case .submit:
       let trimmed = currentState.text.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmed.isEmpty else { return .empty() }
@@ -68,7 +81,24 @@ class SearchReactor: Reactor, Stepper {
           let userItems = bundle.users.map { SearchUserItem(user: $0) }
           return .setResults(tags: tagItems, posts: postItems, users: userItems)
         }
-      return .concat(search, .just(.setRecent(recentSearches)))
+      return .concat([
+        .just(.setMode(.results)),
+        search,
+        .just(.setRecent(recentSearches))
+      ])
+
+    case .clearAllRecent:
+      recentSearches = []
+      return .just(.setRecent(recentSearches))
+
+    case .deleteRecent(let keyword):
+      var list = recentSearches ?? []
+      list.removeAll { $0.caseInsensitiveCompare(keyword) == .orderedSame }
+      recentSearches = list
+      return .just(.setRecent(recentSearches))
+
+    case .changeScope(let scope):
+      return .just(.setScope(scope))
 
     case .didTapBack:
       steps.accept(AppStep.dismiss)
@@ -82,12 +112,20 @@ class SearchReactor: Reactor, Stepper {
     switch mutation {
     case .setText(let text):
       newState.text = text
+
     case .setRecent(let recent):
       newState.recent = recent
+
     case let .setResults(tags, posts, users):
       newState.tagResults = tags
       newState.postResults = posts
       newState.userResults = users
+
+    case .setScope(let scope):
+      newState.scope = scope
+
+    case .setMode(let mode):
+      newState.mode = mode
     }
     return newState
   }
@@ -108,5 +146,15 @@ class SearchReactor: Reactor, Stepper {
       list.removeLast(list.count - 20)
     }
     recentSearches = list
+  }
+
+  private func removeRecent(_ keyword: String) {
+    var list = recentSearches ?? []
+    list.removeAll { $0.caseInsensitiveCompare(keyword) == .orderedSame }
+    recentSearches = list
+  }
+
+  private func clearAllRecent() {
+    recentSearches = []
   }
 }
