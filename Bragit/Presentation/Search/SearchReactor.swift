@@ -15,6 +15,7 @@ import RxRelay
 class SearchReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.searchManager) var searchManager
+  @Dependency(\.tagManager) var tagManager
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
   @LocalStorage(location: .recentSearches) var recentSearches: [String]?
@@ -22,8 +23,8 @@ class SearchReactor: Reactor, Stepper {
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
     case viewDidLoad
-    case updateText(String)         // 입력중
-    case submit                     // 리턴키/ 검색 버튼
+    case updateText(String)
+    case submit
     case clearAllRecent
     case deleteRecent(String)
     case changeScope(SearchScope)
@@ -32,6 +33,7 @@ class SearchReactor: Reactor, Stepper {
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
   enum Mutation {
     case setText(String)
+    case setSuggestions([String])
     case setRecent([String]?)
     case setResults(tags: [SearchTagItem], posts: [SearchPostItem], users: [SearchUserItem])
     case setScope(SearchScope)
@@ -41,6 +43,7 @@ class SearchReactor: Reactor, Stepper {
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
     var text: String = ""
+    var suggestions: [String] = []
     var recent: [String]?
     var tagResults: [SearchTagItem] = []
     var postResults: [SearchPostItem] = []
@@ -65,11 +68,23 @@ class SearchReactor: Reactor, Stepper {
 
     case .updateText(let raw):
       let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-      let nextMode: SearchMode = trimmed.isEmpty ? .recent : .typingSuggestions
-      return .concat([
-        .just(.setText(trimmed)),
-        .just(.setMode(nextMode))
-      ])
+      if trimmed.isEmpty {
+        return .concat([
+          .just(.setText("")),
+          .just(.setMode(.recent)),
+          .just(.setSuggestions([]))
+        ])
+      } else {
+        let suggest = tagManager
+          .rxSearchTags(searchText: trimmed, page: 0, pageSize: 10)
+          .map { $0.map { $0.tag } }
+          .map(Mutation.setSuggestions)
+        return .concat([
+          .just(.setText(trimmed)),
+          .just(.setMode(.typingSuggestions)),
+          suggest
+        ])
+      }
     case .submit:
       let trimmed = currentState.text.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmed.isEmpty else { return .empty() }
@@ -84,6 +99,7 @@ class SearchReactor: Reactor, Stepper {
       return .concat([
         .just(.setMode(.results)),
         search,
+        .just(.setSuggestions([])),
         .just(.setRecent(recentSearches))
       ])
 
@@ -105,6 +121,7 @@ class SearchReactor: Reactor, Stepper {
       return .empty()
     }
   }
+
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
   func reduce(state: State, mutation: Mutation) -> State {
@@ -112,6 +129,9 @@ class SearchReactor: Reactor, Stepper {
     switch mutation {
     case .setText(let text):
       newState.text = text
+
+    case .setSuggestions(let list):
+      newState.suggestions = list
 
     case .setRecent(let recent):
       newState.recent = recent
@@ -130,8 +150,25 @@ class SearchReactor: Reactor, Stepper {
     return newState
   }
 
+  // 검색어 입력 액션만 디바운스
+  func transform(action: Observable<Action>) -> Observable<Action> {
+    let typing = action
+      .compactMap { act -> String? in
+        if case let .updateText(text) = act { return text } else { return nil }
+      }
+      .debounce(.milliseconds(250), scheduler: MainScheduler.instance)
+      .distinctUntilChanged()
+      .map(Action.updateText)
+
+    let others = action.filter { act in
+      if case .updateText = act { return false } else { return true }
+    }
+
+    return Observable.merge(typing, others)
+  }
+
   func transform(state: Observable<State>) -> Observable<State> {
-    return state.observe(on: MainScheduler.instance)
+    state.observe(on: MainScheduler.instance)
   }
 
   private func saveRecent(_ raw: String) {

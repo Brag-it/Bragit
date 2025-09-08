@@ -11,45 +11,42 @@ import Then
 import RxSwift
 import RxCocoa
 
-final class SearchHeaderView: UICollectionReusableView {
-  static let identifier = "SearchHeaderView"
+final class SearchHeaderView: UIView {
+
   enum Tab: Int { case tag = 0, post = 1, user = 2 }
 
-  // 외부 바인딩용 선택된 탭
-  let selected = BehaviorRelay<Tab>(value: .tag)
+  private var current: Tab = .tag
 
-  var disposeBag = DisposeBag()
-
-  private let tagButton = UIButton(type: .system).then {
+  let tagButton = UIButton(type: .system).then {
     $0.setTitle("태그", for: .normal)
     $0.titleLabel?.font = .pretendard(size: 15, weight: .medium)
   }
-  private let postButton = UIButton(type: .system).then {
+  let postButton = UIButton(type: .system).then {
     $0.setTitle("게시글", for: .normal)
     $0.titleLabel?.font = .pretendard(size: 15, weight: .medium)
   }
-  private let userButton = UIButton(type: .system).then {
+  let userButton = UIButton(type: .system).then {
     $0.setTitle("사용자", for: .normal)
     $0.titleLabel?.font = .pretendard(size: 15, weight: .medium)
   }
 
-  private let indicator = UIView().then {
+  let indicator = UIView().then {
     $0.backgroundColor = .primary400
     $0.layer.cornerRadius = 1
   }
 
-  private lazy var buttons: [UIButton] = [tagButton, postButton, userButton]
+  lazy var buttons: [UIButton] = [tagButton, postButton, userButton]
 
   override init(frame: CGRect) {
     super.init(frame: frame)
     setupUI()
-    bind()
     applyStyle(for: .tag, animated: false)
   }
 
-  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
 
-  // MARK: - UI
   private func setupUI() {
     backgroundColor = .white
 
@@ -76,30 +73,22 @@ final class SearchHeaderView: UICollectionReusableView {
     }
   }
 
-  // MARK: - Bind
-  private func bind() {
-    tagButton.rx.tap
-      .map { Tab.tag }
-    .bind(to: selected)
-    .disposed(by: disposeBag)
+  // 현재 선택된 탭
+  var currentTab: Tab { current }
 
-    postButton.rx.tap
-      .map { Tab.post }
-      .bind(to: selected)
-      .disposed(by: disposeBag)
+  // 탭에 해당하는 버튼 반환
+  func button(for tab: Tab) -> UIButton {
+    switch tab {
+    case .tag: return tagButton
+    case .post: return postButton
+    case .user: return userButton
+    }
+  }
 
-    userButton.rx.tap
-      .map { Tab.user }
-      .bind(to: selected)
-      .disposed(by: disposeBag)
-
-    selected
-      .distinctUntilChanged()
-      .bind { [weak self] tab in
-        guard let self else { return }
-        applyStyle(for: tab, animated: true)
-      }
-      .disposed(by: disposeBag)
+  func set(tab: Tab, animated: Bool) {
+    guard current != tab else { return }
+    current = tab
+    applyStyle(for: tab, animated: animated)
   }
 
   private func applyStyle(for tab: Tab, animated: Bool) {
@@ -126,10 +115,5 @@ final class SearchHeaderView: UICollectionReusableView {
     } else {
       layoutIfNeeded()
     }
-  }
-
-  override func prepareForReuse() {
-    super.prepareForReuse()
-    disposeBag = DisposeBag()
   }
 }

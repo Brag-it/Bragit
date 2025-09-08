@@ -14,14 +14,13 @@ final class UserCell: UICollectionViewCell {
   static let identifier: String = "UserCell"
 
   private let profileImageView = UIImageView().then {
-    $0.layer.cornerRadius = 18
+    $0.layer.cornerRadius = 12
     $0.layer.masksToBounds = true
   }
 
   private let userLabel = UILabel().then {
-    $0.text = "검색 결과가 없어요"
     $0.font = .pretendard(size: 16, weight: .medium)
-    $0.textColor = .grayScale600
+    $0.textColor = .grayScale900
   }
 
   override init(frame: CGRect) {

@@ -24,6 +24,12 @@ final class SearchViewController: UIViewController, View {
 
   private let searchBar = SearchBar()
 
+  private let resultHeader = SearchHeaderView().then {
+    $0.isHidden = true
+  }
+
+  private var resultHeaderHeight: Constraint?
+
   private lazy var dataSource = setupDataSource(self.searchCollectionView)
 
   private lazy var searchCollectionView = UICollectionView(
@@ -53,6 +59,7 @@ final class SearchViewController: UIViewController, View {
   // UI 설정
   private func setUIConstraints() {
     view.addSubview(headerView)
+    view.addSubview(resultHeader)
     view.addSubview(searchCollectionView)
     headerView.addSubview(backButton)
     headerView.addSubview(searchBar)
@@ -75,8 +82,15 @@ final class SearchViewController: UIViewController, View {
       $0.trailing.equalToSuperview().inset(20)
     }
 
-    searchCollectionView.snp.makeConstraints {
+    // Result header pinned under headerView
+    resultHeader.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom)
+      $0.leading.trailing.equalToSuperview()
+      resultHeaderHeight = $0.height.equalTo(0).constraint
+    }
+
+    searchCollectionView.snp.makeConstraints {
+      $0.top.equalTo(resultHeader.snp.bottom)
       $0.leading.trailing.bottom.equalToSuperview()
     }
   }
@@ -111,12 +125,53 @@ final class SearchViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    resultHeader.button(for: .tag).rx.tap
+      .map { SearchReactor.Action.changeScope(.tag) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    resultHeader.button(for: .post).rx.tap
+      .map { SearchReactor.Action.changeScope(.post) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    resultHeader.button(for: .user).rx.tap
+      .map { SearchReactor.Action.changeScope(.user) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    reactor.state.map(\.scope).distinctUntilChanged()
+      .map { scope -> SearchHeaderView.Tab in
+        switch scope {
+        case .tag:  return .tag
+        case .post: return .post
+        case .user: return .user
+        }
+      }
+      .observe(on: MainScheduler.instance)
+      .subscribe { [weak self] tab in
+        self?.resultHeader.set(tab: tab, animated: true)
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state.map(\.mode)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .subscribe { [weak self] mode in
+        guard let self else { return }
+        let show = (mode == .results)
+        self.resultHeader.isHidden = !show
+        self.resultHeaderHeight?.update(offset: show ? 50 : 0)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+      }
+      .disposed(by: disposeBag)
+
     reactor.state
       .subscribe { [weak self] state in
         guard let self else { return }
         applySnapshot(
           recent: state.recent,
-          suggestions: [], // TODO: Reactor에 suggestions 추가 시 교체예정
+          suggestions: state.suggestions,
           tags: state.tagResults,
           posts: state.postResults,
           users: state.userResults,
@@ -128,13 +183,16 @@ final class SearchViewController: UIViewController, View {
   }
 
   private func createLayout() -> UICollectionViewCompositionalLayout {
-    UICollectionViewCompositionalLayout { [weak self] sectionIndex, _ in
+    let layout = UICollectionViewCompositionalLayout { [weak self] sectionIndex, _ in
       guard let self else { return nil }
       let sections = self.dataSource.snapshot().sectionIdentifiers
       guard sectionIndex < sections.count else { return nil }
       let section = sections[sectionIndex]
       return self.layout(for: section)
     }
+    let configuration = UICollectionViewCompositionalLayoutConfiguration()
+    layout.configuration = configuration
+    return layout
   }
 
   private func layout(for section: SearchSection) -> NSCollectionLayoutSection {
@@ -211,22 +269,11 @@ final class SearchViewController: UIViewController, View {
 
   // 태그
   private func tagSectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(
-      widthDimension: .fractionalWidth(1.0),
-      heightDimension: .absolute(50)
-    )
-    let header = NSCollectionLayoutBoundarySupplementaryItem(
-      layoutSize: headerSize,
-      elementKind: UICollectionView.elementKindSectionHeader,
-      alignment: .top
-    )
-
     let itemSize = NSCollectionLayoutSize(
       widthDimension: .fractionalWidth(1.0),
       heightDimension: .estimated(300)
     )
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
-
     let groupSize = NSCollectionLayoutSize(
       widthDimension: .fractionalWidth(1.0),
       heightDimension: .estimated(300)
@@ -235,26 +282,13 @@ final class SearchViewController: UIViewController, View {
       layoutSize: groupSize,
       subitems: [item]
     )
-
     let section = NSCollectionLayoutSection(group: group)
-    header.pinToVisibleBounds = true
-    section.boundarySupplementaryItems = [header]
     section.contentInsets = .init(top: 0, leading: 0, bottom: 0, trailing: 0)
     return section
   }
 
   // 게시글
   private func postSectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(
-      widthDimension: .fractionalWidth(1.0),
-      heightDimension: .absolute(50)
-    )
-    let header = NSCollectionLayoutBoundarySupplementaryItem(
-      layoutSize: headerSize,
-      elementKind: UICollectionView.elementKindSectionHeader,
-      alignment: .top
-    )
-
     let item = NSCollectionLayoutItem(
       layoutSize: .init(
         widthDimension: .fractionalWidth(1.0),
@@ -267,23 +301,11 @@ final class SearchViewController: UIViewController, View {
       subitems: [item])
 
     let section = NSCollectionLayoutSection(group: group)
-    header.pinToVisibleBounds = true
-    section.boundarySupplementaryItems = [header]
     return section
   }
 
   // 사용자
   private func userSectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(
-      widthDimension: .fractionalWidth(1.0),
-      heightDimension: .absolute(50)
-    )
-    let header = NSCollectionLayoutBoundarySupplementaryItem(
-      layoutSize: headerSize,
-      elementKind: UICollectionView.elementKindSectionHeader,
-      alignment: .top
-    )
-
     let itemSize = NSCollectionLayoutSize(
       widthDimension: .fractionalWidth(1.0),
       heightDimension: .estimated(300)
@@ -300,24 +322,12 @@ final class SearchViewController: UIViewController, View {
     )
 
     let section = NSCollectionLayoutSection(group: group)
-    header.pinToVisibleBounds = true
-    section.boundarySupplementaryItems = [header]
     section.contentInsets = .init(top: 0, leading: 0, bottom: 0, trailing: 0)
     return section
   }
 
   // 검색결과 없을 때
   private func emptySectionLayout() -> NSCollectionLayoutSection {
-    let headerSize = NSCollectionLayoutSize(
-      widthDimension: .fractionalWidth(1.0),
-      heightDimension: .absolute(50)
-    )
-    let header = NSCollectionLayoutBoundarySupplementaryItem(
-      layoutSize: headerSize,
-      elementKind: UICollectionView.elementKindSectionHeader,
-      alignment: .top
-    )
-
     let itemSize = NSCollectionLayoutSize(
       widthDimension: .fractionalWidth(1.0),
       heightDimension: .fractionalHeight(1.0)
@@ -325,8 +335,6 @@ final class SearchViewController: UIViewController, View {
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
     let group = NSCollectionLayoutGroup.vertical(layoutSize: itemSize, subitems: [item])
     let section = NSCollectionLayoutSection(group: group)
-    header.pinToVisibleBounds = true
-    section.boundarySupplementaryItems = [header]
     section.contentInsets = .zero
     return section
   }
@@ -364,11 +372,9 @@ final class SearchViewController: UIViewController, View {
     let user: UICollectionView.CellRegistration<UserCell, SearchUserItem>
     let empty: UICollectionView.CellRegistration<EmptyCell, Void>
     let recentHeader: UICollectionView.SupplementaryRegistration<RecentHeaderView>
-    let searchHeader: UICollectionView.SupplementaryRegistration<SearchHeaderView>
   }
 
   private func makeRegistrations() -> Registrations {
-    // Cell registrations
     let recentReg = UICollectionView.CellRegistration<RecentCell, String> { [weak self] cell, _, keyword in
       guard let self, let reactor = self.reactor else { return }
       cell.configure(text: keyword)
@@ -408,7 +414,6 @@ final class SearchViewController: UIViewController, View {
 
     let emptyReg = UICollectionView.CellRegistration<EmptyCell, Void> { _, _, _ in }
 
-    // Header registrations
     let recentHeaderReg = UICollectionView.SupplementaryRegistration<RecentHeaderView>(
       elementKind: UICollectionView.elementKindSectionHeader
     ) { [weak self] header, _, _ in
@@ -419,39 +424,6 @@ final class SearchViewController: UIViewController, View {
         .disposed(by: header.disposeBag)
     }
 
-    let searchHeaderReg = UICollectionView.SupplementaryRegistration<SearchHeaderView>(
-      elementKind: UICollectionView.elementKindSectionHeader
-    ) { [weak self] header, _, indexPath in
-      guard let self, let reactor = self.reactor else { return }
-
-      header.selected
-        .map { tab -> SearchReactor.Action in
-          switch tab {
-          case .tag: return .changeScope(.tag)
-          case .post: return .changeScope(.post)
-          case .user: return .changeScope(.user)
-          }
-        }
-        .bind(to: reactor.action)
-        .disposed(by: header.disposeBag)
-
-      // Reactor → Header
-      reactor.state
-        .map(\.scope)
-        .map { scope -> SearchHeaderView.Tab in
-          switch scope {
-          case .tag: return .tag
-          case .post: return .post
-          case .user: return .user
-          }
-        }
-        .observe(on: MainScheduler.instance)
-        .subscribe { [weak header] tab in
-          header?.selected.accept(tab)
-        }
-        .disposed(by: header.disposeBag)
-    }
-
     return Registrations(
       recent: recentReg,
       suggestion: suggestionReg,
@@ -459,8 +431,7 @@ final class SearchViewController: UIViewController, View {
       post: postReg,
       user: userReg,
       empty: emptyReg,
-      recentHeader: recentHeaderReg,
-      searchHeader: searchHeaderReg
+      recentHeader: recentHeaderReg
     )
   }
 
@@ -493,12 +464,8 @@ final class SearchViewController: UIViewController, View {
       switch sectionKind {
       case .recent:
         return collectionView.dequeueConfiguredReusableSupplementary(using: regs.recentHeader, for: indexPath)
-      case .tagResults, .postResults, .userResults:
-        return collectionView.dequeueConfiguredReusableSupplementary(using: regs.searchHeader, for: indexPath)
-      case .suggestions:
+      default:
         return nil
-      case .emptyResults:
-        return collectionView.dequeueConfiguredReusableSupplementary(using: regs.searchHeader, for: indexPath)
       }
     }
   }
@@ -528,9 +495,9 @@ final class SearchViewController: UIViewController, View {
     _ snapshot: inout NSDiffableDataSourceSnapshot<SearchSection, SearchRow>,
     suggestions: [String]
   ) {
+    guard !suggestions.isEmpty else { return }
     snapshot.appendSections([.suggestions])
-    let items: [SearchRow] = suggestions.isEmpty ? [.empty] : suggestions.map { .suggestion($0) }
-    snapshot.appendItems(items, toSection: .suggestions)
+    snapshot.appendItems(suggestions.map { .suggestion($0) }, toSection: .suggestions)
   }
 
   private func applyResultsSnapshot(
