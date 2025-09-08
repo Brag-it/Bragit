@@ -120,6 +120,13 @@ final class SearchViewController: UIViewController, View {
       searchBar.searchButton.rx.tap.asObservable()
     )
 
+    // 텍스트 상태
+    reactor.state
+      .map(\.text)
+      .distinctUntilChanged()
+      .bind(to: textField.rx.text)
+      .disposed(by: disposeBag)
+
     submitTrigger
       .map { SearchReactor.Action.submit }
       .bind(to: reactor.action)

@@ -67,7 +67,7 @@ class SearchReactor: Reactor, Stepper {
     switch action {
 
     case .viewDidLoad:
-      // 진입 시 최근검색 불러오고 모드는 '최근'으로
+      // 진입 시 최근검색 불러오고 모드는 최근으로
       return .concat([
         .just(.setRecent(recentSearches)),
         .just(.setMode(.recent))
@@ -77,7 +77,7 @@ class SearchReactor: Reactor, Stepper {
       // 공백·개행 제거
       let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
 
-      // 공백이면 최근 검색 모드로 복귀 + 추천 비우기
+      // 공백이면 최근 검색 모드로 복귀
       if trimmed.isEmpty {
         return .concat([
           .just(.setText("")),
@@ -86,7 +86,7 @@ class SearchReactor: Reactor, Stepper {
         ])
       }
 
-      // 입력 중: 텍스트 반영 → 모드 전환(typing) → 태그 추천 조회
+      // 입력 중
       let suggest = tagManager
         .rxSearchTags(searchText: trimmed, page: 0, pageSize: 10)
         .map { $0.map { $0.tag } }
@@ -203,8 +203,8 @@ private extension SearchReactor {
         return .setResults(tags: tagItems, posts: postItems, users: userItems)
       }
 
-    // 모드 전환 → 결과 세팅 → 추천 비우기 → 최근검색 재반영
     return .concat([
+      .just(.setText(trimmed)),
       .just(.setMode(.results)),
       search,
       .just(.setSuggestions([])),
