@@ -19,11 +19,14 @@ final class CommentReactor: Reactor, Stepper {
   @Dependency(\.supabase) var supabase
   let steps = PublishRelay<Step>()
 
+  @LocalStorage(location: .nowUser) private var storedUserId: String?
+
   // MARK: Reactor
   enum Action {
     case refresh
     case didTapBack
     case sendComment(String)
+    case didTapKebab(IndexPath)
   }
 
   enum Mutation {
@@ -31,6 +34,7 @@ final class CommentReactor: Reactor, Stepper {
     case setComments([CommentRow])
     case setError(String?)
     case setCommentSent(Bool)
+    case setCurrentUserId(String?)
   }
 
   struct State {
@@ -39,6 +43,7 @@ final class CommentReactor: Reactor, Stepper {
     var errorMessage: String?
     let viewer: Bool
     var commentSent: Bool = false
+    var currentUserId: String?
   }
 
   // MARK: Model for decoding Comment rows
@@ -67,7 +72,10 @@ final class CommentReactor: Reactor, Stepper {
 
   init(postId: UUID, viewer: Bool = false) {
     self.postId = postId
-    self.initialState = State(viewer: viewer)
+    let currentUser = LocalStorage<String?>(location: .nowUser).wrappedValue
+    var state = State(viewer: viewer)
+    state.currentUserId = currentUser
+    self.initialState = state
   }
 
   func mutate(action: Action) -> Observable<Mutation> {
@@ -75,6 +83,7 @@ final class CommentReactor: Reactor, Stepper {
     case .refresh:
       print("CommentReactor refresh for postId: \(postId.uuidString)")
       let start = Observable.just(Mutation.setLoading(true))
+      let setUser = Observable.just(Mutation.setCurrentUserId(storedUserId))
       let request = rxFetchComments(postId: postId)
         // 콘솔 출력
         .do { rows in
@@ -94,7 +103,7 @@ final class CommentReactor: Reactor, Stepper {
           return .just(.setError(msg))
         }
       let end = Observable.just(Mutation.setLoading(false))
-      return .concat([start, request, end])
+      return .concat([start, setUser, request, end])
 
     case .didTapBack:
       steps.accept(AppStep.pop)
@@ -125,6 +134,9 @@ final class CommentReactor: Reactor, Stepper {
       let end = Observable.just(Mutation.setLoading(false))
 
       return .concat([start, send, setSent, resetSent, end])
+
+    case .didTapKebab(_):
+      return .empty()
     }
   }
 
@@ -140,6 +152,8 @@ final class CommentReactor: Reactor, Stepper {
       newState.errorMessage = message
     case .setCommentSent(let sent):
       newState.commentSent = sent
+    case .setCurrentUserId(let id):
+      newState.currentUserId = id
     }
     return newState
   }
@@ -185,16 +199,11 @@ final class CommentReactor: Reactor, Stepper {
       let task = Task {
         do {
           // 현재 유저 ID 가져오기
-          let userId = try await self.supabase.auth.session.user.id
-
-          // 유저 닉네임 가져오기
-          let userInfo: User = try await self.supabase
-            .from("User_Info")
-            .select("*")
-            .eq("id", value: userId.uuidString)
-            .single()
-            .execute()
-            .value
+          guard let userId = self.storedUserId, userId.isEmpty == false else {
+            throw NSError(
+              domain: "CommentReactor", code: -1, userInfo: [NSLocalizedDescriptionKey: "로그인 필요"]
+            )
+          }
 
           let newCommentId = UUID()
           let currentDate = Date()
@@ -206,7 +215,7 @@ final class CommentReactor: Reactor, Stepper {
           let newComment = Comment(
             id: newCommentId,
             postId: self.postId,
-            commenterId: userInfo.id,
+            commenterId: userId,
             content: content,
             date: currentDate
           )

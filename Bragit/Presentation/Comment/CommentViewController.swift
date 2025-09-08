@@ -20,6 +20,8 @@ final class CommentViewController: UIViewController, View {
   // MARK: UI
   private let reportAlert = AlertView.makeAlert(style: .reportComment)
   private let deleteAlert = AlertView.makeAlert(style: .deleteComment)
+  private let commentSelfMenu = MenuView(items: ["삭제하기"])
+  private let commentOtherMenu = MenuView(items: ["신고하기"])
 
   private let headerView = UIView()
 
@@ -44,7 +46,7 @@ final class CommentViewController: UIViewController, View {
     $0.separatorStyle = .none
     $0.backgroundColor = .systemBackground
     $0.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-    $0.keyboardDismissMode = .onDrag
+    $0.keyboardDismissMode = .interactive
   }
 
   private let activityIndicator = UIActivityIndicatorView(style: .medium).then {
@@ -74,6 +76,8 @@ final class CommentViewController: UIViewController, View {
 
     let lockImageView = UIImageView(image: .unlock).then {
       $0.contentMode = .scaleAspectFit
+      $0.setContentHuggingPriority(.required, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     let textContainer = UIView().then {
@@ -85,6 +89,8 @@ final class CommentViewController: UIViewController, View {
     let sendImageView = UIImageView(image: .send).then {
       $0.contentMode = .scaleAspectFit
       $0.isUserInteractionEnabled = false
+      $0.setContentHuggingPriority(.required, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     bottomBarTapButton.backgroundColor = .clear
@@ -97,6 +103,7 @@ final class CommentViewController: UIViewController, View {
     lockImageView.snp.makeConstraints {
       $0.leading.equalTo(bar.snp.leading).offset(12)
       $0.centerY.equalTo(bar.snp.centerY)
+      $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
     textContainer.snp.makeConstraints {
@@ -109,6 +116,7 @@ final class CommentViewController: UIViewController, View {
     sendImageView.snp.makeConstraints {
       $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
       $0.centerY.equalTo(textContainer.snp.centerY)
+      $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
     bottomBarTapButton.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -122,6 +130,8 @@ final class CommentViewController: UIViewController, View {
 
     let lockImageView = UIImageView(image: .unlock).then {
       $0.contentMode = .scaleAspectFit
+      $0.setContentHuggingPriority(.required, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     let textContainer = UIView().then {
@@ -133,6 +143,8 @@ final class CommentViewController: UIViewController, View {
     let sendImageView = UIImageView(image: .send).then {
       $0.contentMode = .scaleAspectFit
       $0.isUserInteractionEnabled = true
+      $0.setContentHuggingPriority(.required, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     commentTextView.backgroundColor = .clear
@@ -154,6 +166,7 @@ final class CommentViewController: UIViewController, View {
     lockImageView.snp.makeConstraints {
       $0.leading.equalTo(bar.snp.leading).offset(12)
       $0.centerY.equalTo(bar.snp.centerY)
+      $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
     textContainer.snp.makeConstraints {
@@ -166,6 +179,7 @@ final class CommentViewController: UIViewController, View {
     sendImageView.snp.makeConstraints {
       $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
       $0.centerY.equalTo(textContainer.snp.centerY)
+      $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
     sendButton.snp.makeConstraints {
@@ -375,6 +389,9 @@ final class CommentViewController: UIViewController, View {
 final class CommentCell: UITableViewCell {
   static let reuseID = "CommentCell"
 
+  var disposeBag = DisposeBag()
+  var kebabTap: ControlEvent<Void> { kebabButton.rx.tap }
+  var kebabButtonFrameInCell: CGRect { kebabButton.frame }
   private let profileImageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
     $0.clipsToBounds = true
@@ -398,7 +415,7 @@ final class CommentCell: UITableViewCell {
     $0.setContentHuggingPriority(.required, for: .horizontal)
   }
 
-  private let kebabButton = UIButton(type: .system).then {
+  let kebabButton = UIButton(type: .system).then {
     $0.setImage(.kebab, for: .normal)
     $0.tintColor = .grayScale900
   }
@@ -487,6 +504,10 @@ final class CommentCell: UITableViewCell {
     } else {
       profileImageView.image = UIImage.profilePerson
     }
+  }
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    disposeBag = DisposeBag()
   }
 }
 
