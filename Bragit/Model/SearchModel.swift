@@ -40,7 +40,7 @@ enum SearchRow: Hashable {
 
 struct SearchTagItem: Hashable {
   let id: UUID = UUID()
-  let tag: String
+  let tag: Tag
 }
 
 struct SearchPostItem: Hashable {

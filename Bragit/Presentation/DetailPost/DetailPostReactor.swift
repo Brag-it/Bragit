@@ -33,6 +33,7 @@ class DetailPostReactor: Reactor, Stepper {
     case didTapEdit
     case didTapReport
     case didTapDelete
+    case didTapUserProfile
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -55,6 +56,7 @@ class DetailPostReactor: Reactor, Stepper {
     var isLiked: Bool               // 좋아요 눌렀는지
     var likeCount: Int              // 좋아요 수
     var isfollowed: Bool            // 팔로우 여부
+    var withdrewUser: Bool          // 탈퇴유저 체크
   }
 
   init(post: Post) {
@@ -69,9 +71,11 @@ class DetailPostReactor: Reactor, Stepper {
       viewer: post.author?.id.lowercased() == nowUser?.lowercased(),
       isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
       likeCount: post.like,
-      isfollowed: followUser?.contains { $0 == post.author?.id } ?? false
+      isfollowed: followUser?.contains { $0 == post.author?.id } ?? false,
+      withdrewUser: post.author?.nickname == nil
     )
     self.post = post
+
   }
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
@@ -183,21 +187,31 @@ class DetailPostReactor: Reactor, Stepper {
         .catch { _ in Observable<Mutation>.empty() }
 
     case .didTapDelete:
-      print("[DetailPostReactor] didTapDelete: postId=\(post.id.uuidString)")
-
       return Observable.concat([
         .just(.setLoading(true)),
         postManager.rxDeletePost(postId: post.id.uuidString)
-          .do { _ in
-            print("[DetailPostReactor] delete success")
-          }
           .map { _ in Mutation.setDeleted }
           .catch { error in
-            print("[DetailPostReactor] delete error: \(error.localizedDescription)")
             return .just(.setError(error))
           },
         .just(.setLoading(false))
       ])
+    case .didTapUserProfile:
+      guard let authorId = post.author?.id, !authorId.isEmpty else {
+        return .empty()
+      }
+
+      return userManager
+        .rxfetchUsersBy(ids: [authorId])
+        .compactMap { $0.first }
+        .do { [weak self] user in
+          self?.steps.accept(AppStep.userProfile(user: user))
+        }
+        .flatMap { _ in Observable<Mutation>.empty() }
+        .catch { error in
+          print("fetch user failed:", error)
+          return .empty()
+        }
     }
   }
   // swiftlint:enable cyclomatic_complexity
