@@ -201,6 +201,11 @@ final class CancelAccountViewController: UIViewController, View {
     reactor.state.map { $0.user }.bind { user in
       self.setupText(name: user?.nickname ?? "사용자")
     }.disposed(by: disposeBag)
+
+    cancelAccountButton.rx.tap
+      .map { .cancelButtonTap }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
 

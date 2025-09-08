@@ -312,4 +312,5 @@ struct UserRegistrationInfo {
   let password: String?
   let nickname: String
   let isAppleLogin: Bool
+  let refreshToken: String?
 }

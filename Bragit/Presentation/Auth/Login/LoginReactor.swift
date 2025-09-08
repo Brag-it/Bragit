@@ -18,12 +18,13 @@ import RxFlow
 import RxRelay
 import RxSwift
 import Supabase
+import Functions
 
 final class LoginReactor: Reactor, Stepper {
 
   // View -> Reactor
   enum Action {
-    case tapApple(idToken: String, nonce: String, mail: String?)
+    case tapApple(idToken: String, nonce: String, mail: String?, authCode: String)
     case tapAppleButton
     case tapSignUp
     case tapNext
@@ -44,10 +45,17 @@ final class LoginReactor: Reactor, Stepper {
     var appleHashsedNonce: String?
   }
 
+  struct Response: Decodable {
+    var success: Bool
+    var refreshToken: String
+  }
+
   var initialState = State()
   let steps = PublishRelay<Step>()
+  private var disposeBag = DisposeBag()
   @Dependency(\.authClient) private var authClient
   @Dependency(\.supabase) private var supabase
+  @Dependency(\.userManager) private var userManager
 
   init() {
     self.initialState = State()
@@ -55,13 +63,16 @@ final class LoginReactor: Reactor, Stepper {
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
-    case .tapApple(let idToken, let nonce, let mail):
-      return Observable.concat([
+    case .tapApple(let idToken, let nonce, let mail, let authCode):
+      return .concat([
         .just(.setLoading(true)),
         signInWithApple(idToken: idToken, nonce: nonce)
           .catch { .just(.setError("로그인 실패: \($0.localizedDescription)")) },
-        // new line
-        checkUserRegistrationAndRoute(mail: mail),
+        getRefreshToken(authCode: authCode)
+          .flatMap { [weak self] refreshToken -> Observable<Mutation> in
+            guard let self = self else { return .empty() }
+            return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
+          },
         .just(.setLoading(false)),
         .just(.setNonce(raw: nil, hashed: nil))
       ])
@@ -70,7 +81,7 @@ final class LoginReactor: Reactor, Stepper {
       let hashed = Self.sha256(raw)
       return .just(.setNonce(raw: raw, hashed: hashed))
     case .tapSignUp:
-      steps.accept(AppStep.signup(initialMail: nil))
+      steps.accept(AppStep.signup(initialMail: nil, refreshToken: nil))
       return .empty()
     case .tapNext:
       steps.accept(AppStep.home)
@@ -94,7 +105,7 @@ final class LoginReactor: Reactor, Stepper {
     state.observe(on: MainScheduler.instance)
   }
 
-  private func checkUserRegistrationAndRoute(mail: String?) -> Observable<Mutation> {
+  private func checkUserRegistrationAndRoute(mail: String?, refreshToken: String?) -> Observable<Mutation> {
     Observable<Mutation>.create { [weak self] observer in
       guard let self else { return Disposables.create() }
       Task { [weak self] in
@@ -119,7 +130,7 @@ final class LoginReactor: Reactor, Stepper {
             await MainActor.run { self.steps.accept(AppStep.home) }
           } else {
             //            let email = mail
-            await MainActor.run { self.steps.accept(AppStep.signup(initialMail: mail)) }
+            await MainActor.run { self.steps.accept(AppStep.signup(initialMail: mail, refreshToken: refreshToken)) }
           }
           observer.onCompleted()
         } catch {
@@ -170,6 +181,32 @@ final class LoginReactor: Reactor, Stepper {
         }
       }
       return Disposables.create()
+    }
+  }
+
+  private func getRefreshToken(authCode: String) -> Observable<String> {
+    return .create { [weak self] observer in
+      guard let self = self else { return Disposables.create() }
+
+      let task = Task {
+        do {
+          let response: Response = try await self.supabase.functions
+            .invoke(
+              "generate-refreshToken",
+              options: FunctionInvokeOptions(body: ["authCode": authCode])
+            )
+
+          observer.onNext(response.refreshToken)
+          observer.onCompleted()
+
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create {
+        task.cancel()
+      }
     }
   }
 }
