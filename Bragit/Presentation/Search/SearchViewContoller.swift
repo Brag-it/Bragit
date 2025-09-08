@@ -96,6 +96,12 @@ final class SearchViewController: UIViewController, View {
   }
 
   func bind(reactor: SearchReactor) {
+    rx.viewDidAppear
+      .take(1)
+      .map { _ in SearchReactor.Action.viewDidLoad }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     backButton.rx.tap
       .map { SearchReactor.Action.didTapBack }
       .bind(to: reactor.action)
@@ -119,9 +125,36 @@ final class SearchViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    rx.viewDidAppear
-      .take(1)
-      .map { _ in SearchReactor.Action.viewDidLoad }
+    searchCollectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath -> SearchRow? in
+        guard let self else { return nil }
+
+        searchCollectionView.deselectItem(at: indexPath, animated: true)
+
+        return dataSource.itemIdentifier(for: indexPath)
+      }
+      .do { [weak self] _ in
+        self?.view.endEditing(true)
+      }
+      .flatMap { row -> Observable<SearchReactor.Action> in
+        switch row {
+
+        case .recentKeyword(let text), .suggestion(let text):
+          return .just(.submitWithQuery(text, true))
+
+        case .tag(let item):
+          return .just(.didTapTag(item.tag))
+
+        case .post(let item):
+          return .just(.didTapPost(item.post))
+
+        case .user(let item):
+          return .just(.didTapUser(item.user))
+
+        default:
+          return .empty()
+        }
+      }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -367,7 +400,7 @@ final class SearchViewController: UIViewController, View {
   private struct Registrations {
     let recent: UICollectionView.CellRegistration<RecentCell, String>
     let suggestion: UICollectionView.CellRegistration<UICollectionViewListCell, String>
-    let tag: UICollectionView.CellRegistration<UICollectionViewListCell, String>
+    let tag: UICollectionView.CellRegistration<UICollectionViewListCell, SearchTagItem>
     let post: UICollectionView.CellRegistration<PostCell, SearchPostItem>
     let user: UICollectionView.CellRegistration<UserCell, SearchUserItem>
     let empty: UICollectionView.CellRegistration<EmptyCell, Void>
@@ -392,12 +425,14 @@ final class SearchViewController: UIViewController, View {
       cell.contentConfiguration = content
     }
 
-    let tagReg = UICollectionView.CellRegistration<UICollectionViewListCell, String> { cell, _, item in
+    let tagReg = UICollectionView.CellRegistration<UICollectionViewListCell, SearchTagItem> { cell, _, item in
       var content = cell.defaultContentConfiguration()
       content.image = .hashTag
       content.imageProperties.tintColor = .grayScale900
       content.imageProperties.reservedLayoutSize = CGSize(width: 20, height: 20)
-      content.text = item
+
+      content.text = item.tag.tag
+
       content.textProperties.font = .pretendard(size: 15)
       content.textProperties.color = .grayScale900
       content.imageToTextPadding = 8
@@ -444,7 +479,7 @@ final class SearchViewController: UIViewController, View {
         case .suggestion(let text):
           return collectionView.dequeueConfiguredReusableCell(using: regs.suggestion, for: indexPath, item: text)
         case .tag(let item):
-          return collectionView.dequeueConfiguredReusableCell(using: regs.tag, for: indexPath, item: item.tag)
+          return collectionView.dequeueConfiguredReusableCell(using: regs.tag, for: indexPath, item: item)
         case .post(let item):
           return collectionView.dequeueConfiguredReusableCell(using: regs.post, for: indexPath, item: item)
         case .user(let item):

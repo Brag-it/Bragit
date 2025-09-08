@@ -125,13 +125,6 @@ class DetailPostViewController: UIViewController, View {
     view.backgroundColor = .white
 
     setUIConstraints()
-    print("제목 : \(String(describing: reactor?.currentState.title))")
-    print("내용 : \(String(describing: reactor?.currentState.content))")
-    print("닉네임 : \(String(describing: reactor?.currentState.nickName))")
-    print("보는사람(작성자인지): \(String(describing: reactor?.currentState.viewer))")
-    print("작성자ID: \(String(describing: reactor?.post.author?.id))")
-    print("보는사람ID: \(String(describing: reactor?.nowUser))")
-
   }
 
   // UI 설정
@@ -152,8 +145,8 @@ class DetailPostViewController: UIViewController, View {
     titleView.addSubview(uploadDateLabel)
     titleView.addSubview(titleLabel)
     titleView.addSubview(profileImage)
-    titleView.addSubview(followButton)
     titleView.addSubview(nickNameLabel)
+    titleView.addSubview(followButton)
     titleView.addSubview(dividerView)
 
     view.addSubview(bottomView)
@@ -335,6 +328,16 @@ class DetailPostViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    profileImage.rx.tap
+      .map { Reactor.Action.didTapUserProfile }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    nickNameLabel.rx.tap
+      .map { Reactor.Action.didTapUserProfile }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     followButton.rx.tap
       .map { Reactor.Action.didTapFollow }
       .bind(to: reactor.action)
@@ -369,7 +372,7 @@ class DetailPostViewController: UIViewController, View {
           followButton.setTitle("팔로잉", for: .normal)
           followButton.backgroundColor = .grayScale100
         }
-        if state.viewer == true {
+        if state.viewer == true || state.withdrewUser == true {
           followButton.isHidden = true
         }
         // 프로필 이미지 nil이면 기본 이미지 유지
