@@ -40,6 +40,10 @@ enum UserDependencyKey: DependencyKey {
   static let liveValue: UserManagerProtocol = UserManager()
 }
 
+enum SearchDependencyKey: DependencyKey {
+  static let liveValue: SearchManagerProtocol = SearchManager()
+}
+
 extension DependencyValues {
   var postManager: PostManagerProtocol {
     get { self[PostDependencyKey.self] }
@@ -64,5 +68,10 @@ extension DependencyValues {
   var userManager: UserManagerProtocol {
     get { self[UserDependencyKey.self] }
     set { self[UserDependencyKey.self] = newValue }
+  }
+
+  var searchManager: SearchManagerProtocol {
+    get { self[SearchDependencyKey.self] }
+    set { self[SearchDependencyKey.self] = newValue }
   }
 }

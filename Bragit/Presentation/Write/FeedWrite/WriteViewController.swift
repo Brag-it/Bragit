@@ -73,7 +73,7 @@ class WriteViewController: UIViewController, View {
       .forEach { view.addSubview($0) }
 
     headerView.snp.makeConstraints {
-      $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+      $0.top.equalTo(view.safeAreaLayoutGuide)
       $0.leading.trailing.equalToSuperview()
       $0.height.equalTo(58)
     }

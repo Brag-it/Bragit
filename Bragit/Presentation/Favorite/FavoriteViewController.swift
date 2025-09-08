@@ -145,6 +145,11 @@ class FavoriteViewController: UIViewController, View {
         self?.favoriteView.feedView.reconfigurePosts(posts)
       }
       .disposed(by: disposeBag)
+
+    favoriteView.searchButton.rx.tap
+      .map { Reactor.Action.searchTapped }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 
   func scrollToTop() {

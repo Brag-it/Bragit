@@ -15,7 +15,7 @@ class FavoriteView: UIView {
     $0.backgroundColor = .white
   }
 
-  private let searchButton = UIButton().then {
+  let searchButton = UIButton().then {
     $0.setImage(.search, for: .normal)
   }
 

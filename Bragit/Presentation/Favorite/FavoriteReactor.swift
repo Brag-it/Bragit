@@ -38,6 +38,7 @@ class FavoriteReactor: Reactor, Stepper {
     case followButtonTapped(Post)
     case goToTagDetail(Tag)
     case refresh
+    case searchTapped
   }
 
   enum Mutation {
@@ -207,6 +208,9 @@ class FavoriteReactor: Reactor, Stepper {
       return .empty()
     case .refresh:
       return rxSetPost(postType: currentState.postType)
+    case .searchTapped:
+      steps.accept(AppStep.searchFeed)
+      return .empty()
     }
   }
   // swiftlint:enable cyclomatic_complexity

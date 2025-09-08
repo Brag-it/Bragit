@@ -49,7 +49,7 @@ final class HeaderView: UICollectionReusableView {
     disposeBag = DisposeBag()
   }
 
-  func configure(section: Section) {
+  func configure(section: PreviewSection) {
     switch section {
     case .title:
       titleLabel.text = ""

@@ -14,7 +14,6 @@ import SnapKit
 import Then
 import Kingfisher
 
-// swiftlint:disable type_body_length
 class DetailPostViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let reportAlert = AlertView.makeAlert(style: .reportPost)
@@ -469,5 +468,4 @@ class DetailPostViewController: UIViewController, View {
     }
     return mutable
   }
-  // swiftlint:enable type_body_length
 }

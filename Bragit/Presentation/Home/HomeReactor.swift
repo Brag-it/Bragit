@@ -29,6 +29,7 @@ class HomeReactor: Reactor, Stepper {
     case goToTagDetail(Tag)
     case refresh
     case nowPostsRefresh
+    case searchTapped
   }
 
   enum Mutation {
@@ -125,6 +126,9 @@ class HomeReactor: Reactor, Stepper {
           .map { .setPosts($0) },
         .just(.setLoading(false))
       ])
+    case .searchTapped:
+      steps.accept(AppStep.searchFeed)
+      return .empty()
     }
   }
   // swiftlint:enable cyclomatic_complexity
