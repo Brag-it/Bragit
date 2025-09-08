@@ -90,3 +90,14 @@ extension Reactive where Base: UIImageView {
     return ControlEvent(events: source)
   }
 }
+
+extension Reactive where Base: UILabel {
+  // 라발 탭 이벤트 방출 유틸
+  var tap: ControlEvent<Void> {
+    base.isUserInteractionEnabled = true
+    let gesture = UITapGestureRecognizer()
+    base.addGestureRecognizer(gesture)
+    let source = gesture.rx.event.map { _ in () }
+    return ControlEvent(events: source)
+  }
+}

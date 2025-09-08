@@ -333,6 +333,11 @@ class DetailPostViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    nickNameLabel.rx.tap
+      .map { Reactor.Action.didTapUserProfile }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     followButton.rx.tap
       .map { Reactor.Action.didTapFollow }
       .bind(to: reactor.action)
