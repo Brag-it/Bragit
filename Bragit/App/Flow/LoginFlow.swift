@@ -21,8 +21,8 @@ final class LoginFlow: Flow, Stepper {
     switch step {
     case .login:
       return showLogin()
-    case .signup(let initialMail):
-      return showSignup(initialMail: initialMail)
+    case .signup(let initialMail, let refreshToken):
+      return showSignup(initialMail: initialMail, refreshToken: refreshToken)
     case .signTermsConset:
       return showTermsConsent()
     case .signupPhoto:
@@ -50,8 +50,8 @@ final class LoginFlow: Flow, Stepper {
     )
   }
 
-  private func showSignup(initialMail: String?) -> FlowContributors {
-    let userInfoVC = UserInfoViewController(initialMail: initialMail)
+  private func showSignup(initialMail: String?, refreshToken: String?) -> FlowContributors {
+    let userInfoVC = UserInfoViewController(initialMail: initialMail, refreshToken: refreshToken)
     userInfoVC.onNext = { [weak self] (info: UserRegistrationInfo) in
       print("[Flow]: \(initialMail as Any)")
       self?.pendingUserInfo = info
