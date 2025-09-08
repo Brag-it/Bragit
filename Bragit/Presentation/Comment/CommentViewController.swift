@@ -108,7 +108,7 @@ final class CommentViewController: UIViewController, View {
     commentTextView.delegate = self
 
     sendButton.backgroundColor = .clear
-    bottomBarTapButton.backgroundColor = .white
+    bottomBarTapButton.backgroundColor = .clear
 
     bar.addSubview(lockImageView)
     bar.addSubview(textContainer)
