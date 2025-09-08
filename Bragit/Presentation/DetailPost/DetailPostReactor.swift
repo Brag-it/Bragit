@@ -55,6 +55,7 @@ class DetailPostReactor: Reactor, Stepper {
     var isLiked: Bool               // 좋아요 눌렀는지
     var likeCount: Int              // 좋아요 수
     var isfollowed: Bool            // 팔로우 여부
+    var withdrewUser: Bool          // 탈퇴유저 체크
   }
 
   init(post: Post) {
@@ -69,9 +70,11 @@ class DetailPostReactor: Reactor, Stepper {
       viewer: post.author?.id == nowUser,
       isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
       likeCount: post.like,
-      isfollowed: followUser?.contains { $0 == post.author?.id } ?? false
+      isfollowed: followUser?.contains { $0 == post.author?.id } ?? false,
+      withdrewUser: post.author?.nickname == nil
     )
     self.post = post
+
   }
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
