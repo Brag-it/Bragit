@@ -28,6 +28,7 @@ final class CommentReactor: Reactor, Stepper {
     case sendComment(String)
     case didTapKebab(IndexPath)
     case deleteComment(IndexPath)
+    case reportComment(IndexPath)
   }
 
   enum Mutation {
@@ -59,7 +60,8 @@ final class CommentReactor: Reactor, Stepper {
     let content: String
     let date: Date
     let commenterId: String?  // null/빈 값 허용
-    let user: CommentUser?  // 조인 결과가 없을 수 있음
+    let user: CommentUser?    // 조인 결과가 없을 수 있음
+    let reports: Int?         // 신고 수
 
     enum CodingKeys: String, CodingKey {
       case id
@@ -68,6 +70,7 @@ final class CommentReactor: Reactor, Stepper {
       case date
       case commenterId = "commenter_id"
       case user = "User_Info"
+      case reports
     }
   }
 
@@ -86,7 +89,6 @@ final class CommentReactor: Reactor, Stepper {
       let start = Observable.just(Mutation.setLoading(true))
       let setUser = Observable.just(Mutation.setCurrentUserId(storedUserId))
       let request = rxFetchComments(postId: postId)
-        // 콘솔 출력
         .do { rows in
           let formatter = DateFormatter()
           formatter.locale = Locale(identifier: "ko_KR")
@@ -95,7 +97,7 @@ final class CommentReactor: Reactor, Stepper {
           rows.forEach { row in
             let dateString = formatter.string(from: row.date)
             let nick = row.user?.nickname?.isEmpty == false ? row.user!.nickname! : "탈퇴한 회원"
-            print("Reactor with nick: \(nick), content: \(row.content), date: \(dateString)")
+            print("nick: \(nick), content: \(row.content), date: \(dateString), reports: \(row.reports ?? 0)")
           }
         }
         .map { Mutation.setComments($0) as Mutation }
@@ -111,7 +113,6 @@ final class CommentReactor: Reactor, Stepper {
       return .empty()
 
     case .sendComment(let content):
-      // 댓글 전송 처리
       let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmedContent.isEmpty else { return .empty() }
 
@@ -119,7 +120,6 @@ final class CommentReactor: Reactor, Stepper {
       let send = rxSendComment(content: trimmedContent)
         .flatMap { [weak self] _ -> Observable<Mutation> in
           guard let self else { return .empty() }
-          // 댓글 전송 성공 후 목록 새로고침
           return self.rxFetchComments(postId: self.postId)
             .map { Mutation.setComments($0) }
             .catch { error in
@@ -138,16 +138,16 @@ final class CommentReactor: Reactor, Stepper {
       return .empty()
 
     case .deleteComment(let indexPath):
-      let comments = currentState.comments
-      guard indexPath.row >= 0, indexPath.row < comments.count
-      else {
+      // 화면과 동일한 정렬(최신순)로 대상 찾기
+      let sorted = currentState.comments.sorted { $0.date > $1.date }
+      guard indexPath.row >= 0, indexPath.row < sorted.count else {
         return .just(.setError("[Delete Comment] 인덱스 에러"))
       }
-      let target = comments[indexPath.row]
+      let target = sorted[indexPath.row]
 
       if let ownerId = target.commenterId,
-        let currentUserId = storedUserId,
-        ownerId != currentUserId {
+         let currentUserId = storedUserId,
+         ownerId != currentUserId {
         return .just(.setError("[Delete Comment] 삭제 권한 없음"))
       }
 
@@ -167,6 +167,35 @@ final class CommentReactor: Reactor, Stepper {
         refresh,
         end
       ])
+
+    case .reportComment(let indexPath):
+      // 화면과 동일한 정렬(최신순)로 대상 찾기
+      let sorted = currentState.comments.sorted { $0.date > $1.date }
+      guard indexPath.row >= 0, indexPath.row < sorted.count else {
+        return .just(.setError("[Report Comment] 인덱스 에러"))
+      }
+      let target = sorted[indexPath.row]
+
+      // 신고 버튼이 눌렸을 때 대상 정보 로그 출력
+      print("""
+      [Report Tap]
+      - id: \(target.id.uuidString)
+      - post_id: \(target.postId.uuidString)
+      - commenter_id: \(target.commenterId ?? "nil")
+      - content: \(target.content)
+      - reports(before): \(target.reports ?? 0)
+      """)
+
+      let start = Observable.just(Mutation.setLoading(true))
+      let report = rxReportComment(commentId: target.id)
+        .map { _ in Mutation.setError(nil) as Mutation }
+        .catch { error in
+          let message = (error as NSError).localizedDescription
+          return .just(Mutation.setError(message))
+        }
+      let end = Observable.just(Mutation.setLoading(false))
+
+      return .concat([start, report, end])
     }
   }
 
@@ -203,7 +232,7 @@ final class CommentReactor: Reactor, Stepper {
         do {
           let rows: [CommentRow] = try await self.supabase
             .from("Comment")
-            .select("id, post_id, content, date, commenter_id, User_Info!left(nickname, profile)")
+            .select("id, post_id, content, date, commenter_id, reports, User_Info!left(nickname, profile)")
             .eq("post_id", value: postId)
             .order("date", ascending: true)
             .execute()
@@ -239,9 +268,6 @@ final class CommentReactor: Reactor, Stepper {
 
           let newCommentId = UUID()
           let currentDate = Date()
-          let dateFormatter = DateFormatter()
-          dateFormatter.locale = Locale(identifier: "ko_KR")
-          dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
           // 댓글 전송
           let newComment = Comment(
@@ -294,4 +320,69 @@ final class CommentReactor: Reactor, Stepper {
       return Disposables.create { task.cancel() }
     }
   }
+
+  // 신고: id로 reports(int4) +1
+  // 업데이트가 실제 반영됐는지 다시 SELECT로 최종 검증하고, 모든 단계에서 상세 로그를 남김
+  private func rxReportComment(commentId: UUID) -> Observable<Void> {
+    struct Row: Codable { let reports: Int? }
+
+    return .create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      let task = Task {
+        do {
+          print("[Report] target id:", commentId.uuidString)
+
+          // 1) 현재 값 읽기
+          let before: Row = try await self.supabase
+            .from("Comment")
+            .select("reports")
+            .eq("id", value: commentId)
+            .single()
+            .execute()
+            .value
+          let beforeCount = before.reports ?? 0
+          print("[Report] before reports:", beforeCount)
+
+          // 2) +1 업데이트 (returning 없이도 수행)
+          try await self.supabase
+            .from("Comment")
+            .update(["reports": beforeCount + 1])
+            .eq("id", value: commentId)
+            .execute()
+          print("[Report] update issued to:", beforeCount + 1)
+
+          // 3) 다시 읽어서 실제 반영 확인
+          let after: Row = try await self.supabase
+            .from("Comment")
+            .select("reports")
+            .eq("id", value: commentId)
+            .single()
+            .execute()
+            .value
+          let afterCount = after.reports ?? 0
+          print("[Report] after reports:", afterCount)
+
+          guard afterCount == beforeCount + 1 else {
+            throw NSError(
+              domain: "CommentReactor",
+              code: -3,
+              userInfo: [NSLocalizedDescriptionKey: "신고 반영 실패(값 불일치)"]
+            )
+          }
+
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          print("[Report] error:", error.localizedDescription)
+          observer.onError(error)
+        }
+      }
+      return Disposables.create { task.cancel() }
+    }
+  }
 }
+

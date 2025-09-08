@@ -204,7 +204,6 @@ final class CommentViewController: UIViewController, View {
     }
 
     // 홈 인디케이터 영역 + 키보드 둥근 모서리 뒤까지 동일 색으로 채움
-    // 핵심: top을 safeArea가 아니라 bottomBar의 bottom에 맞춤
     bottomSafeAreaBackground.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview()
       $0.top.equalTo(bottomBar.snp.bottom)
@@ -265,9 +264,13 @@ final class CommentViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     deleteAlert.rightTap
-      .compactMap { [weak self] in self?.deleteIndexPath }
-      .do { [weak self] _ in self?.deleteIndexPath = nil }
-      .map { Reactor.Action.deleteComment($0) }
+      .compactMap { [weak self] (_: Void) -> IndexPath? in
+        self?.deleteIndexPath
+      }
+      .do { [weak self] (_: IndexPath) in self?.deleteIndexPath = nil }
+      .map { (indexPath: IndexPath) -> Reactor.Action in
+        Reactor.Action.deleteComment(indexPath)
+      }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -298,7 +301,7 @@ final class CommentViewController: UIViewController, View {
           content: row.content
         )
 
-        // 케밥 버튼 탭 시 메뉴 표시 (표시만, 동작 바인딩 없음)
+        // 케밥 버튼 탭 시 메뉴 표시
         cell.kebabTap
           .bind { [weak self, weak cell] in
             guard let self, let cell else { return }
@@ -313,13 +316,14 @@ final class CommentViewController: UIViewController, View {
             let originY = buttonFrameInView.maxY + spacing
             let sourcePoint = CGPoint(x: originX, y: originY)
 
+            guard let indexPath = self.tableView.indexPath(for: cell) else { return }
+            self.menuTargetIndexPath = indexPath
+            print("[VC] kebab tapped at indexPath:", indexPath)
+
             // 작성자 여부 판별
             let currentUserId = reactor.currentState.currentUserId
             let commenterId = row.commenterId
             let isSelf = (currentUserId != nil && commenterId != nil && currentUserId == commenterId)
-            guard self.tableView.indexPath(for: cell) != nil else { return }
-            guard let indexPath = self.tableView.indexPath(for: cell) else { return }
-            self.menuTargetIndexPath = indexPath
 
             if isSelf {
               self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
@@ -331,13 +335,58 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    // 내 댓글 메뉴 - 삭제하기
     commentSelfMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
         guard index == 0 else { return }
         guard let target = owner.menuTargetIndexPath else { return }
+        print("[VC] self menu delete tapped at indexPath:", target)
         owner.deleteIndexPath = target
         owner.deleteAlert.show(in: owner.view)
+      }
+      .disposed(by: disposeBag)
+
+    // 다른 사용자 댓글 메뉴 - 신고하기
+    commentOtherMenu.itemTap
+      .compactMap { $0 }
+      .bind(with: self) { owner, index in
+        print("[VC] other menu itemTap index:", index as Any)
+        guard index == 0 else { return }
+        guard let target = owner.menuTargetIndexPath else {
+          print("[VC] menuTargetIndexPath is nil")
+          return
+        }
+        print("[VC] report alert will show for indexPath:", target)
+        owner.reportAlert.show(in: owner.view)
+      }
+      .disposed(by: disposeBag)
+
+    // 신고 알럿 - 확인
+    reportAlert.rightTap
+      .compactMap { [weak self] (_: Void) -> IndexPath? in
+        guard let indexPath = self?.menuTargetIndexPath else {
+          print("[VC] reportAlert.rightTap but menuTargetIndexPath is nil")
+          return nil
+        }
+        print("[VC] reportAlert.rightTap indexPath:", indexPath)
+        return indexPath
+      }
+      .do(onNext: { [weak self] (_: IndexPath) in
+        self?.menuTargetIndexPath = nil
+      })
+      .map { (indexPath: IndexPath) -> Reactor.Action in
+        print("[VC] dispatch Reactor.Action.reportComment:", indexPath)
+        return Reactor.Action.reportComment(indexPath)
+      }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 신고 알럿 - 취소
+    reportAlert.leftTap
+      .bind { [weak self] in
+        print("[VC] reportAlert.leftTap (cancel)")
+        self?.menuTargetIndexPath = nil
       }
       .disposed(by: disposeBag)
 
