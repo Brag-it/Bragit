@@ -150,6 +150,21 @@ class FavoriteViewController: UIViewController, View {
       .map { Reactor.Action.searchTapped }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    favoriteView.feedView.collectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath -> Post? in
+        guard let self, let item = self.favoriteView.feedView.dataSource.itemIdentifier(for: indexPath)
+        else { return nil }
+        switch item {
+        case .post(let post):
+          return post
+        default:
+          return nil
+        }
+      }
+      .map { post in Reactor.Action.didTapPost(post) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 
   func scrollToTop() {

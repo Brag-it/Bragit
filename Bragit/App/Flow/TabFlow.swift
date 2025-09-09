@@ -27,7 +27,7 @@ final class TabFlow: NSObject, Flow, Stepper {
     super.init()
     rootViewController.delegate = self
   }
-
+  // swiftlint:disable cyclomatic_complexity
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
     switch step {
@@ -53,7 +53,7 @@ final class TabFlow: NSObject, Flow, Stepper {
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
   }
-
+  // swiftlint:enable cyclomatic_complexity
   func dismiss() -> FlowContributors {
     guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
     navigation.dismiss(animated: true)
@@ -168,16 +168,27 @@ final class TabFlow: NSObject, Flow, Stepper {
   }
 
   func showsearchView() -> FlowContributors {
-    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
-    let reactor = SearchReactor()
-    let searchVC = SearchViewController(reactor: reactor)
+    let flow = SearchFlow() // 모달로 띄울 전용 플로우
+    Flows.use(flow, when: .ready) { [weak self] root in
+      root.modalPresentationStyle = .fullScreen
+      root.modalTransitionStyle = .crossDissolve
+      self?.rootViewController.present(root, animated: true)
+    }
+    return .one(flowContributor: .contribute(
+      withNextPresentable: flow,
+      withNextStepper: OneStepper(withSingleStep: AppStep.searchFeed)
+    ))
+  }
 
-    searchVC.modalPresentationStyle = .fullScreen
-    searchVC.modalTransitionStyle = .crossDissolve
-    navigation.present(searchVC, animated: true)
+  func showUserProfile(user: User) -> FlowContributors {
+    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
+    let reactor = UserProfileReactor(user: user)
+    let userProfileVC = UserProfileViewCotnroller(reactor: reactor)
+
+    navigation.pushViewController(userProfileVC, animated: true)
 
     return .one(flowContributor: .contribute(
-      withNextPresentable: searchVC,
+      withNextPresentable: userProfileVC,
       withNextStepper: reactor
     ))
   }

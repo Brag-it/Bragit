@@ -25,9 +25,13 @@ class SearchReactor: Reactor, Stepper {
     case viewDidLoad
     case updateText(String)
     case submit
+    case submitWithQuery(String, Bool)
     case clearAllRecent
     case deleteRecent(String)
     case changeScope(SearchScope)
+    case didTapTag(Tag)
+    case didTapPost(Post)
+    case didTapUser(User)
     case didTapBack
   }
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -42,14 +46,14 @@ class SearchReactor: Reactor, Stepper {
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State {
-    var text: String = ""
-    var suggestions: [String] = []
-    var recent: [String]?
-    var tagResults: [SearchTagItem] = []
-    var postResults: [SearchPostItem] = []
-    var userResults: [SearchUserItem] = []
-    var scope: SearchScope = .tag
-    var mode: SearchMode = .recent
+    var text: String = ""                      // 검색창 텍스트
+    var suggestions: [String] = []             // 입력 중 연관어
+    var recent: [String]?                      // 최근 검색어
+    var tagResults: [SearchTagItem] = []       // 태그 결과
+    var postResults: [SearchPostItem] = []     // 게시글 결과
+    var userResults: [SearchUserItem] = []     // 사용자 결과
+    var scope: SearchScope = .tag              // 현재 결과 탭
+    var mode: SearchMode = .recent             // 화면 모드 (최근/입력중/결과)
   }
 
   init() {
@@ -58,50 +62,48 @@ class SearchReactor: Reactor, Stepper {
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
   // 사용자 입력 → 상태 변화 신호로 변환
+  // swiftlint:disable cyclomatic_complexity
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+
     case .viewDidLoad:
+      // 진입 시 최근검색 불러오고 모드는 최근으로
       return .concat([
         .just(.setRecent(recentSearches)),
         .just(.setMode(.recent))
       ])
 
     case .updateText(let raw):
+      // 공백·개행 제거
       let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+
+      // 공백이면 최근 검색 모드로 복귀
       if trimmed.isEmpty {
         return .concat([
           .just(.setText("")),
           .just(.setMode(.recent)),
           .just(.setSuggestions([]))
         ])
-      } else {
-        let suggest = tagManager
-          .rxSearchTags(searchText: trimmed, page: 0, pageSize: 10)
-          .map { $0.map { $0.tag } }
-          .map(Mutation.setSuggestions)
-        return .concat([
-          .just(.setText(trimmed)),
-          .just(.setMode(.typingSuggestions)),
-          suggest
-        ])
       }
+
+      // 입력 중
+      let suggest = tagManager
+        .rxSearchTags(searchText: trimmed, page: 0, pageSize: 10)
+        .map { $0.map { $0.tag } }
+        .map(Mutation.setSuggestions)
+
+      return .concat([
+        .just(.setText(trimmed)),
+        .just(.setMode(.typingSuggestions)),
+        suggest
+      ])
+
     case .submit:
       let trimmed = currentState.text.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard !trimmed.isEmpty else { return .empty() }
-      saveRecent(trimmed)
-      let search = searchManager.rxSearchAll(searchText: trimmed, page: 0, pageSize: 20)
-        .map { bundle -> Mutation in
-          let tagItems = bundle.tags.map { SearchTagItem(tag: $0.tag) }
-          let postItems = bundle.posts.map { SearchPostItem(post: $0) }
-          let userItems = bundle.users.map { SearchUserItem(user: $0) }
-          return .setResults(tags: tagItems, posts: postItems, users: userItems)
-        }
-      return .concat([
-        .just(.setMode(.results)),
-        search,
-        .just(.setSuggestions([])),
-        .just(.setRecent(recentSearches))
-      ])
+      return performSearch(for: trimmed, saveToRecent: true)
+
+    case let .submitWithQuery(query, save):
+      return performSearch(for: query, saveToRecent: save)
 
     case .clearAllRecent:
       recentSearches = []
@@ -116,11 +118,24 @@ class SearchReactor: Reactor, Stepper {
     case .changeScope(let scope):
       return .just(.setScope(scope))
 
+    case .didTapTag(let tag):
+      steps.accept(AppStep.tagInform(tag))
+      return .empty()
+
+    case .didTapPost(let post):
+      steps.accept(AppStep.feedDetail(post: post))
+      return .empty()
+
+    case .didTapUser(let user):
+      steps.accept(AppStep.userProfile(user: user))
+      return .empty()
+
     case .didTapBack:
       steps.accept(AppStep.dismiss)
       return .empty()
     }
   }
+  // swiftlint:enable cyclomatic_complexity
 
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
@@ -170,28 +185,47 @@ class SearchReactor: Reactor, Stepper {
   func transform(state: Observable<State>) -> Observable<State> {
     return state.observe(on: MainScheduler.instance)
   }
+}
 
-  private func saveRecent(_ raw: String) {
+private extension SearchReactor {
+  func performSearch(for query: String, saveToRecent: Bool) -> Observable<Mutation> {
+    let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return .empty() }
+    if saveToRecent {
+      saveRecent(trimmed)
+    }
+
+    let search = searchManager.rxSearchAll(searchText: trimmed, page: 0, pageSize: 20)
+      .map { bundle -> Mutation in
+        let tagItems = bundle.tags.map { SearchTagItem(tag: $0) }
+        let postItems = bundle.posts.map { SearchPostItem(post: $0) }
+        let userItems = bundle.users.map { SearchUserItem(user: $0) }
+        return .setResults(tags: tagItems, posts: postItems, users: userItems)
+      }
+
+    return .concat([
+      .just(.setText(trimmed)),
+      .just(.setMode(.results)),
+      search,
+      .just(.setSuggestions([])),
+      .just(.setRecent(recentSearches))
+    ])
+  }
+
+  // 최근검색 저장
+  func saveRecent(_ raw: String) {
     let trimmedQuery = raw.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmedQuery.isEmpty else { return }
 
     var list = recentSearches ?? []
+    // 대소문자 무시 중복 제거
     list.removeAll { $0.caseInsensitiveCompare(trimmedQuery) == .orderedSame }
+    // 맨 앞에 삽입
     list.insert(trimmedQuery, at: 0)
-    // 최근 검색어 20개만 저장
+    // 최대 20개 유지
     if list.count > 20 {
       list.removeLast(list.count - 20)
     }
     recentSearches = list
-  }
-
-  private func removeRecent(_ keyword: String) {
-    var list = recentSearches ?? []
-    list.removeAll { $0.caseInsensitiveCompare(keyword) == .orderedSame }
-    recentSearches = list
-  }
-
-  private func clearAllRecent() {
-    recentSearches = []
   }
 }

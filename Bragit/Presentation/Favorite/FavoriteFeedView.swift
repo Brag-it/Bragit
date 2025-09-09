@@ -36,7 +36,7 @@ final class FavoriteFeedView: UIView {
       $0.refreshControl = refreshControl
     }
 
-  private lazy var dataSource = makeFavoriteCollectionViewDataSource(self.collectionView)
+  lazy var dataSource = makeFavoriteCollectionViewDataSource(self.collectionView)
 
   override init(frame: CGRect) {
     super.init(frame: frame)

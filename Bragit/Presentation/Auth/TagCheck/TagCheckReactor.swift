@@ -11,6 +11,7 @@ import ReactorKit
 import RxFlow
 import RxRelay
 import RxSwift
+import Supabase
 
 final class TagCheckReactor: Reactor, Stepper {
   enum Action {
@@ -78,12 +79,15 @@ final class TagCheckReactor: Reactor, Stepper {
           observer.onNext(.setLoading(true))
 
           let session = try await self.supabase.auth.session
-          let userId = session.user.id
+          let userUUID = session.user.id
+          let userId = userUUID.uuidString
 
-          UserDefaults.standard.set(userId.uuidString, forKey: LocalStorageCase.nowUser.rawValue)
+          // 현재 로그인한 유저를 로컬에 기억
+          UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
 
+          // 회원 정보 저장
           let user = User(
-            id: userId.uuidString,
+            id: userId,
             nickname: self.userInfo.nickname,
             profile: profileURL,
             provider: self.userInfo.isAppleLogin ? "apple" : "mail",
@@ -93,6 +97,35 @@ final class TagCheckReactor: Reactor, Stepper {
           )
 
           try await self.saveUserInfo(user)
+
+          // 1) Apple/이메일 가입 모두에서 User_Info.email 컬럼에 저장
+          let trimmedMail = self.userInfo.mail.trimmingCharacters(in: .whitespacesAndNewlines)
+          if !trimmedMail.isEmpty {
+            do {
+              try await self.supabase
+                .from("User_Info")
+                .update(["email": trimmedMail])
+                .eq("id", value: userId)
+                .execute()
+              print("[signup] User_Info.email updated")
+            } catch {
+              print("[signup] User_Info.email update failed: \(error)")
+            }
+          }
+
+          if !trimmedMail.isEmpty {
+            do {
+              try await self.supabase.auth.update(
+                user: UserAttributes(
+                  data: ["email": AnyJSON.string(trimmedMail)]
+                )
+              )
+              print("[signup] auth.user_metadata.email backfilled")
+            } catch {
+              print("[signup] auth.user_metadata.email backfill failed: \(error)")
+            }
+          }
+
           observer.onNext(.setRegistrationComplete(true))
           observer.onNext(.setLoading(false))
           observer.onCompleted()

@@ -263,4 +263,9 @@ class StubPostManager: PostManagerProtocol {
     _ = postId
     return .just(())
   }
+
+  func rxIncrementReports(postId: UUID) -> RxSwift.Observable<Void> {
+    _ = postId
+    return .just(())
+  }
 }

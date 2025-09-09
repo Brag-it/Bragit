@@ -49,6 +49,7 @@ protocol PostManagerProtocol {
   func deletePost(postId: String) async throws
   func rxDeletePost(postId: String) -> Observable<Void>
   func rxFetchPosts(ids: [String]) -> Observable<[Post]>
+  func rxIncrementReports(postId: UUID) -> Observable<Void>
 }
 
 class PostManager: PostManagerProtocol {
@@ -525,6 +526,34 @@ class PostManager: PostManagerProtocol {
       return Disposables.create()
     }
   }
+
+  private struct PostReportsOnly: Decodable {
+    let reports: Int?
+  }
+
+  // 게시글 신고 카운트
+  func rxIncrementReports(postId: UUID) -> Observable<Void> {
+    return Observable.create { [weak self] observer in
+      guard let self else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      let task = Task {
+        do {
+          _ = try await self.client
+            .rpc("increment_post_reports", params: ["_post_id": postId.uuidString])
+            .execute()
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create { task.cancel() }
+    }
+  }
 }
 
 extension PostManager {
@@ -534,4 +563,3 @@ extension PostManager {
     let p_delta: Int
   }
 }
-

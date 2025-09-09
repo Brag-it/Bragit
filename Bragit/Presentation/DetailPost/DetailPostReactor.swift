@@ -56,6 +56,7 @@ class DetailPostReactor: Reactor, Stepper {
     var isLiked: Bool               // 좋아요 눌렀는지
     var likeCount: Int              // 좋아요 수
     var isfollowed: Bool            // 팔로우 여부
+    var withdrewUser: Bool          // 탈퇴유저 체크
   }
 
   init(post: Post) {
@@ -67,12 +68,14 @@ class DetailPostReactor: Reactor, Stepper {
       content: DetailPostReactor.unarchivedContent(content: post.content),
       nickName: post.author?.nickname ?? "탈퇴한 유저 입니다",
       profileImage: post.author?.profile ?? nil,
-      viewer: post.author?.id == nowUser,
+      viewer: post.author?.id.lowercased() == nowUser?.lowercased(),
       isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
       likeCount: post.like,
-      isfollowed: followUser?.contains { $0 == post.author?.id } ?? false
+      isfollowed: followUser?.contains { $0 == post.author?.id } ?? false,
+      withdrewUser: post.author?.nickname == nil
     )
     self.post = post
+
   }
 
   // Action이 들어왔을 때 어떤 Mutation으로 바뀔지 정의
@@ -179,22 +182,16 @@ class DetailPostReactor: Reactor, Stepper {
       return .empty()
 
     case .didTapReport:
-      return .empty()
+      return postManager.rxIncrementReports(postId: post.id)
+        .flatMap { _ in Observable<Mutation>.empty() }
+        .catch { _ in Observable<Mutation>.empty() }
 
     case .didTapDelete:
       return Observable.concat([
         .just(.setLoading(true)),
         postManager.rxDeletePost(postId: post.id.uuidString)
-          .do{ _ in
-            #if DEBUG
-            print("[DetailPostReactor] delete success")
-            #endif
-          }
           .map { _ in Mutation.setDeleted }
           .catch { error in
-            #if DEBUG
-            print("[DetailPostReactor] delete error: \(error.localizedDescription)")
-            #endif
             return .just(.setError(error))
           },
         .just(.setLoading(false))

@@ -20,6 +20,8 @@ final class CommentViewController: UIViewController, View {
   // MARK: UI
   private let reportAlert = AlertView.makeAlert(style: .reportComment)
   private let deleteAlert = AlertView.makeAlert(style: .deleteComment)
+  private let commentSelfMenu = MenuView(items: ["삭제하기"])
+  private let commentOtherMenu = MenuView(items: ["신고하기"])
 
   private let headerView = UIView()
 
@@ -44,7 +46,7 @@ final class CommentViewController: UIViewController, View {
     $0.separatorStyle = .none
     $0.backgroundColor = .systemBackground
     $0.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-    $0.keyboardDismissMode = .onDrag
+    $0.keyboardDismissMode = .interactive
   }
 
   private let activityIndicator = UIActivityIndicatorView(style: .medium).then {
@@ -52,21 +54,26 @@ final class CommentViewController: UIViewController, View {
   }
 
   private let commentTextView = UITextView()
-
-  // 전송 버튼을 별도로 선언 (Rx 바인딩을 위해)
   private let sendButton = UIButton(type: .custom)
 
   // 화면 빈 곳 탭 시 키보드 내리기용 제스처
   private lazy var dismissTapGesture: UITapGestureRecognizer = {
     let tap = UITapGestureRecognizer()
     tap.cancelsTouchesInView = false
+    tap.delegate = self
     return tap
   }()
 
-  // bottomBar의 탭 버튼
   private let bottomBarTapButton = UIButton(type: .custom)
+  private var menuTargetIndexPath: IndexPath?
+  private var deleteIndexPath: IndexPath?
 
-  // 액세서리 바
+  // 하단 안전영역(홈 인디케이터) + 키보드 둥근 모서리 뒤 배경 색 채움용
+  private let bottomSafeAreaBackground = UIView().then {
+    $0.backgroundColor = .grayScale50
+    $0.isUserInteractionEnabled = false
+  }
+
   private lazy var bottomBar: UIView = {
     let bar = UIView()
     bar.backgroundColor = .grayScale50
@@ -74,6 +81,8 @@ final class CommentViewController: UIViewController, View {
 
     let lockImageView = UIImageView(image: .unlock).then {
       $0.contentMode = .scaleAspectFit
+      $0.setContentHuggingPriority(.required, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     let textContainer = UIView().then {
@@ -85,75 +94,32 @@ final class CommentViewController: UIViewController, View {
     let sendImageView = UIImageView(image: .send).then {
       $0.contentMode = .scaleAspectFit
       $0.isUserInteractionEnabled = false
-    }
-
-    bottomBarTapButton.backgroundColor = .clear
-
-    bar.addSubview(lockImageView)
-    bar.addSubview(textContainer)
-    bar.addSubview(sendImageView)
-    textContainer.addSubview(bottomBarTapButton)
-
-    lockImageView.snp.makeConstraints {
-      $0.leading.equalTo(bar.snp.leading).offset(12)
-      $0.centerY.equalTo(bar.snp.centerY)
-    }
-
-    textContainer.snp.makeConstraints {
-      $0.leading.equalTo(lockImageView.snp.trailing).offset(10)
-      $0.trailing.equalTo(bar.snp.trailing).inset(12)
-      $0.centerY.equalTo(bar.snp.centerY)
-      $0.height.equalTo(42)
-    }
-
-    sendImageView.snp.makeConstraints {
-      $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
-      $0.centerY.equalTo(textContainer.snp.centerY)
-    }
-
-    bottomBarTapButton.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-    return bar
-  }()
-
-  private lazy var accessoryBar: UIView = {
-    let bar = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 54))
-    bar.backgroundColor = .grayScale50
-
-    let lockImageView = UIImageView(image: .unlock).then {
-      $0.contentMode = .scaleAspectFit
-    }
-
-    let textContainer = UIView().then {
-      $0.backgroundColor = .white
-      $0.layer.cornerRadius = 12
-      $0.layer.masksToBounds = true
-    }
-
-    let sendImageView = UIImageView(image: .send).then {
-      $0.contentMode = .scaleAspectFit
-      $0.isUserInteractionEnabled = true
+      $0.setContentHuggingPriority(.required, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     commentTextView.backgroundColor = .clear
     commentTextView.font = .pretendard(size: 15, weight: .regular)
     commentTextView.textColor = .grayScale900
     commentTextView.isScrollEnabled = false
-
     commentTextView.returnKeyType = .send
     commentTextView.enablesReturnKeyAutomatically = true
-
     commentTextView.delegate = self
+
+    sendButton.backgroundColor = .clear
+    bottomBarTapButton.backgroundColor = .clear
 
     bar.addSubview(lockImageView)
     bar.addSubview(textContainer)
     bar.addSubview(sendImageView)
     bar.addSubview(sendButton)
     textContainer.addSubview(commentTextView)
+    textContainer.addSubview(bottomBarTapButton)
 
     lockImageView.snp.makeConstraints {
       $0.leading.equalTo(bar.snp.leading).offset(12)
       $0.centerY.equalTo(bar.snp.centerY)
+      $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
     textContainer.snp.makeConstraints {
@@ -166,6 +132,7 @@ final class CommentViewController: UIViewController, View {
     sendImageView.snp.makeConstraints {
       $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
       $0.centerY.equalTo(textContainer.snp.centerY)
+      $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
     sendButton.snp.makeConstraints {
@@ -178,13 +145,17 @@ final class CommentViewController: UIViewController, View {
       $0.height.equalTo(42)
     }
 
+    bottomBarTapButton.snp.makeConstraints {
+      $0.top.bottom.leading.equalToSuperview()
+      $0.trailing.equalTo(sendImageView.snp.leading).offset(-8)
+    }
+
     commentTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 34)
+
+    bar.bringSubviewToFront(sendButton)
 
     return bar
   }()
-
-  override var canBecomeFirstResponder: Bool { true }
-  override var inputAccessoryView: UIView? { accessoryBar }
 
   init(reactor: CommentReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -200,7 +171,6 @@ final class CommentViewController: UIViewController, View {
     title = "댓글"
     view.backgroundColor = .white
     setupLayout()
-    setupKeyboardObservation()
     view.addGestureRecognizer(dismissTapGesture)
   }
 
@@ -209,6 +179,7 @@ final class CommentViewController: UIViewController, View {
     headerView.addSubview(backButton)
     headerView.addSubview(titleLabel)
 
+    view.addSubview(bottomSafeAreaBackground)
     view.addSubview(tableView)
     view.addSubview(activityIndicator)
     view.addSubview(bottomBar)
@@ -232,8 +203,14 @@ final class CommentViewController: UIViewController, View {
 
     bottomBar.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview()
-      $0.bottom.equalTo(view.keyboardLayoutGuide)
+      $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
       $0.height.equalTo(54)
+    }
+
+    bottomSafeAreaBackground.snp.makeConstraints {
+      $0.leading.trailing.equalToSuperview()
+      $0.top.equalTo(bottomBar.snp.bottom)
+      $0.bottom.equalTo(view.snp.bottom)
     }
 
     tableView.snp.makeConstraints {
@@ -247,27 +224,8 @@ final class CommentViewController: UIViewController, View {
     }
   }
 
-  private func setupKeyboardObservation() {
-    // Rx로 키보드 이벤트 처리
-    NotificationCenter.default.rx
-      .notification(UIResponder.keyboardWillShowNotification)
-      .subscribe { [weak self] _ in
-        self?.bottomBar.isHidden = true
-      }
-      .disposed(by: disposeBag)
-
-    NotificationCenter.default.rx
-      .notification(UIResponder.keyboardWillHideNotification)
-      .subscribe { [weak self] _ in
-        self?.bottomBar.isHidden = false
-      }
-      .disposed(by: disposeBag)
-  }
-
   func bind(reactor: CommentReactor) {
-    // MARK: - Input (Actions)
-
-    // 뒤로가기 버튼
+    // 뒤로가기
     backButton.rx.tap
       .map { Reactor.Action.didTapBack }
       .bind(to: reactor.action)
@@ -289,7 +247,8 @@ final class CommentViewController: UIViewController, View {
     // 전송 버튼 탭
     sendButton.rx.tap
       .withLatestFrom(commentTextView.rx.text.orEmpty)
-      .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
       .map { Reactor.Action.sendComment($0) }
       .do { [weak self] _ in
         self?.commentTextView.text = ""
@@ -300,20 +259,27 @@ final class CommentViewController: UIViewController, View {
 
     // 화면 빈 곳 탭 -> 키보드 내리기
     dismissTapGesture.rx.event
-      .subscribe { [weak self] _ in
-        if let window = self?.view.window {
-          window.endEditing(true)
-        } else {
-          self?.view.endEditing(true)
-        }
+      .bind(with: self) { owner, _ in
+        owner.view.endEditing(true)
       }
       .disposed(by: disposeBag)
 
-    // MARK: - Output (State)
+    // 삭제 확인
+    deleteAlert.rightTap
+      .compactMap { [weak self] in self?.deleteIndexPath }
+      .do { [weak self] _ in self?.deleteIndexPath = nil }
+      .map { Reactor.Action.deleteComment($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 삭제 취소
+    deleteAlert.leftTap
+      .bind { [weak self] in self?.deleteIndexPath = nil }
+      .disposed(by: disposeBag)
 
     // 댓글 목록 바인딩
     reactor.state
-      .map(\.comments)
+      .map { $0.comments.sorted { $0.date > $1.date } }
       .distinctUntilChanged()
       .observe(on: MainScheduler.instance)
       .bind(
@@ -321,7 +287,8 @@ final class CommentViewController: UIViewController, View {
           cellIdentifier: CommentCell.reuseID,
           cellType: CommentCell.self
         )
-      ) { _, row, cell in
+      ) { [weak self, weak reactor] _, row, cell in
+        guard let self, let reactor else { return }
         let nickname = (row.user?.nickname?.isEmpty == false) ? row.user!.nickname! : "탈퇴한 회원"
         let profileURL = row.user?.profile
         cell.configure(
@@ -330,7 +297,69 @@ final class CommentViewController: UIViewController, View {
           date: row.date,
           content: row.content
         )
+
+        // 케밥 버튼 탭 시 메뉴 표시
+        cell.kebabTap
+          .bind { [weak self, weak cell] in
+            guard let self, let cell else { return }
+
+            // 버튼 위치 기준 메뉴 표시 위치 계산
+            let buttonFrameInView = cell.kebabButton.convert(cell.kebabButton.bounds, to: self.view)
+            let menuWidth: CGFloat = 120
+            let spacing: CGFloat = 8
+            let sourcePoint = CGPoint(
+              x: buttonFrameInView.maxX - menuWidth,
+              y: buttonFrameInView.maxY + spacing
+            )
+
+            guard let indexPath = self.tableView.indexPath(for: cell) else { return }
+            self.menuTargetIndexPath = indexPath
+
+            // 작성자 여부 판별
+            let currentUserId = reactor.currentState.currentUserId
+            let commenterId = row.commenterId
+            let isSelf = (currentUserId != nil && commenterId != nil && currentUserId == commenterId)
+
+            if isSelf {
+              self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
+            } else {
+              self.commentOtherMenu.show(in: self.view, sourcePoint: sourcePoint)
+            }
+          }
+          .disposed(by: cell.disposeBag)
       }
+      .disposed(by: disposeBag)
+
+    // 본인 댓글 삭제 메뉴
+    commentSelfMenu.itemTap
+      .compactMap { $0 }
+      .bind(with: self) { owner, index in
+        guard index == 0, let target = owner.menuTargetIndexPath else { return }
+        owner.deleteIndexPath = target
+        owner.deleteAlert.show(in: owner.view)
+      }
+      .disposed(by: disposeBag)
+
+    // 남 댓글 신고 메뉴
+    commentOtherMenu.itemTap
+      .compactMap { $0 }
+      .bind(with: self) { owner, index in
+        guard index == 0, owner.menuTargetIndexPath != nil else { return }
+        owner.reportAlert.show(in: owner.view)
+      }
+      .disposed(by: disposeBag)
+
+    // 신고 확인
+    reportAlert.rightTap
+      .compactMap { [weak self] in self?.menuTargetIndexPath }
+      .do { [weak self] _ in self?.menuTargetIndexPath = nil }
+      .map { Reactor.Action.reportComment($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 신고 취소
+    reportAlert.leftTap
+      .bind { [weak self] in self?.menuTargetIndexPath = nil }
       .disposed(by: disposeBag)
 
     // 로딩 인디케이터
@@ -359,26 +388,38 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // 댓글 전송 성공 시 텍스트뷰 초기화
+    // 댓글 전송 성공 시 텍스트뷰 초기화 및 스크롤
     reactor.state
       .map(\.commentSent)
       .filter { $0 }
       .observe(on: MainScheduler.instance)
       .subscribe { [weak self] _ in
         self?.commentTextView.text = ""
+        if let tableView = self?.tableView,
+          tableView.numberOfRows(inSection: 0) > 0 {
+          tableView.scrollToRow(
+            at: IndexPath(row: 0, section: 0),
+            at: .top,
+            animated: true
+          )
+        }
       }
       .disposed(by: disposeBag)
   }
 }
 
-// MARK: - CommentCell은 그대로 유지
+// MARK: - CommentCell
 final class CommentCell: UITableViewCell {
   static let reuseID = "CommentCell"
+
+  var disposeBag = DisposeBag()
+  var kebabTap: ControlEvent<Void> { kebabButton.rx.tap }
+  var kebabButtonFrameInCell: CGRect { kebabButton.frame }
 
   private let profileImageView = UIImageView().then {
     $0.contentMode = .scaleAspectFill
     $0.clipsToBounds = true
-    $0.layer.cornerRadius = 18  // 36x36 원형
+    $0.layer.cornerRadius = 18
     $0.backgroundColor = .secondarySystemBackground
     $0.snp.makeConstraints { $0.size.equalTo(CGSize(width: 36, height: 36)) }
   }
@@ -398,7 +439,7 @@ final class CommentCell: UITableViewCell {
     $0.setContentHuggingPriority(.required, for: .horizontal)
   }
 
-  private let kebabButton = UIButton(type: .system).then {
+  let kebabButton = UIButton(type: .system).then {
     $0.setImage(.kebab, for: .normal)
     $0.tintColor = .grayScale900
   }
@@ -416,7 +457,6 @@ final class CommentCell: UITableViewCell {
     selectionStyle = .none
     backgroundColor = .clear
     contentView.backgroundColor = .clear
-
     setupLayout()
   }
 
@@ -439,9 +479,7 @@ final class CommentCell: UITableViewCell {
       $0.bottom.equalTo(profileImageView.snp.bottom)
     }
 
-    profileImageView.snp.makeConstraints {
-      $0.top.leading.equalToSuperview()
-    }
+    profileImageView.snp.makeConstraints { $0.top.leading.equalToSuperview() }
 
     nameLabel.snp.makeConstraints {
       $0.leading.equalTo(profileImageView.snp.trailing).offset(6)
@@ -473,7 +511,7 @@ final class CommentCell: UITableViewCell {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "ko_KR")
     formatter.timeZone = .current
-    formatter.dateFormat = "yyyy.MM.dd"  // 0 패딩 포함
+    formatter.dateFormat = "yyyy.MM.dd"
     dateLabel.text = formatter.string(from: date)
     dateLabel.font = UIFont.pretendard(size: 13, weight: .regular)
     dateLabel.textColor = .grayScale400
@@ -488,6 +526,11 @@ final class CommentCell: UITableViewCell {
       profileImageView.image = UIImage.profilePerson
     }
   }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    disposeBag = DisposeBag()
+  }
 }
 
 extension CommentViewController: UITextViewDelegate {
@@ -501,6 +544,16 @@ extension CommentViewController: UITextViewDelegate {
         textView.resignFirstResponder()
       }
       return false
+    }
+    return true
+  }
+}
+
+extension CommentViewController: UIGestureRecognizerDelegate {
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+    if gestureRecognizer === dismissTapGesture {
+      if touch.view is UIControl { return false }
+      if touch.view?.isDescendant(of: bottomBar) == true { return false }
     }
     return true
   }
