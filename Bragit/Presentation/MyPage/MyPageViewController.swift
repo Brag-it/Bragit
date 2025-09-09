@@ -100,14 +100,20 @@ class MyPageViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-//    myPageView.collectionView.rx.itemSelected
-//      .compactMap { [weak self] indexPath -> Post? in
-//        return self?.myPageView.collectionView.dataSource.itemIdentifier(for: indexPath)
-//      }
-//      .map { post in .didTapPost(post) }
-//      .bind(to: reactor.action)
-//      .disposed(by: disposeBag)
-
+    myPageView.collectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath -> Post? in
+        guard let self, let item = myPageView.dataSource.itemIdentifier(for: indexPath)
+        else { return nil }
+        switch item {
+        case .post(let post):
+          return post
+        default:
+          return nil
+        }
+      }
+      .map { post in Reactor.Action.didTapPost(post) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
 
