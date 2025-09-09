@@ -15,7 +15,8 @@ import RichTextKit
 final class EditorView: UIView {
   let accessoryView = EditorAccessoryView()
 
-  lazy var textView = RichTextView().then {
+  lazy var textView = RichTextViewWithPlaceholder().then {
+    $0.placeholder = "오늘의 자랑을 자유롭게 나눠보세요 :)\n욕설, 혐오 등 타인에게 불쾌감을 주는 내용은 삭제될 수 있어요."
     $0.typingAttributes[.font] = UIFont.systemFont(ofSize: 16)
     $0.backgroundColor = .systemBackground
     $0.isEditable = true

@@ -1,19 +1,20 @@
 //
-//  DescriptionTextView.swift
+//  RichTextViewWithPlaceholder.swift
 //  Bragit
 //
-//  Created by 이태윤 on 9/1/25.
+//  Created by 이태윤 on 9/9/25.
 //
 import UIKit
 
-final class DescriptionTextView: UITextView {
+import RichTextKit
+
+final class RichTextViewWithPlaceholder: RichTextView {
 
   private let placeholderLabel = UILabel()
 
   var placeholder: String? {
     didSet {
       placeholderLabel.text = placeholder
-      setNeedsLayout()
       updatePlaceholderVisibility()
     }
   }
@@ -24,37 +25,40 @@ final class DescriptionTextView: UITextView {
     }
   }
 
+  override var text: String! {
+    didSet {
+      updatePlaceholderVisibility()
+    }
+  }
+
+  override var attributedText: NSAttributedString! {
+    didSet {
+      updatePlaceholderVisibility()
+    }
+  }
+
   override init(frame: CGRect, textContainer: NSTextContainer?) {
     super.init(frame: frame, textContainer: textContainer)
-    commonInit()
+    configurePlaceholder()
   }
 
   required init?(coder: NSCoder) {
     super.init(coder: coder)
-    commonInit()
+    configurePlaceholder()
   }
 
-  private func commonInit() {
+  private func configurePlaceholder() {
     delegate = self
-    backgroundColor = .white
-
     placeholderLabel.font = self.font
     placeholderLabel.textColor = placeholderColor
     placeholderLabel.numberOfLines = 0
     placeholderLabel.isUserInteractionEnabled = false
     addSubview(placeholderLabel)
-    updatePlaceholderVisibility()
-  }
-
-  private func setupPlaceholder() {
-    addSubview(placeholderLabel)
-    placeholderLabel.isHidden = !text.isEmpty
   }
 
   override func layoutSubviews() {
     super.layoutSubviews()
 
-    // 커서 기준 위치와 placeholder 위치를 맞추기
     let padding = textContainer.lineFragmentPadding
     let inset = textContainerInset
 
@@ -69,6 +73,7 @@ final class DescriptionTextView: UITextView {
     if placeholderLabel.frame.height > maxHeight {
       placeholderLabel.frame.size.height = maxHeight
     }
+
     updatePlaceholderVisibility()
   }
 
@@ -77,7 +82,7 @@ final class DescriptionTextView: UITextView {
   }
 }
 
-extension DescriptionTextView: UITextViewDelegate {
+extension RichTextViewWithPlaceholder: UITextViewDelegate {
   func textViewDidChange(_ textView: UITextView) {
     updatePlaceholderVisibility()
   }
