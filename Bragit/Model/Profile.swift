@@ -13,4 +13,5 @@ struct Profile: Hashable {
   let follwerCount: Int
   let followingCount: Int
   let favoriteTagCount: Int
+  let isFollowing: Bool
 }

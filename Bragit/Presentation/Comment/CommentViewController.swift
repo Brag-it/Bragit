@@ -49,6 +49,7 @@ final class CommentViewController: UIViewController, View {
     $0.keyboardDismissMode = .interactive
   }
 
+  private let refreshControl = UIRefreshControl()
   private let activityIndicator = UIActivityIndicatorView(style: .medium).then {
     $0.hidesWhenStopped = true
   }
@@ -184,6 +185,9 @@ final class CommentViewController: UIViewController, View {
     view.addSubview(activityIndicator)
     view.addSubview(bottomBar)
 
+    // 당겨서 새로고침
+    tableView.refreshControl = refreshControl
+
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide)
       $0.leading.trailing.equalToSuperview()
@@ -233,6 +237,12 @@ final class CommentViewController: UIViewController, View {
 
     // 화면 진입 시 댓글 로드
     rx.viewDidLoad
+      .map { Reactor.Action.refresh }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 당겨서 새로고침
+    refreshControl.rx.controlEvent(.valueChanged)
       .map { Reactor.Action.refresh }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
@@ -349,20 +359,7 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // 신고 확인
-    reportAlert.rightTap
-      .compactMap { [weak self] in self?.menuTargetIndexPath }
-      .do { [weak self] _ in self?.menuTargetIndexPath = nil }
-      .map { Reactor.Action.reportComment($0) }
-      .bind(to: reactor.action)
-      .disposed(by: disposeBag)
-
-    // 신고 취소
-    reportAlert.leftTap
-      .bind { [weak self] in self?.menuTargetIndexPath = nil }
-      .disposed(by: disposeBag)
-
-    // 로딩 인디케이터
+    // 로딩 인디케이터 + 당겨서 새로고침 종료
     reactor.state
       .map(\.isLoading)
       .distinctUntilChanged()
@@ -372,6 +369,9 @@ final class CommentViewController: UIViewController, View {
           owner.activityIndicator.startAnimating()
         } else {
           owner.activityIndicator.stopAnimating()
+          if owner.refreshControl.isRefreshing {
+            owner.refreshControl.endRefreshing()
+          }
         }
         owner.view.isUserInteractionEnabled = !loading
       }
