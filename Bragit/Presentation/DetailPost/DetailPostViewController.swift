@@ -19,7 +19,8 @@ class DetailPostViewController: UIViewController, View {
   private let reportAlert = AlertView.makeAlert(style: .reportPost)
   private let deleteAlert = AlertView.makeAlert(style: .deletePost)
   private let differentMenu = MenuView(items: ["신고하기"])
-  private let selfMenu = MenuView(items: ["수정하기", "삭제하기"])
+  private let selfMenu = MenuView(items: ["삭제하기"])
+//  private let selfMenu = MenuView(items: ["수정하기", "삭제하기"])
 
   private let activityIndicator = UIActivityIndicatorView(style: .large).then {
     $0.hidesWhenStopped = true
@@ -282,12 +283,22 @@ class DetailPostViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+      // TODO: - 게시글 수정 구현 필요
+//    selfMenu.itemTap
+//      .bind { [weak self] index in
+//        guard let self else { return }
+//        if index == 0 {
+//          self.reactor?.action.onNext(.didTapEdit)
+//        } else if index == 1 {
+//          deleteAlert.show(in: view)
+//        }
+//      }
+//      .disposed(by: disposeBag)
+
     selfMenu.itemTap
       .bind { [weak self] index in
         guard let self else { return }
         if index == 0 {
-          self.reactor?.action.onNext(.didTapEdit)
-        } else if index == 1 {
           deleteAlert.show(in: view)
         }
       }
