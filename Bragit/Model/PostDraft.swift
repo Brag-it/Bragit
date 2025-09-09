@@ -18,6 +18,12 @@ struct PostDraft {
   let content: NSAttributedString     // 내용
 }
 
+struct PostUpdate {
+  let id: UUID
+  let title: String
+  let content: NSAttributedString
+}
+
 // 업로더 프로토콜 (DI)
 protocol ImageUploader {
   func upload(jpeg data: Data, filename: String) -> Single<URL>
