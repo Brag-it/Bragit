@@ -20,8 +20,6 @@ class FavoriteReactor: Reactor, Stepper {
   @Dependency(\.tagManager) var tagManager
   @Dependency(\.userManager) var userManager
   private let disposeBag = DisposeBag()
-  @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
-  @LocalStorage(location: .followUser) var followUser: [String]?
   let steps = PublishRelay<Step>()
 
   enum PostType: Hashable {
@@ -109,10 +107,13 @@ class FavoriteReactor: Reactor, Stepper {
         .just(.setLoading(false))
       ])
     case .menuTapped(let index):
+      @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
+      @LocalStorage(location: .followUser) var followUser: [String]?
+
       switch index {
         // 0번 메뉴 태그
       case 0:
-        if self.favoriteTags == nil || self.favoriteTags!.isEmpty {
+        if favoriteTags == nil || favoriteTags!.isEmpty {
           // 관심 태그가 없을 경우, 인기 태그를 가져옴
           return self.tagManager.rxFetchPopularTags().flatMap { [weak self] popularTags -> Observable<Mutation> in
             guard let self = self else { return .empty() }
@@ -126,17 +127,15 @@ class FavoriteReactor: Reactor, Stepper {
           }
         } else {
           // 관심 태그가 있을 경우
-          let favoriteTags = self.favoriteTags ?? []
-
           return .concat([
             .just(.setLoading(true)),
-            .just(.setPostType(.tag(favoriteTags))),
-            rxSetPost(postType: .tag(favoriteTags)),
+            .just(.setPostType(.tag(favoriteTags ?? []))),
+            rxSetPost(postType: .tag(favoriteTags ?? [])),
             .just(.setLoading(false))
           ])
         }
       case 1: // "사용자" 메뉴 탭
-        if self.followUser == nil || self.followUser!.isEmpty {
+        if followUser == nil || followUser!.isEmpty {
           // 팔로우한 사용자가 없는 경우
           return .concat([
             .just(.setLoading(true)),
@@ -160,10 +159,12 @@ class FavoriteReactor: Reactor, Stepper {
       guard currentState.isLoading == false else {
         return .empty()
       }
+      @LocalStorage(location: .followUser) var followUser: [String]?
+
       // 언팔로우인 경우
       if followUser?.contains(authorId) == true {
         followUser = followUser?.filter { $0 != authorId }
-        let followUser = self.followUser ?? []
+        let followUser = followUser ?? []
 
         return .concat([
           .just(.setLoading(true)),
@@ -183,15 +184,14 @@ class FavoriteReactor: Reactor, Stepper {
           .just(.setLoading(false))
         ])
       } else { // 팔로우인 경우
-        self.followUser = (followUser ?? []) + [authorId]
-        let followUser = self.followUser ?? []
+        followUser = (followUser ?? []) + [authorId]
 
         return .concat([
           .just(.setLoading(true)),
           userManager.rxFollowUser(id: authorId) // 서버에 팔로우
             .andThen(Observable.deferred { [weak self] () -> Observable<Mutation> in
               guard let self = self else { return .empty() }
-              if followUser.count == 1 { // 팔로워가 없다가 생긴 경우
+              if (followUser ?? []).count == 1 { // 팔로워가 없다가 생긴 경우
                 return self.rxPostTypeChangeToUser() // User로 전환
               } else {
                 return .empty()
@@ -263,11 +263,11 @@ class FavoriteReactor: Reactor, Stepper {
   }
 
   private func rxPostTypeChangeToUser() -> Observable<Mutation> {
-    let followedUserIDs = self.followUser ?? []
+    @LocalStorage(location: .followUser) var followUser: [String]?
     let postManager = self.postManager
 
     // ID들로 유저 정보 가져오기
-    return self.userManager.rxfetchUsersBy(ids: followedUserIDs)
+    return self.userManager.rxfetchUsersBy(ids: followUser ?? [])
       .flatMap { users -> Observable<Mutation> in
         // 팔로우 유저의 아이디들로 게시글 가져옴
         let postsStream = postManager

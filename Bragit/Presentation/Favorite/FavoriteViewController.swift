@@ -118,6 +118,18 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    self.rx.viewDidAppear
+      .map { _ in
+        let postType = reactor.currentState.postType
+        switch postType {
+        case .emptyTag, .tag:
+          return .menuTapped(0)
+        case .emptyUser, .user:
+          return .menuTapped(1)
+        }
+      }.bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     // 태그 탭
     favoriteView.feedView.tagDidTap
       .map { tag in .tagTapped(tag) }
