@@ -74,7 +74,7 @@ final class LoginReactor: Reactor, Stepper {
             return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
           },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil))
+        .just(.setNonce(raw: nil, hashed: nil)),
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
@@ -144,8 +144,11 @@ final class LoginReactor: Reactor, Stepper {
             .value
 
           if users.first != nil {
+            // 기존 사용자: nowUser 저장 후 홈으로
+            UserDefaults.standard.set(userId.uuidString, forKey: LocalStorageCase.nowUser.rawValue)
             await MainActor.run { self.steps.accept(AppStep.home) }
           } else {
+            // 미가입: 회원가입 플로우로 (TagCheckReactor에서 nowUser 저장)
             await MainActor.run { self.steps.accept(AppStep.signup(initialMail: mail, refreshToken: refreshToken)) }
           }
           observer.onCompleted()

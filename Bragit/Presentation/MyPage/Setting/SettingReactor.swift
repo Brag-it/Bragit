@@ -12,6 +12,7 @@ import RxRelay
 import Then
 import Dependencies
 import Foundation
+import Supabase
 
 class SettingReactor: Reactor, Stepper {
   var initialState: State
@@ -32,14 +33,12 @@ class SettingReactor: Reactor, Stepper {
     case didLogout
   }
 
-  struct State: Then {
-  }
+  struct State: Then { }
 
   init() {
     self.initialState = State()
   }
 
-  // 사용자 입력 → 상태 변화 신호로 변환
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .backButtonTap:
@@ -47,8 +46,7 @@ class SettingReactor: Reactor, Stepper {
       return .just(.noop)
 
     case .cancelAccountButtonTap:
-      steps.accept(AppStep.cancelAccount)
-      return .just(.noop)
+      return cancelAccount()
 
     case .logoutButtonTap:
       return logoutAndRouteToLogin()
@@ -57,15 +55,13 @@ class SettingReactor: Reactor, Stepper {
 
   func reduce(state: State, mutation: Mutation) -> State {
     switch mutation {
-    case .noop:
-      return state
-    case .didLogout:
+    case .noop, .didLogout:
       return state
     }
   }
 
   func transform(state: Observable<State>) -> Observable<State> {
-    return state.observe(on: MainScheduler.instance)
+    state.observe(on: MainScheduler.instance)
   }
 
   // MARK: - Private
@@ -79,21 +75,22 @@ class SettingReactor: Reactor, Stepper {
 
       let task = Task {
         do {
-          try await self.supabase.auth.signOut()
+          // 글로벌 범위로 리프레시 토큰까지 폐기하여 재실행 시 자동 세션 복원을 방지
+          try await self.supabase.auth.signOut(scope: .global)
 
+          // 로컬 저장소 정리
           UserDefaults.standard.removeObject(forKey: LocalStorageCase.nowUser.rawValue)
-
           KeychainMailStore.clear()
 
           await MainActor.run {
             self.steps.accept(AppStep.login)
           }
         } catch {
+          // 실패해도 라우팅은 로그인으로 보냄 (UI 관점에서 로그아웃 처리)
           await MainActor.run {
             self.steps.accept(AppStep.login)
           }
         }
-        // Emit a mutation so `reduce` is reachable
         observer.onNext(.didLogout)
         observer.onCompleted()
       }
@@ -101,6 +98,21 @@ class SettingReactor: Reactor, Stepper {
       return Disposables.create {
         task.cancel()
       }
+    }
+  }
+
+  private func cancelAccount() -> Observable<Mutation> {
+    return Observable<Mutation>.deferred { [weak self] in
+      guard let self else { return .empty() }
+
+      // Clear local persisted data similar to logout
+      UserDefaults.standard.removeObject(forKey: LocalStorageCase.nowUser.rawValue)
+      // KeychainMailStore.clear()
+
+      // Route to the cancel account flow
+      self.steps.accept(AppStep.cancelAccount)
+
+      return .just(.noop)
     }
   }
 }
