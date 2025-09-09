@@ -137,9 +137,9 @@ final class FavoriteFeedView: UIView {
         guard let self = self else { return nil }
         if kind == UICollectionView.elementKindSectionHeader {
           let header = collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
-            header.tagDidTap
-              .bind(to: self.tagDidTap)
-              .disposed(by: header.disposeBag)
+          header.tagDidTap
+            .bind(to: self.tagDidTap)
+            .disposed(by: header.disposeBag)
           return header
         }
         return nil
@@ -173,7 +173,7 @@ final class FavoriteFeedView: UIView {
       snapshot.appendItems(posts.map { .post($0) }, toSection: sectionIndex)
     }
 
-    dataSource.applySnapshotUsingReloadData(snapshot)
+    dataSource.apply(snapshot, animatingDifferences: true)
   }
 
   func reconfigurePosts(_ posts: [Post]) {

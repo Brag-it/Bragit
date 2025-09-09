@@ -70,6 +70,7 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // state 바인딩
     reactor.state
       .bind { [weak self] state in
         guard let self = self else { return }
@@ -118,7 +119,7 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    self.rx.viewDidAppear
+    self.rx.viewWillAppear
       .map { _ in
         let postType = reactor.currentState.postType
         switch postType {
@@ -127,11 +128,14 @@ class FavoriteViewController: UIViewController, View {
         case .emptyUser, .user:
           return .menuTapped(1)
         }
-      }.bind(to: reactor.action)
+      }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     // 태그 탭
     favoriteView.feedView.tagDidTap
+      .do { [weak self] _ in self?.scrollToTop() }
+      .delay(.milliseconds(300), scheduler: MainScheduler.instance)
       .map { tag in .tagTapped(tag) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
@@ -177,6 +181,13 @@ class FavoriteViewController: UIViewController, View {
       .map { post in .didTapPost(post) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    // 화면 갱신
+    reactor.doReload
+      .observe(on: MainScheduler.instance)
+      .bind { [favoriteView] in
+        favoriteView.feedView.collectionView.reloadData()
+      }.disposed(by: disposeBag)
   }
 
   func scrollToTop() {

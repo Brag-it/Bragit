@@ -21,6 +21,7 @@ class FavoriteReactor: Reactor, Stepper {
   @Dependency(\.userManager) var userManager
   private let disposeBag = DisposeBag()
   let steps = PublishRelay<Step>()
+  let doReload = PublishRelay<Void>()
 
   enum PostType: Hashable {
     case tag([Tag])
@@ -47,6 +48,7 @@ class FavoriteReactor: Reactor, Stepper {
     case setPostType(PostType)
     case setSelectedTag(Tag?)
     case setPostsToReconfigure([Post]?)
+    case doReload
   }
 
   struct State: Then {
@@ -122,17 +124,30 @@ class FavoriteReactor: Reactor, Stepper {
               .just(.setLoading(true)),
               .just(.setPostType(.emptyTag(popularTags))),
               rxSetPost(postType: .emptyTag(popularTags)),
+              .just(.doReload),
               .just(.setLoading(false))
             ])
           }
         } else {
           // 관심 태그가 있을 경우
-          return .concat([
-            .just(.setLoading(true)),
-            .just(.setPostType(.tag(favoriteTags ?? []))),
-            rxSetPost(postType: .tag(favoriteTags ?? [])),
-            .just(.setLoading(false))
-          ])
+          // 선택되어 있는 태그가 있던경우
+          if currentState.selectedTag != nil {
+            return .concat([
+              .just(.setLoading(true)),
+              .just(.setPostType(.tag(favoriteTags ?? []))),
+              rxSetPost(postType: .tag([currentState.selectedTag!])),
+              .just(.doReload),
+              .just(.setLoading(false))
+            ])
+          } else {
+            return .concat([
+              .just(.setLoading(true)),
+              .just(.setPostType(.tag(favoriteTags ?? []))),
+              rxSetPost(postType: .tag(favoriteTags ?? [])),
+              .just(.doReload),
+              .just(.setLoading(false))
+            ])
+          }
         }
       case 1: // "사용자" 메뉴 탭
         if followUser == nil || followUser!.isEmpty {
@@ -140,6 +155,7 @@ class FavoriteReactor: Reactor, Stepper {
           return .concat([
             .just(.setLoading(true)),
             rxPostTypeChangeToEmptyUser(),
+            .just(.doReload),
             .just(.setLoading(false))
           ])
         } else {
@@ -147,6 +163,7 @@ class FavoriteReactor: Reactor, Stepper {
           return .concat([
             .just(.setLoading(true)),
             rxPostTypeChangeToUser(),
+            .just(.doReload),
             .just(.setLoading(false))
           ])
         }
@@ -247,6 +264,9 @@ class FavoriteReactor: Reactor, Stepper {
       return state.with {
         $0.postsToReconfigure = posts
       }
+    case .doReload:
+      doReload.accept(())
+      return state
     }
   }
 
@@ -286,7 +306,7 @@ class FavoriteReactor: Reactor, Stepper {
     case .tag(let tags):
       let postsStream = {
         if self.currentState.selectedTag != nil {
-          self.postManager.rxSearchFeed(tagIDs: [self.currentState.selectedTag!.id], from: 0, to: 10)
+          self.postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
             .map { Mutation.setPosts($0) }
         } else {
           self.postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
