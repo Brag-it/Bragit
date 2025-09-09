@@ -53,7 +53,7 @@ final class MyPageView: UIView {
       $0.backgroundColor = .white
   }
 
-  private lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
+  lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
 
   let imagePicker = UIImagePickerController().then {
     $0.allowsEditing = true

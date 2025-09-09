@@ -9,7 +9,7 @@ import RxFlow
 
 final class WriteFeedFlow: Flow {
   var root: Presentable { nav }
-  private let nav = UINavigationController()
+  private let nav = NavigationController()
 
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
@@ -26,14 +26,14 @@ final class WriteFeedFlow: Flow {
       return .none
     case .writeTagSearch:
       return showSearchTagView()
-
     case .tagPicked(let tag):
-
       if let previewVC = nav.topViewController as? PreviewViewController {
         previewVC.reactor?.action.onNext(.addTag(tag))
       }
       nav.topViewController?.presentedViewController?.dismiss(animated: true)
       return .none
+    case .updateFeed(let post):
+      return showupdateFeed(post: post)
     default:
       return .none
     }
@@ -76,6 +76,18 @@ final class WriteFeedFlow: Flow {
 
     return .one(flowContributor: .contribute(
       withNextPresentable: modal,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showupdateFeed(post: PostUpdate) -> FlowContributors {
+    let reactor = UpdateFeedReactor(post: post)
+    let updateFeedVC = UpdateFeedViewController(reactor: reactor)
+
+    nav.pushViewController(updateFeedVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: updateFeedVC,
       withNextStepper: reactor
     ))
   }

@@ -135,9 +135,7 @@ final class SearchViewController: UIViewController, View {
     searchCollectionView.rx.itemSelected
       .compactMap { [weak self] indexPath -> SearchRow? in
         guard let self else { return nil }
-
         searchCollectionView.deselectItem(at: indexPath, animated: true)
-
         return dataSource.itemIdentifier(for: indexPath)
       }
       .do { [weak self] _ in
@@ -162,6 +160,14 @@ final class SearchViewController: UIViewController, View {
           return .empty()
         }
       }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    searchCollectionView.rx.reachedBottom()
+      .throttle(.milliseconds(600), scheduler: MainScheduler.instance)
+      .withLatestFrom(reactor.state.map(\.mode))
+      .filter { $0 == .results || $0 == .typingSuggestions }
+      .map { _ in SearchReactor.Action.loadNextPage }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
