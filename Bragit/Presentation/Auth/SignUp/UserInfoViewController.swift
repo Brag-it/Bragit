@@ -1,6 +1,9 @@
 import SnapKit
 import Then
 import UIKit
+import ReactorKit
+import RxSwift
+import RxCocoa
 
 final class UserInfoFormView: UIView {
   let descriptionLabel = UILabel()
@@ -313,6 +316,9 @@ final class UserInfoViewController: UIViewController {
   private var keyboardBottomInset: CGFloat = 0
   private weak var currentFirstResponder: UITextField?
 
+  private let reactorBag = DisposeBag()
+  private let nicknameReactor = UserInfoReactor()
+
   init(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) {
     if let space = initialMail?.trimmingCharacters(in: .whitespacesAndNewlines), !space.isEmpty {
       self.initialMail = space
@@ -336,6 +342,42 @@ final class UserInfoViewController: UIViewController {
     configureDelegates()
     addKeyboardDismissGesture()
     registerKeyboardNotifications()
+    bindNicknameReactor()
+  }
+
+  private func bindNicknameReactor() {
+    // State -> UI
+    nicknameReactor.state
+      .map(\.nicknameStatusText)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .subscribe(with: self) { owner, text in
+        owner.formView.nicknameCheckLabel.text = text
+        switch text {
+        case "사용 가능한 닉네임입니다":
+          owner.formView.nicknameCheckLabel.textColor = owner.formView.acceptColor
+          owner.formView.nicknameCheckIcon.image = UIImage.accept.withRenderingMode(.alwaysOriginal)
+        case "사용 중인 닉네임입니다", "닉네임 확인 실패", "사용 불가한 닉네임입니다":
+          owner.formView.nicknameCheckLabel.textColor = owner.formView.rejectColor
+          owner.formView.nicknameCheckIcon.image = UIImage.reject.withRenderingMode(.alwaysOriginal)
+        case "중복 확인 중...":
+          owner.formView.nicknameCheckLabel.textColor = owner.formView.labelColor
+          owner.formView.nicknameCheckIcon.image = nil
+        default:
+          break
+        }
+      }
+      .disposed(by: reactorBag)
+
+    nicknameReactor.state
+      .map(\.nicknameValid)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .subscribe(with: self) { owner, valid in
+        owner.nicknameValid = valid
+        owner.updateNextButton()
+      }
+      .disposed(by: reactorBag)
   }
 
   private func registerKeyboardNotifications() {
@@ -413,27 +455,22 @@ final class UserInfoViewController: UIViewController {
 
   private func configureInitialState() {
     if isAppleLogin {
-      // 애플 로그인 시 이메일 필드에 고정 문구 표시 (백엔드 저장은 하지 않음)
-      formView.mailTextField.text = "Apple Social Login"
+      formView.mailTextField.text = "Apple Social Account"
 
-      // 아이디/비번/확인 비활성화
       [formView.mailTextField, formView.pwTextField, formView.rePwTextField].forEach {
         setFieldDisabled($0, dim: true)
       }
 
-      // 시각적 피드백(검증 성공 상태 표시)
       [formView.pwTextField, formView.rePwTextField].forEach {
         $0.text = String(repeating: "•", count: 8)
         $0.isSecureTextEntry = true
       }
 
-      // 체크 라벨 텍스트도 애플 계정 안내로 표시
       let appleInfoText = "Apple 계정을 이용 중입니다"
       formView.mailCheckLabel.text = appleInfoText
       formView.pwCheckLabel.text = appleInfoText
       formView.rePwCheckLabel.text = appleInfoText
 
-      // 아이콘/색상은 긍정(accept) 상태로 유지
       formView.mailCheckLabel.textColor = formView.acceptColor
       formView.mailCheckIcon.image = .accept
       formView.pwCheckLabel.textColor = formView.acceptColor
@@ -445,7 +482,6 @@ final class UserInfoViewController: UIViewController {
       passwordValid = true
       confirmMatched = true
     } else {
-      // 일반 가입 초기 상태
       formView.mailCheckLabel.text = " "
       formView.mailCheckIcon.image = nil
       formView.pwCheckLabel.text = " "
@@ -453,13 +489,11 @@ final class UserInfoViewController: UIViewController {
       formView.rePwCheckLabel.text = " "
       formView.rePwCheckIcon.image = nil
 
-      // 초기 이메일이 있으면 세팅 (메일 가입에서만 의미)
       if let mail = initialMail {
         formView.mailTextField.text = mail
       }
     }
 
-    // 닉네임 초기 상태
     formView.nicknameCheckLabel.text = " "
     formView.nicknameCheckIcon.image = nil
 
@@ -646,17 +680,7 @@ extension UserInfoViewController {
 
   @objc func onNicknameEditingEnd() {
     let name = formView.nicknameTextField.text ?? ""
-    nicknameValid = UserInfoValidator.isValidNickname(name)
-
-    applyCheckState(
-      icon: formView.nicknameCheckIcon,
-      label: formView.nicknameCheckLabel,
-      okStatus: nicknameValid,
-      okText: "사용 가능한 닉네임입니다",
-      failText: "사용 불가한 닉네임입니다"
-    )
-
-    updateNextButton()
+    nicknameReactor.action.onNext(.validateNickname(name))
   }
 }
 
@@ -675,10 +699,10 @@ class InsetTextField: UITextField {
 
 extension UserInfoViewController: UITextFieldDelegate {
   public func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-    // Apple 로그인일 때 이메일/비밀번호/확인 필드는 편집 시작 자체를 방지
     if isAppleLogin,
-      textField === formView.mailTextField || textField === formView.pwTextField || textField === formView.rePwTextField
-    {
+      textField === formView.mailTextField
+        || textField === formView.pwTextField
+        || textField === formView.rePwTextField {
       return false
     }
     return true

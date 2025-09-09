@@ -276,13 +276,13 @@ final class MailLoginViewController: UIViewController, View {
       .compactMap { $0 }
       .observe(on: MainScheduler.instance)
       .withUnretained(self)
-      .bind(onNext: { vc, message in
-        guard vc.isViewLoaded, vc.view.window != nil else { return }
-        guard vc.presentedViewController == nil else { return }
+      .bind(onNext: { viewController, message in
+        guard viewController.isViewLoaded, viewController.view.window != nil else { return }
+        guard viewController.presentedViewController == nil else { return }
 
         let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
         alert.addAction(.init(title: "확인", style: .default))
-        vc.present(alert, animated: true)
+        viewController.present(alert, animated: true)
       })
       .disposed(by: disposeBag)
   }
