@@ -241,9 +241,13 @@ final class CommentViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // 당겨서 새로고침
-    refreshControl.rx.controlEvent(.valueChanged)
-      .map { Reactor.Action.refresh }
+    // 당겨서 새로고침: 손을 뗐을 때만 트리거
+    tableView.rx.didEndDragging
+      .filter { [weak self] _ in
+        // 사용자가 드래그를 끝냈고, 임계치를 넘어 refreshControl이 활성화된 경우에만
+        self?.refreshControl.isRefreshing == true
+      }
+      .map { _ in Reactor.Action.refresh }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -398,8 +402,7 @@ final class CommentViewController: UIViewController, View {
       .subscribe { [weak self] _ in
         self?.commentTextView.text = ""
         if let tableView = self?.tableView,
-          tableView.numberOfRows(inSection: 0) > 0
-        {
+          tableView.numberOfRows(inSection: 0) > 0 {
           tableView.scrollToRow(
             at: IndexPath(row: 0, section: 0),
             at: .top,
