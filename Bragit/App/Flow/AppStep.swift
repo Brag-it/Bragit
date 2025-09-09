@@ -57,9 +57,7 @@ enum AppStep: Step {
   case setting                         // 설정
   case notification                    // 공지사항
   case terms                           // 이용 약관
-  case serviceTerms                    // 서비스 이용 약관
-  case personalInfo                    // 개인정보 수집 방침
-  case marketing                       // 마케팅 정보 수집 방침
+  case termsDetails(TermsItem)         // 이용 약관 상세
   case service                         // 이용방법
   case report                          // 의견/오류 신고
   case openSource                      // 오픈소스 라이선스

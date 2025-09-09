@@ -45,16 +45,28 @@
 			membershipExceptions = (
 				Resources/Config.xcconfig,
 				Resources/Info.plist,
+				Resources/TermsOfUse/Terms_Service.txt,
 			);
 			target = E70E4E872E55D60D00CE935E /* Bragit */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		E738955B2E70EABC00E1A8D1 /* Exceptions for "Bragit" folder in "Compile Sources" phase from "Bragit" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = E70E4E842E55D60D00CE935E /* Sources */;
+			membershipExceptions = (
+				Resources/TermsOfUse/Terms_Service.txt,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E70E4E8A2E55D60D00CE935E /* Bragit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E70E4EB02E55D60E00CE935E /* Exceptions for "Bragit" folder in "Bragit" target */,
+				E738955B2E70EABC00E1A8D1 /* Exceptions for "Bragit" folder in "Compile Sources" phase from "Bragit" target */,
 			);
 			path = Bragit;
 			sourceTree = "<group>";

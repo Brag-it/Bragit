@@ -1,5 +1,5 @@
 //
-//  LicenseDetailViewController.swift
+//  SettingTermsDetailViewController.swift
 //  Bragit
 //
 //  Created by 이태윤 on 9/9/25.
@@ -12,12 +12,11 @@ import RxSwift
 import RxCocoa
 import RxFlow
 
-final class LicenseDetailViewController: UIViewController, Stepper {
+final class SettingTermsDetailViewController: UIViewController, Stepper {
   let steps = PublishRelay<Step>()
   var disposeBag = DisposeBag()
 
-  // 표시할 항목
-  private let item: LicenseItem
+  private let item: TermsItem
 
   private let headerView = UIView()
 
@@ -31,17 +30,6 @@ final class LicenseDetailViewController: UIViewController, Stepper {
     $0.textColor = .grayScale900
   }
 
-  private let subLabel = UILabel().then {
-    $0.font = .pretendard(size: 14)
-    $0.textColor = .grayScale700
-  }
-
-  private let labelStack = UIStackView().then {
-    $0.axis = .vertical
-    $0.alignment = .center
-    $0.spacing = 2
-  }
-
   private let textView = UITextView().then {
     $0.isEditable = false
     $0.alwaysBounceVertical = true
@@ -50,7 +38,7 @@ final class LicenseDetailViewController: UIViewController, Stepper {
     $0.backgroundColor = .white
   }
 
-  init(item: LicenseItem) {
+  init(item: TermsItem) {
     self.item = item
     super.init(nibName: nil, bundle: nil)
     self.title = item.name
@@ -64,12 +52,10 @@ final class LicenseDetailViewController: UIViewController, Stepper {
     config()
     view.addSubview(headerView)
     headerView.addSubview(backButton)
-    headerView.addSubview(labelStack)
-    labelStack.addArrangedSubview(titleLabel)
-    labelStack.addArrangedSubview(subLabel)
+    headerView.addSubview(titleLabel)
 
     headerView.snp.makeConstraints {
-      $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+      $0.top.equalTo(view.safeAreaLayoutGuide)
       $0.leading.trailing.equalToSuperview()
       $0.height.equalTo(58)
     }
@@ -79,9 +65,8 @@ final class LicenseDetailViewController: UIViewController, Stepper {
       $0.centerY.equalTo(headerView)
     }
 
-    labelStack.snp.makeConstraints {
-      $0.centerY.equalTo(headerView)
-      $0.centerX.equalToSuperview()
+    titleLabel.snp.makeConstraints {
+      $0.center.equalToSuperview()
     }
 
     view.addSubview(textView)
@@ -115,6 +100,5 @@ final class LicenseDetailViewController: UIViewController, Stepper {
 
   private func config() {
     titleLabel.text = item.name
-    subLabel.text = item.licenseType
   }
 }

@@ -34,12 +34,8 @@ final class MyPageFlow: Flow {
       return .none
     case .terms:
       return showTerms()
-    case .serviceTerms:
-      return showServiceTerms()
-    case .personalInfo:
-      return showPersonalInfo()
-    case .marketing:
-      return showMarketing()
+    case .termsDetails(let terms):
+      return showTermsDetail(terms: terms)
     case .service:
       return .none
     case .report:
@@ -140,8 +136,8 @@ final class MyPageFlow: Flow {
   }
 
   private func showTerms() -> FlowContributors {
-    let reactor = TermsOfUseReactor()
-    let termsVC = TermsOfUseViewController(reactor: reactor)
+    let reactor = SettingTermsReactor()
+    let termsVC = SettingTermsViewController(reactor: reactor)
     termsVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(termsVC, animated: true)
     return .one(flowContributor: .contribute(
@@ -150,33 +146,13 @@ final class MyPageFlow: Flow {
     ))
   }
 
-  private func showServiceTerms() -> FlowContributors {
-    let termsServiceVC = TermsServiceViewController()
-    termsServiceVC.hidesBottomBarWhenPushed = true
-    nav.pushViewController(termsServiceVC, animated: true)
+  private func showTermsDetail(terms: TermsItem) -> FlowContributors {
+    let detailVC = SettingTermsDetailViewController(item: terms)
+    detailVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(detailVC, animated: true)
     return .one(flowContributor: .contribute(
-      withNextPresentable: termsServiceVC,
-      withNextStepper: termsServiceVC
-    ))
-  }
-
-  private func showPersonalInfo() -> FlowContributors {
-    let personalInfoVC = PersonalInformationViewController()
-    personalInfoVC.hidesBottomBarWhenPushed = true
-    nav.pushViewController(personalInfoVC, animated: true)
-    return .one(flowContributor: .contribute(
-      withNextPresentable: personalInfoVC,
-      withNextStepper: personalInfoVC
-    ))
-  }
-
-  private func showMarketing() -> FlowContributors {
-    let marketingVC = MarketingVeiwController()
-    marketingVC.hidesBottomBarWhenPushed = true
-    nav.pushViewController(marketingVC, animated: true)
-    return .one(flowContributor: .contribute(
-      withNextPresentable: marketingVC,
-      withNextStepper: marketingVC
+      withNextPresentable: detailVC,
+      withNextStepper: detailVC
     ))
   }
 }
