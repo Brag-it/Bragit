@@ -49,7 +49,8 @@ class MyPageViewController: UIViewController, View {
         profileImage: $0.profileImage,
         follwerCount: $0.followers.count,
         followingCount: $0.followings.count,
-        favoriteTagCount: $0.favoriteTags.count
+        favoriteTagCount: $0.favoriteTags.count,
+        isFollowing: false
       )
 
       myPageView.dataApply(profile: profile, posts: $0.posts)
@@ -111,7 +112,7 @@ class MyPageViewController: UIViewController, View {
           return nil
         }
       }
-      .map { post in Reactor.Action.didTapPost(post) }
+      .map { post in .didTapPost(post) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
   }
