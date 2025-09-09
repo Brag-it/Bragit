@@ -99,6 +99,15 @@ class MyPageViewController: UIViewController, View {
         owner.present(owner.myPageView.imagePicker, animated: true)
       }
       .disposed(by: disposeBag)
+
+//    myPageView.collectionView.rx.itemSelected
+//      .compactMap { [weak self] indexPath -> Post? in
+//        return self?.myPageView.collectionView.dataSource.itemIdentifier(for: indexPath)
+//      }
+//      .map { post in .didTapPost(post) }
+//      .bind(to: reactor.action)
+//      .disposed(by: disposeBag)
+
   }
 }
 

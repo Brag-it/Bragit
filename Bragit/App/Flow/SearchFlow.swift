@@ -9,7 +9,7 @@ import RxFlow
 
 final class SearchFlow: Flow {
   var root: Presentable { nav }
-  private let nav = UINavigationController()
+  private let nav = NavigationController()
 
   init() {
     nav.setNavigationBarHidden(true, animated: false)
