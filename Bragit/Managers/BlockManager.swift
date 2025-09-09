@@ -67,18 +67,34 @@ class BlockManager: BlockManagerProtocol {
   // 유저 차단하기
   func rxBlockUser(blockId: String) -> Observable<Void> {
     .create { [weak self] observer in
-      guard let self = self, let userId = userId else {
+      guard let self = self, let userId = self.userId else {
         observer.onCompleted()
         return Disposables.create()
       }
 
       Task {
         do {
+          // 1. 사용자를 Block 테이블에 추가 (기존 로직)
           let blockInfo = BlockData(blockId: blockId, userId: userId, createdAt: Date())
           try await self.client
             .from("Block")
             .insert(blockInfo, returning: .representation)
             .execute()
+
+          // 2. 내가 상대를 팔로우하는 관계 삭제
+          try await self.client
+            .from("Follow")
+            .delete()
+            .match(["user_id": userId, "follow_id": blockId])
+            .execute()
+          
+          // 3. 상대가 나를 팔로우하는 관계 삭제
+          try await self.client
+            .from("Follow")
+            .delete()
+            .match(["user_id": blockId, "follow_id": userId])
+            .execute()
+
           observer.onNext(())
           observer.onCompleted()
         } catch {

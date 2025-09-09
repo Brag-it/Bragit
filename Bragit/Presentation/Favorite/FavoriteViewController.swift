@@ -162,7 +162,7 @@ class FavoriteViewController: UIViewController, View {
           return nil
         }
       }
-      .map { post in Reactor.Action.didTapPost(post) }
+      .map { post in .didTapPost(post) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
   }

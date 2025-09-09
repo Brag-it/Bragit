@@ -192,19 +192,6 @@ final class TabFlow: NSObject, Flow, Stepper {
       withNextStepper: reactor
     ))
   }
-
-  func showUserProfile(user: User) -> FlowContributors {
-    guard let navigation = rootViewController.selectedViewController as? UINavigationController else { return .none }
-    let reactor = UserProfileReactor(user: user)
-    let userProfileVC = UserProfileViewCotnroller(reactor: reactor)
-
-    navigation.pushViewController(userProfileVC, animated: true)
-
-    return .one(flowContributor: .contribute(
-      withNextPresentable: userProfileVC,
-      withNextStepper: reactor
-    ))
-  }
 }
 
 extension TabFlow: UITabBarControllerDelegate {
