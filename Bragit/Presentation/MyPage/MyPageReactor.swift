@@ -34,6 +34,7 @@ class MyPageReactor: Reactor, Stepper {
     case goToFavoriteTag
     case goToTagDetail(Tag)
     case registImage(UIImage)
+    case didTapPost(Post)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -143,6 +144,9 @@ class MyPageReactor: Reactor, Stepper {
             .asObservable()
             .map { _ in Mutation.setProfileImage(url) }
         }
+    case .didTapPost(let post):
+      self.steps.accept(AppStep.feedDetail(post: post))
+      return .empty()
     }
   }
   // swiftlint:enable cyclomatic_complexity

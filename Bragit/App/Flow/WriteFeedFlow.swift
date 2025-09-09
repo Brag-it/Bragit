@@ -9,7 +9,7 @@ import RxFlow
 
 final class WriteFeedFlow: Flow {
   var root: Presentable { nav }
-  private let nav = UINavigationController()
+  private let nav = NavigationController()
 
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
