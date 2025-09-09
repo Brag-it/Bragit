@@ -92,6 +92,7 @@ final class UserInfoFormView: UIView {
       $0.autocapitalizationType = .none
       $0.spellCheckingType = .no
       $0.autocorrectionType = .no
+      $0.textContentType = .username
     }
     mailCheckIcon.do {
       $0.contentMode = .scaleAspectFit
@@ -129,6 +130,7 @@ final class UserInfoFormView: UIView {
       $0.returnKeyType = .next
       $0.spellCheckingType = .no
       $0.autocorrectionType = .no
+      $0.autocapitalizationType = .none
     }
     pwCheckIcon.do {
       $0.contentMode = .scaleAspectFit
@@ -166,6 +168,7 @@ final class UserInfoFormView: UIView {
       $0.returnKeyType = .next
       $0.spellCheckingType = .no
       $0.autocorrectionType = .no
+      $0.autocapitalizationType = .none
     }
     rePwCheckIcon.do {
       $0.contentMode = .scaleAspectFit
@@ -297,7 +300,7 @@ final class UserInfoViewController: UIViewController {
   var onNext: ((UserRegistrationInfo) -> Void)?
 
   private let initialMail: String?
-  private var isAppleLogin: Bool { initialMail?.isEmpty == false }
+  private var isAppleLogin: Bool
   private let refreshToken: String?
 
   fileprivate var mailValid = false
@@ -306,24 +309,18 @@ final class UserInfoViewController: UIViewController {
   fileprivate var nicknameValid = false
 
   private let formView = UserInfoFormView()
-
-  private lazy var inputOrder: [UITextField] = [
-    formView.mailTextField,
-    formView.pwTextField,
-    formView.rePwTextField,
-    formView.nicknameTextField
-  ]
-
+  private var inputOrder: [UITextField] = []
   private var keyboardBottomInset: CGFloat = 0
   private weak var currentFirstResponder: UITextField?
 
-  init(initialMail: String?, refreshToken: String?) {
+  init(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) {
     if let space = initialMail?.trimmingCharacters(in: .whitespacesAndNewlines), !space.isEmpty {
       self.initialMail = space
     } else {
       self.initialMail = nil
     }
     self.refreshToken = refreshToken
+    self.isAppleLogin = isAppleLogin
     super.init(nibName: nil, bundle: nil)
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -334,6 +331,7 @@ final class UserInfoViewController: UIViewController {
     super.viewDidLoad()
     title = "회원가입"
     configureInitialState()
+    configureInputOrder()
     configureTargets()
     configureDelegates()
     addKeyboardDismissGesture()
@@ -407,22 +405,39 @@ final class UserInfoViewController: UIViewController {
     NotificationCenter.default.removeObserver(self)
   }
 
+  private func setFieldDisabled(_ textField: UITextField, dim: Bool = true) {
+    textField.isEnabled = false
+    textField.isUserInteractionEnabled = false
+    if dim { textField.alpha = 0.5 }
+  }
+
   private func configureInitialState() {
-    if let mail = initialMail {
-      formView.mailTextField.text = mail
-      [formView.mailTextField, formView.pwTextField, formView.rePwTextField].forEach { $0.isEnabled = false }
+    if isAppleLogin {
+      // 애플 로그인 시 이메일 필드에 고정 문구 표시 (백엔드 저장은 하지 않음)
+      formView.mailTextField.text = "Apple Social Login"
+
+      // 아이디/비번/확인 비활성화
+      [formView.mailTextField, formView.pwTextField, formView.rePwTextField].forEach {
+        setFieldDisabled($0, dim: true)
+      }
+
+      // 시각적 피드백(검증 성공 상태 표시)
       [formView.pwTextField, formView.rePwTextField].forEach {
         $0.text = String(repeating: "•", count: 8)
         $0.isSecureTextEntry = true
       }
 
-      formView.mailCheckLabel.text = "사용 가능한 이메일입니다"
+      // 체크 라벨 텍스트도 애플 계정 안내로 표시
+      let appleInfoText = "Apple 계정을 이용 중입니다"
+      formView.mailCheckLabel.text = appleInfoText
+      formView.pwCheckLabel.text = appleInfoText
+      formView.rePwCheckLabel.text = appleInfoText
+
+      // 아이콘/색상은 긍정(accept) 상태로 유지
       formView.mailCheckLabel.textColor = formView.acceptColor
       formView.mailCheckIcon.image = .accept
-      formView.pwCheckLabel.text = "사용 가능한 비밀번호입니다"
       formView.pwCheckLabel.textColor = formView.acceptColor
       formView.pwCheckIcon.image = .accept
-      formView.rePwCheckLabel.text = "비밀번호가 일치합니다"
       formView.rePwCheckLabel.textColor = formView.acceptColor
       formView.rePwCheckIcon.image = .accept
 
@@ -430,19 +445,38 @@ final class UserInfoViewController: UIViewController {
       passwordValid = true
       confirmMatched = true
     } else {
+      // 일반 가입 초기 상태
       formView.mailCheckLabel.text = " "
       formView.mailCheckIcon.image = nil
       formView.pwCheckLabel.text = " "
       formView.pwCheckIcon.image = nil
       formView.rePwCheckLabel.text = " "
       formView.rePwCheckIcon.image = nil
+
+      // 초기 이메일이 있으면 세팅 (메일 가입에서만 의미)
+      if let mail = initialMail {
+        formView.mailTextField.text = mail
+      }
     }
-    print("[UserInfoVC]: \(initialMail as Any)")
+
+    // 닉네임 초기 상태
     formView.nicknameCheckLabel.text = " "
-    formView.nicknameCheckLabel.textColor =
-      formView.labelFont == formView.labelFont ? formView.acceptColor : formView.rejectColor
     formView.nicknameCheckIcon.image = nil
+
     updateNextButton()
+  }
+
+  private func configureInputOrder() {
+    if isAppleLogin {
+      inputOrder = [formView.nicknameTextField]
+    } else {
+      inputOrder = [
+        formView.mailTextField,
+        formView.pwTextField,
+        formView.rePwTextField,
+        formView.nicknameTextField
+      ]
+    }
   }
 
   private func configureTargets() {
@@ -487,8 +521,10 @@ final class UserInfoViewController: UIViewController {
   }
 
   @objc private func onTapNext() {
+    // 메일 가입 외에는 메일을 무시
+    let mailValue = isAppleLogin ? "" : (formView.mailTextField.text ?? "")
     let info = UserRegistrationInfo(
-      mail: formView.mailTextField.text ?? "",
+      mail: mailValue,
       password: isAppleLogin ? nil : formView.pwTextField.text,
       nickname: formView.nicknameTextField.text ?? "",
       isAppleLogin: isAppleLogin,
@@ -510,8 +546,8 @@ extension UserInfoViewController {
         icon: formView.mailCheckIcon,
         label: formView.mailCheckLabel,
         okStatus: true,
-        okText: "사용 가능한 이메일입니다",
-        failText: "사용 불가한 이메일입니다"
+        okText: "Apple 계정을 이용 중입니다",
+        failText: "Apple 계정을 이용 중입니다"
       )
     } else {
       let text = formView.mailTextField.text ?? ""
@@ -537,16 +573,16 @@ extension UserInfoViewController {
         icon: formView.pwCheckIcon,
         label: formView.pwCheckLabel,
         okStatus: true,
-        okText: "사용 가능한 비밀번호입니다",
-        failText: "사용 불가한 비밀번호입니다"
+        okText: "Apple 계정을 이용 중입니다",
+        failText: "Apple 계정을 이용 중입니다"
       )
 
       applyCheckState(
         icon: formView.rePwCheckIcon,
         label: formView.rePwCheckLabel,
         okStatus: true,
-        okText: "비밀번호가 일치합니다",
-        failText: "비밀번호가 불일치합니다"
+        okText: "Apple 계정을 이용 중입니다",
+        failText: "Apple 계정을 이용 중입니다"
       )
     } else {
       let pwdRaw = formView.pwTextField.text ?? ""
@@ -555,7 +591,6 @@ extension UserInfoViewController {
       let confirm = confirmRaw.trimmingCharacters(in: .whitespacesAndNewlines)
 
       passwordValid = UserInfoValidator.isValidPassword(pwd)
-      // let confirm = formView.rePwTextField.text ?? ""
 
       if !confirm.isEmpty {
         confirmMatched = (pwd == confirm)
@@ -590,8 +625,8 @@ extension UserInfoViewController {
         icon: formView.rePwCheckIcon,
         label: formView.rePwCheckLabel,
         okStatus: true,
-        okText: "비밀번호가 일치합니다",
-        failText: "비밀번호가 불일치합니다"
+        okText: "Apple 계정을 이용 중입니다",
+        failText: "Apple 계정을 이용 중입니다"
       )
     } else {
       let pwd = (formView.pwTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -639,6 +674,16 @@ class InsetTextField: UITextField {
 }
 
 extension UserInfoViewController: UITextFieldDelegate {
+  public func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+    // Apple 로그인일 때 이메일/비밀번호/확인 필드는 편집 시작 자체를 방지
+    if isAppleLogin,
+      textField === formView.mailTextField || textField === formView.pwTextField || textField === formView.rePwTextField
+    {
+      return false
+    }
+    return true
+  }
+
   public func textFieldDidBeginEditing(_ textField: UITextField) {
     currentFirstResponder = textField
     let target = textField.convert(textField.bounds, to: formView.scrollView)

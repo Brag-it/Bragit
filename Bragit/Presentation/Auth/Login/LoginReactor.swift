@@ -85,7 +85,8 @@ final class LoginReactor: Reactor, Stepper {
       steps.accept(AppStep.signInMail)
       return .empty()
     case .tapSignUp:
-      steps.accept(AppStep.signup(initialMail: nil, refreshToken: nil))
+      // 일반(메일) 회원가입 시작
+      steps.accept(AppStep.signup(initialMail: nil, refreshToken: nil, isAppleLogin: false))
       return .empty()
     case .tapNext:
       steps.accept(AppStep.home)
@@ -153,7 +154,15 @@ final class LoginReactor: Reactor, Stepper {
             await MainActor.run { self.steps.accept(AppStep.home) }
           } else {
             // 미가입: 회원가입 플로우로 (TagCheckReactor에서 nowUser 저장)
-            await MainActor.run { self.steps.accept(AppStep.signup(initialMail: mail, refreshToken: refreshToken)) }
+            await MainActor.run {
+              self.steps.accept(
+                AppStep.signup(
+                  initialMail: mail,
+                  refreshToken: refreshToken,
+                  isAppleLogin: true
+                )
+              )
+            }
           }
           observer.onCompleted()
         } catch {
@@ -233,3 +242,4 @@ final class LoginReactor: Reactor, Stepper {
     }
   }
 }
+

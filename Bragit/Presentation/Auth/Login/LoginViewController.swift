@@ -62,13 +62,13 @@ final class LoginViewController: UIViewController, View {
     $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
     $0.layer.cornerRadius = 12
     $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
-    $0.isEnabled = false
+    $0.isEnabled = true
   }
 
   let signUpButton = UIButton(type: .system).then {
     $0.setTitle("회원 가입하기", for: .normal)
     $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
-    $0.isEnabled = false
+    $0.isEnabled = true
   }
 
   init(reactor: LoginReactor) {
