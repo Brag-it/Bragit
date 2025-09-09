@@ -6,11 +6,14 @@
 //
 import UIKit
 
+import Then
 import RichTextKit
 
 final class RichTextViewWithPlaceholder: RichTextView {
 
-  private let placeholderLabel = UILabel()
+  private let placeholderLabel = UILabel().then {
+    $0.font = .pretendard(size: 16)
+  }
 
   var placeholder: String? {
     didSet {
