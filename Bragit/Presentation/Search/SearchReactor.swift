@@ -67,7 +67,7 @@ class SearchReactor: Reactor, Stepper {
     var hasMoreSuggestions: Bool = false
     var isPagingSuggestions: Bool = false
     var page: Int = 0
-    let pageSize: Int = 10
+    let pageSize: Int = 20
     var isPaging: Bool = false
     var hasMoreTags: Bool = true
     var hasMorePosts: Bool = true
