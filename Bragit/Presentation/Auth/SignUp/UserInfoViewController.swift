@@ -55,7 +55,7 @@ final class UserInfoFormView: UIView {
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
   private func configureUI() {
-    backgroundColor = .systemBackground
+    backgroundColor = .white
     scrollView.keyboardDismissMode = .interactive
     contentView.backgroundColor = .clear
     contentView.isUserInteractionEnabled = true

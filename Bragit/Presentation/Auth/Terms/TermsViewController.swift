@@ -126,7 +126,7 @@ final class TermsViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     title = "회원가입"
     setupLayout()
     setupActions()

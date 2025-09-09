@@ -101,7 +101,7 @@ class ImageUploadViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "회원가입"
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     self.reactor = injectReactor
     setupLayout()
     imagePicker.delegate = self

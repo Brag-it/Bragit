@@ -27,7 +27,7 @@ class WriteViewController: UIViewController, View {
 
   private let titleLabel = UILabel().then {
     $0.text = "글쓰기"
-    $0.font = UIFont.systemFont(ofSize: 16)
+    $0.font = .pretendard(size: 18, weight: .medium)
     $0.textColor = .grayScale900
     $0.textAlignment = .center
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -36,7 +36,7 @@ class WriteViewController: UIViewController, View {
   private let doneButton = UIButton(type: .system).then {
     $0.setTitle("완료", for: .normal)
     $0.setTitleColor(.grayScale900, for: .normal)
-    $0.titleLabel?.font = .pretendard(size: 14)
+    $0.titleLabel?.font = .pretendard(size: 16)
   }
 
   private let titleTextField = UITextField().then {

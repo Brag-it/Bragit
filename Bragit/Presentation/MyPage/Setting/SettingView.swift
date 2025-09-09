@@ -60,7 +60,7 @@ final class SettingView: UIView {
 
   override init(frame: CGRect) {
     super.init(frame: frame)
-    backgroundColor = .systemBackground
+    backgroundColor = .white
     setupUI()
     applySnapshot()
   }

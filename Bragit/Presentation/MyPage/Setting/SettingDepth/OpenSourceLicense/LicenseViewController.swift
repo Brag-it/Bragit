@@ -21,7 +21,7 @@ final class LicenseViewController: UIViewController, View {
 
   private let titleLabel = UILabel().then {
     $0.text = "오픈소스 라이선스"
-    $0.font = .pretendard(size: 18, weight: .medium)
+    $0.font = .pretendard(size: 20, weight: .medium)
     $0.textColor = .grayScale900
   }
 
@@ -30,18 +30,15 @@ final class LicenseViewController: UIViewController, View {
     $0.tintColor = .grayScale900
   }
 
-  private lazy var collectionView: UICollectionView = {
-    // 리스트 형태의 컴포지셔널 레이아웃 구성
-    var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-    config.showsSeparators = true
-    let layout = UICollectionViewCompositionalLayout.list(using: config)
+  private lazy var dataSource = setupDataSource(self.collectionView)
 
-    let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-    cv.backgroundColor = .white
-    cv.register(LicenseCell.self, forCellWithReuseIdentifier: LicenseCell.identifier)
-    return cv
-  }()
-
+  private lazy var collectionView = UICollectionView(
+    frame: .zero,
+    collectionViewLayout: createLayout()).then {
+      $0.backgroundColor = .white
+      $0.showsVerticalScrollIndicator = false
+      $0.register(LicenseCell.self, forCellWithReuseIdentifier: LicenseCell.identifier)
+    }
   init(reactor: LicenseReactor = LicenseReactor()) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
@@ -92,11 +89,9 @@ final class LicenseViewController: UIViewController, View {
 
     reactor.state
       .map { $0.items }
-      .bind(to: collectionView.rx.items(
-        cellIdentifier: LicenseCell.identifier,
-        cellType: LicenseCell.self
-      )) { _, item, cell in
-        cell.configure(main: item.name, sub: "1 license")
+      .observe(on: MainScheduler.instance)
+      .subscribe { [weak self] items in
+        self?.applySnapshot(items)
       }
       .disposed(by: disposeBag)
 
@@ -107,5 +102,50 @@ final class LicenseViewController: UIViewController, View {
       .map { LicenseReactor.Action.select(index: $0.item) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
+
+  // 리스트 형태
+  private func createLayout() -> UICollectionViewCompositionalLayout {
+    let itemSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(65)
+    )
+    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+    let groupSize = NSCollectionLayoutSize(
+      widthDimension: .fractionalWidth(1.0),
+      heightDimension: .absolute(65)
+    )
+    let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+
+    let section = NSCollectionLayoutSection(group: group)
+    section.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
+
+    return UICollectionViewCompositionalLayout(section: section)
+  }
+
+  private func applySnapshot(_ results: [LicenseItem]) {
+    var snapshot = NSDiffableDataSourceSnapshot<Int, LicenseItem>()
+    snapshot.appendSections([0])
+    snapshot.appendItems(results, toSection: 0)
+    dataSource.apply(snapshot, animatingDifferences: true)
+  }
+
+  private func setupDataSource(
+    _ collectionView: UICollectionView
+  ) -> UICollectionViewDiffableDataSource<Int, LicenseItem> {
+    return UICollectionViewDiffableDataSource<Int, LicenseItem>(
+      collectionView: collectionView
+    ) { collectionView, indexPath, item in
+      guard let cell = collectionView.dequeueReusableCell(
+        withReuseIdentifier: LicenseCell.identifier,
+        for: indexPath
+      ) as? LicenseCell else {
+        return UICollectionViewCell()
+      }
+
+      cell.configure(main: item.name, sub: "1 license")
+      return cell
+    }
   }
 }

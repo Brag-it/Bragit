@@ -87,7 +87,7 @@ class TagCheckViewController: UIViewController {
     // 가입할 때 태그 있으면 안 되니 아예 초기화
     self.favoriteTags = []
 
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     title = "회원가입"
     setupLayout()
     loadTags()

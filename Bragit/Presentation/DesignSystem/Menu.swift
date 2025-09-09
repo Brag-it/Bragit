@@ -87,8 +87,8 @@ final class MenuView: UIView {
     for (index, item) in items.enumerated() {
       let button = UIButton().then {
         $0.setTitle(item, for: .normal)
-        $0.setTitleColor(UIColor(red: 0.44, green: 0.44, blue: 0.44, alpha: 1), for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 15)
+        $0.setTitleColor(UIColor(.grayScale700), for: .normal)
+        $0.titleLabel?.font = .pretendard(size: 15)
         $0.contentHorizontalAlignment = .center
         $0.tag = index
       }
