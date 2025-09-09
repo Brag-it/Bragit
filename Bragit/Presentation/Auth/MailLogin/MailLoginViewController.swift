@@ -5,12 +5,13 @@
 //  Created by luca on 9/9/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxCocoa
 import RxSwift
 import SnapKit
 import Then
-import UIKit
 
 final class MailLoginViewController: UIViewController, View {
   typealias Reactor = MailLoginReactor

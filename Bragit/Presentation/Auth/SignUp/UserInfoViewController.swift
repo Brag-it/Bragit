@@ -1,6 +1,7 @@
+import UIKit
+
 import SnapKit
 import Then
-import UIKit
 import ReactorKit
 import RxSwift
 import RxCocoa

@@ -5,12 +5,13 @@
 //  Created by luca on 8/27/25.
 //
 
+import UIKit
+
 import Dependencies
 import RxCocoa
 import RxSwift
 import SnapKit
 import Then
-import UIKit
 
 typealias PopularTag = Tag
 

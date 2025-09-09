@@ -5,13 +5,14 @@
 //  Created by luca on 9/4/25.
 //
 
+import UIKit
+
 import Kingfisher
 import ReactorKit
 import RxCocoa
 import RxSwift
 import SnapKit
 import Then
-import UIKit
 
 final class CommentViewController: UIViewController, View {
   typealias Reactor = CommentReactor

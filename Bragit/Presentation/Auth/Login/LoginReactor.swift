@@ -10,9 +10,10 @@
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 // 아 리액트 어렵다
 
+import Foundation
+
 import CryptoKit
 import Dependencies
-import Foundation
 import Functions
 import ReactorKit
 import RxFlow
