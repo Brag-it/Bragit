@@ -6,13 +6,13 @@
 //
 import UIKit
 
+import Dependencies
 import Lottie
-import SnapKit
-import Then
 import RxFlow
 import RxRelay
-import Dependencies
+import SnapKit
 import Supabase
+import Then
 
 final class SplashViewController: UIViewController, Stepper {
   let steps = PublishRelay<Step>()
@@ -53,12 +53,17 @@ final class SplashViewController: UIViewController, Stepper {
           self.view.layoutIfNeeded()
           self.animationView.play { [weak self] _ in
             guard let self = self else { return }
-            UIView.animate(withDuration: 0.18, delay: 0.0, options: [.curveEaseInOut], animations: {
-              self.animationView.alpha = 0.0
-            }, completion: { _ in
-              // 애니메이션 종료 후 자동 로그인 분기
-              self.decideNextStep()
-            })
+            UIView.animate(
+              withDuration: 0.18,
+              delay: 0.0,
+              options: [.curveEaseInOut],
+              animations: {
+                self.animationView.alpha = 0.0
+              },
+              completion: { _ in
+                self.decideNextStep()
+              }
+            )
           }
         }
       case .failure(_):
@@ -68,12 +73,17 @@ final class SplashViewController: UIViewController, Stepper {
             self.view.layoutIfNeeded()
             self.animationView.play { [weak self] _ in
               guard let self = self else { return }
-              UIView.animate(withDuration: 0.18, delay: 0.0, options: [.curveEaseInOut], animations: {
-                self.animationView.alpha = 0.0
-              }, completion: { _ in
-                // 애니메이션 종료 후 자동 로그인 분기
-                self.decideNextStep()
-              })
+              UIView.animate(
+                withDuration: 0.18,
+                delay: 0.0,
+                options: [.curveEaseInOut],
+                animations: {
+                  self.animationView.alpha = 0.0
+                },
+                completion: { _ in
+                  self.decideNextStep()
+                }
+              )
             }
           }
         } else {
@@ -92,18 +102,29 @@ final class SplashViewController: UIViewController, Stepper {
   private func decideNextStep() {
     Task { [weak self] in
       guard let self else { return }
-      do {
-        // 세션이 유효하면 자동 로그인 처리
-        let session = try await self.supabase.auth.session
-        let userId = session.user.id.uuidString
+      let nowUser = UserDefaults.standard.string(forKey: LocalStorageCase.nowUser.rawValue)
 
-        UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
-
+      if nowUser == nil {
         await MainActor.run {
-          self.steps.accept(AppStep.home)
+          self.steps.accept(AppStep.login)
+        }
+        return
+      }
+
+      do {
+        let session = try await self.supabase.auth.session
+        if session.user.id.uuidString == nowUser {
+          await MainActor.run {
+            self.steps.accept(AppStep.home)
+          }
+        } else {
+          UserDefaults.standard.removeObject(forKey: LocalStorageCase.nowUser.rawValue)
+          await MainActor.run {
+            self.steps.accept(AppStep.login)
+          }
         }
       } catch {
-        // 세션이 없거나 만료된 경우 로그인 화면으로
+        UserDefaults.standard.removeObject(forKey: LocalStorageCase.nowUser.rawValue)
         await MainActor.run {
           self.steps.accept(AppStep.login)
         }
