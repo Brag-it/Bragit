@@ -63,5 +63,19 @@ final class SettingViewController: UIViewController, View {
       .map { .logoutButtonTap }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    settingView.itemSelected
+      .compactMap { item -> SettingReactor.Action? in
+        switch item.title {
+        case "이용 약관":
+          return .tapTerms
+        case "오픈소스 라이선스":
+          return .tapLicenses
+        default:
+          return nil
+        }
+      }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }

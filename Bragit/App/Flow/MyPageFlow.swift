@@ -30,6 +30,24 @@ final class MyPageFlow: Flow {
       return showFavoritTagsList(tags: tags)
     case .cancelAccount:
       return showCancelAccount()
+    case .notification:
+      return .none
+    case .terms:
+      return showTerms()
+    case .serviceTerms:
+      return showServiceTerms()
+    case .personalInfo:
+      return showPersonalInfo()
+    case .marketing:
+      return showMarketing()
+    case .service:
+      return .none
+    case .report:
+      return .none
+    case .openSource:
+      return showOpenSource()
+    case .openSourceDetails(let license):
+      return showOpenSourceDetail(license: license)
     default:
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
@@ -48,6 +66,7 @@ final class MyPageFlow: Flow {
   private func showSetting() -> FlowContributors {
     let reactor = SettingReactor()
     let settingVC = SettingViewController(reactor: reactor)
+    settingVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(settingVC, animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: settingVC,
@@ -58,6 +77,7 @@ final class MyPageFlow: Flow {
   private func showFollowerList(users: [User]) -> FlowContributors {
     let reactor = FollowerReactor()
     let followerVC = FollowerViewController(reactor: reactor, users: users)
+    followerVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(followerVC, animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: followerVC,
@@ -68,6 +88,7 @@ final class MyPageFlow: Flow {
   private func showFollowingList(users: [User]) -> FlowContributors {
     let reactor = FollowingReactor()
     let followingVC = FollowingViewController(reactor: reactor, users: users)
+    followingVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(followingVC, animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: followingVC,
@@ -78,6 +99,7 @@ final class MyPageFlow: Flow {
   private func showFavoritTagsList(tags: [Tag]) -> FlowContributors {
     let reactor = FavoriteTagsReactor()
     let favoriteTagsVC = FavoriteTagsViewController(reactor: reactor, tags: tags)
+    favoriteTagsVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(favoriteTagsVC, animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: favoriteTagsVC,
@@ -88,10 +110,61 @@ final class MyPageFlow: Flow {
   private func showCancelAccount() -> FlowContributors {
     let reactor = CancelAccountReactor()
     let cancelAccountVC = CancelAccountViewController(reactor: reactor)
+    cancelAccountVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(cancelAccountVC, animated: true)
     return .one(flowContributor: .contribute(
       withNextPresentable: cancelAccountVC,
       withNextStepper: reactor
     ))
+  }
+
+  private func showOpenSource() -> FlowContributors {
+    let reactor = LicenseReactor()
+    let licenseVC = LicenseViewController(reactor: reactor)
+    licenseVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(licenseVC, animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: licenseVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showOpenSourceDetail(license: LicenseItem) -> FlowContributors {
+    let detailVC = LicenseDetailViewController(item: license)
+    detailVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(detailVC, animated: true)
+    return .none
+  }
+
+  private func showTerms() -> FlowContributors {
+    let reactor = TermsOfUseReactor()
+    let termsVC = TermsOfUseViewController(reactor: reactor)
+    termsVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(termsVC, animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: termsVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  private func showServiceTerms() -> FlowContributors {
+    let termsServiceVC = TermsServiceViewController()
+    termsServiceVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(termsServiceVC, animated: true)
+    return .none
+  }
+
+  private func showPersonalInfo() -> FlowContributors {
+    let personalInfoVC = PersonalInformationViewController()
+    personalInfoVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(personalInfoVC, animated: true)
+    return .none
+  }
+
+  private func showMarketing() -> FlowContributors {
+    let marketingVC = MarketingVeiwController()
+    marketingVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(marketingVC, animated: true)
+    return .none
   }
 }
