@@ -290,7 +290,7 @@ final class CommentViewController: UIViewController, View {
     // 댓글 목록 바인딩
     reactor.state
       .map { $0.comments.sorted { $0.date > $1.date } }
-      .distinctUntilChanged()
+      // .distinctUntilChanged() // 동일 데이터라도 새로고침 시 셀 재구성을 위해 제거
       .observe(on: MainScheduler.instance)
       .bind(
         to: tableView.rx.items(
@@ -372,6 +372,8 @@ final class CommentViewController: UIViewController, View {
           if owner.refreshControl.isRefreshing {
             owner.refreshControl.endRefreshing()
           }
+          // 새로고침 후 상대 시간 재계산을 위해 강제 리로드
+          owner.tableView.reloadData()
         }
         owner.view.isUserInteractionEnabled = !loading
       }
@@ -396,7 +398,8 @@ final class CommentViewController: UIViewController, View {
       .subscribe { [weak self] _ in
         self?.commentTextView.text = ""
         if let tableView = self?.tableView,
-          tableView.numberOfRows(inSection: 0) > 0 {
+          tableView.numberOfRows(inSection: 0) > 0
+        {
           tableView.scrollToRow(
             at: IndexPath(row: 0, section: 0),
             at: .top,
@@ -503,16 +506,17 @@ final class CommentCell: UITableViewCell {
     }
   }
 
-  func configure(nickname: String, profileURLString: String?, date: Date, content: String) {
+  func configure(
+    nickname: String,
+    profileURLString: String?,
+    date: Date,
+    content: String
+  ) {
     nameLabel.text = nickname
     nameLabel.font = UIFont.pretendard(size: 15, weight: .medium)
     nameLabel.textColor = .black
 
-    let formatter = DateFormatter()
-    formatter.locale = Locale(identifier: "ko_KR")
-    formatter.timeZone = .current
-    formatter.dateFormat = "yyyy.MM.dd"
-    dateLabel.text = formatter.string(from: date)
+    dateLabel.text = date.timeAgoDisplay()
     dateLabel.font = UIFont.pretendard(size: 13, weight: .regular)
     dateLabel.textColor = .grayScale400
 
