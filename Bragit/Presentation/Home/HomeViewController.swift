@@ -35,16 +35,15 @@ class HomeViewController: UIViewController, View {
 
   func bind(reactor: HomeReactor) {
 
-    self.rx.viewDidAppear.bind { _ in
+    self.rx.viewDidAppear.bind { [homeView] _ in
       reactor.action.onNext(.nowPostsRefresh)
+      homeView.feedView.collectionView.reloadData()
     }.disposed(by: disposeBag)
 
     // 게시글 바인딩
     reactor.state.map { $0.posts }
-      .distinctUntilChanged()
       .bind { [homeView] posts in
         @LocalStorage(location: .blockUser) var blockUsers: [String]?
-
         if blockUsers == nil {
           blockUsers = []
         }
@@ -57,7 +56,7 @@ class HomeViewController: UIViewController, View {
           }
           return filteredPost
         }.filter {
-          blockUsers!.firstIndex(of: $0.author?.id.rawValue ?? "") == nil
+          blockUsers!.contains($0.author?.id ?? "") == false
         }
 
         homeView.feedView.dataApply(data: posts)
