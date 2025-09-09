@@ -124,10 +124,6 @@ final class MailLoginViewController: UIViewController, View {
     navigationController?.setNavigationBarHidden(true, animated: false)
   }
 
-  override func viewWillDisappear(_ animated: Bool) {
-    super.viewWillDisappear(animated)
-  }
-
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
@@ -276,14 +272,14 @@ final class MailLoginViewController: UIViewController, View {
       .compactMap { $0 }
       .observe(on: MainScheduler.instance)
       .withUnretained(self)
-      .bind(onNext: { viewController, message in
+      .bind { viewController, message in
         guard viewController.isViewLoaded, viewController.view.window != nil else { return }
         guard viewController.presentedViewController == nil else { return }
 
         let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
         alert.addAction(.init(title: "확인", style: .default))
         viewController.present(alert, animated: true)
-      })
+      }
       .disposed(by: disposeBag)
   }
 }
