@@ -260,6 +260,7 @@ final class UserInfoFormView: UIView {
     contentView.snp.makeConstraints {
       $0.edges.equalTo(scrollView.contentLayoutGuide)
       $0.width.equalTo(scrollView.frameLayoutGuide)
+      $0.height.greaterThanOrEqualTo(scrollView.frameLayoutGuide)
     }
 
     descriptionLabel.snp.makeConstraints {
@@ -284,10 +285,10 @@ final class UserInfoFormView: UIView {
       $0.leading.trailing.equalTo(contentView).inset(20)
     }
     nextButton.snp.makeConstraints {
-      $0.top.equalTo(nicknameStack.snp.bottom).offset(24)
+      $0.top.greaterThanOrEqualTo(nicknameStack.snp.bottom).offset(24)
       $0.leading.trailing.equalTo(contentView).inset(20)
       $0.height.equalTo(52)
-      $0.bottom.equalTo(contentView.snp.bottom)
+      $0.bottom.equalTo(contentView.safeAreaLayoutGuide).inset(24)
     }
   }
 }
