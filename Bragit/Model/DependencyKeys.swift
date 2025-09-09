@@ -44,6 +44,14 @@ enum SearchDependencyKey: DependencyKey {
   static let liveValue: SearchManagerProtocol = SearchManager()
 }
 
+enum ReportDependencyKey: DependencyKey {
+  static let liveValue: ReportManagerProtocol = ReportManager()
+}
+
+enum BlockDependencyKey: DependencyKey {
+  static let liveValue: BlockManagerProtocol = BlockManager()
+}
+
 extension DependencyValues {
   var postManager: PostManagerProtocol {
     get { self[PostDependencyKey.self] }
@@ -73,5 +81,15 @@ extension DependencyValues {
   var searchManager: SearchManagerProtocol {
     get { self[SearchDependencyKey.self] }
     set { self[SearchDependencyKey.self] = newValue }
+  }
+
+  var blockManager: BlockManagerProtocol {
+    get { self[BlockDependencyKey.self] }
+    set { self[BlockDependencyKey.self] = newValue }
+  }
+
+  var reportManager: ReportManagerProtocol {
+    get { self[ReportDependencyKey.self] }
+    set { self[ReportDependencyKey.self] = newValue }
   }
 }
