@@ -47,6 +47,9 @@ final class CommentViewController: UIViewController, View {
     $0.backgroundColor = .systemBackground
     $0.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
     $0.keyboardDismissMode = .interactive
+    $0.separatorStyle = .singleLine
+    $0.separatorColor = .grayScale100
+    $0.separatorInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
   }
 
   private let refreshControl = UIRefreshControl()
