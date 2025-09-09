@@ -8,8 +8,13 @@ import UIKit
 
 import SnapKit
 import Then
+import RxSwift
+import RxCocoa
+import RxFlow
 
-final class LicenseDetailViewController: UIViewController {
+final class LicenseDetailViewController: UIViewController, Stepper {
+  let steps = PublishRelay<Step>()
+  var disposeBag = DisposeBag()
 
   // 표시할 항목
   private let item: LicenseItem
@@ -90,16 +95,22 @@ final class LicenseDetailViewController: UIViewController {
     }
 
     loadLicenseText()
+
+    backButton.rx.tap
+      .bind { [weak self] in
+        self?.steps.accept(AppStep.pop)
+      }
+      .disposed(by: disposeBag)
   }
 
   private func loadLicenseText() {
     // 파일명과 확장자를 분리해서 안전하게 로딩
     let name = item.bundleFileName
-    if let url = Bundle.main.url(forResource: name, withExtension: "txt"),
-       let text = try? String(contentsOf: url, encoding: .utf8) {
+    if let url = Bundle.main.url(forResource: name, withExtension: "txt", subdirectory: "License"),
+    let text = try? String(contentsOf: url, encoding: .utf8) {
       textView.text = text
     } else {
-      textView.text = "라이선스 파일을 찾을 수 없습니다: \(name).txt)"
+      textView.text = "라이선스 파일을 찾을 수 없습니다: License/\(name).txt"
     }
   }
 

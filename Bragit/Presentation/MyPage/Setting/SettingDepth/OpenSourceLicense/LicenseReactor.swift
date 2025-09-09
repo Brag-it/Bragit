@@ -45,14 +45,18 @@ class LicenseReactor: Reactor, Stepper {
     switch action {
     case .viewDidLoad:
       let items: [LicenseItem] = [
-        .init(name: "RxSwift", licenseType: "MIT", bundleFileName: "LICENSE_RxSwift"),
-        .init(name: "ReactorKit", licenseType: "MIT", bundleFileName: "LICENSE_ReactorKit"),
-        .init(name: "SnapKit", licenseType: "MIT", bundleFileName: "LICENSE_SnapKit"),
-        .init(name: "Then", licenseType: "MIT", bundleFileName: "LICENSE_Then"),
         .init(name: "Kingfisher", licenseType: "MIT", bundleFileName: "LICENSE_Kingfisher"),
+        .init(name: "LookinServer", licenseType: "MIT", bundleFileName: "LICENSE_LookinServer"),
         .init(name: "Lottie", licenseType: "Apache-2.0", bundleFileName: "LICENSE_Lottie"),
-        .init(name: "Supabase iOS", licenseType: "Apache-2.0", bundleFileName: "LICENSE_Supabase"),
-        .init(name: "Pretendard", licenseType: "OFL-1.1", bundleFileName: "LICENSE_Pretendard")
+        .init(name: "Pretendard", licenseType: "OFL-1.1", bundleFileName: "LICENSE_Pretendard"),
+        .init(name: "ReactorKit", licenseType: "MIT", bundleFileName: "LICENSE_ReactorKit"),
+        .init(name: "RichTextKit", licenseType: "MIT", bundleFileName: "LICENSE_RichTextKit"),
+        .init(name: "RxFlow", licenseType: "MIT", bundleFileName: "LICENSE_RxFlow"),
+        .init(name: "RxSwift", licenseType: "MIT", bundleFileName: "LICENSE_RxSwift"),
+        .init(name: "SnapKit", licenseType: "MIT", bundleFileName: "LICENSE_SnapKit"),
+        .init(name: "Supabase Swift SDK", licenseType: "Apache-2.0", bundleFileName: "LICENSE_Supabase"),
+        .init(name: "Swift-Dependencies", licenseType: "MIT", bundleFileName: "LICENSE_Swift_Dependencies"),
+        .init(name: "Then", licenseType: "MIT", bundleFileName: "LICENSE_Then")
       ]
       return .just(.setItems(items))
 
