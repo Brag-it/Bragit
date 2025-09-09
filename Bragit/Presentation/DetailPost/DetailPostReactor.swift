@@ -178,7 +178,8 @@ class DetailPostReactor: Reactor, Stepper {
         return Disposables.create()
       }
     case .didTapEdit:
-      //      steps.accept(AppStep.edit(postId: currentState.post))
+      let post = PostUpdate(id: post.id, title: currentState.title, content: currentState.content)
+      steps.accept(AppStep.updateFeed(post: post))
       return .empty()
 
     case .didTapReport:
