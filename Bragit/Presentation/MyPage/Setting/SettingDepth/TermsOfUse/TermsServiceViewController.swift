@@ -9,8 +9,13 @@ import UIKit
 
 import SnapKit
 import Then
+import RxSwift
+import RxCocoa
+import RxFlow
 
-final class TermsServiceViewController: UIViewController {
+final class TermsServiceViewController: UIViewController, Stepper {
+  let steps = PublishRelay<Step>()
+  var disposeBag = DisposeBag()
 
   private let headerView = UIView().then {
     $0.backgroundColor = .white

@@ -21,6 +21,11 @@ final class LicenseDetailViewController: UIViewController, Stepper {
 
   private let headerView = UIView()
 
+  private let backButton = UIButton().then {
+    $0.setImage(.back, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+
   private let titleLabel = UILabel().then {
     $0.font = .pretendard(size: 20, weight: .medium)
     $0.textColor = .grayScale900
@@ -31,18 +36,12 @@ final class LicenseDetailViewController: UIViewController, Stepper {
     $0.textColor = .grayScale700
   }
 
-  private let backButton = UIButton().then {
-    $0.setImage(.back, for: .normal)
-    $0.tintColor = .grayScale900
-  }
-
   private let labelStack = UIStackView().then {
     $0.axis = .vertical
     $0.alignment = .center
     $0.spacing = 2
   }
 
-  // 라이선스 전문을 보여줄 텍스트뷰
   private let textView = UITextView().then {
     $0.isEditable = false
     $0.alwaysBounceVertical = true

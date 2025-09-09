@@ -133,7 +133,10 @@ final class MyPageFlow: Flow {
     let detailVC = LicenseDetailViewController(item: license)
     detailVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(detailVC, animated: true)
-    return .none
+    return .one(flowContributor: .contribute(
+      withNextPresentable: detailVC,
+      withNextStepper: detailVC
+    ))
   }
 
   private func showTerms() -> FlowContributors {
@@ -151,20 +154,29 @@ final class MyPageFlow: Flow {
     let termsServiceVC = TermsServiceViewController()
     termsServiceVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(termsServiceVC, animated: true)
-    return .none
+    return .one(flowContributor: .contribute(
+      withNextPresentable: termsServiceVC,
+      withNextStepper: termsServiceVC
+    ))
   }
 
   private func showPersonalInfo() -> FlowContributors {
     let personalInfoVC = PersonalInformationViewController()
     personalInfoVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(personalInfoVC, animated: true)
-    return .none
+    return .one(flowContributor: .contribute(
+      withNextPresentable: personalInfoVC,
+      withNextStepper: personalInfoVC
+    ))
   }
 
   private func showMarketing() -> FlowContributors {
     let marketingVC = MarketingVeiwController()
     marketingVC.hidesBottomBarWhenPushed = true
     nav.pushViewController(marketingVC, animated: true)
-    return .none
+    return .one(flowContributor: .contribute(
+      withNextPresentable: marketingVC,
+      withNextStepper: marketingVC
+    ))
   }
 }
