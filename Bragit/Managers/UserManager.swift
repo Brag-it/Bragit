@@ -10,6 +10,7 @@ import Foundation
 import Supabase
 import RxSwift
 import Dependencies
+import Functions
 
 protocol UserManagerProtocol {
   func fetchFollowUsers() async throws -> [String]
@@ -29,6 +30,8 @@ protocol UserManagerProtocol {
   func rxProfileImageUpload(image: Data) -> Observable<Void>
   func rxUpdateUserProfileImage(imageURLstring: String) -> Single<Void>
   func rxCancelAccount() -> Single<Void>
+  func rxFetchFollowingCount(userId: String) -> Observable<Int>
+  func rxFetchFollowerCount(userId: String) -> Observable<Int>
 }
 
 class UserManager: UserManagerProtocol {
@@ -472,6 +475,56 @@ class UserManager: UserManagerProtocol {
         }
       }
 
+      return Disposables.create()
+    }
+  }
+
+  // 특정 유저의 팔로잉 수 가져오기
+  func rxFetchFollowingCount(userId: String) -> Observable<Int> {
+    .create { [weak self] observer in
+      Task { [weak self] in
+        do {
+          guard let self = self else { return }
+          let count = try await self.client
+            .from("Follow")
+            .select("*", head: true, count: .exact)
+            .eq("user_id", value: userId)
+            .execute()
+            .count
+          
+          observer.onNext(count ?? 0)
+          observer.onCompleted()
+        } catch {
+          print(error)
+          observer.onError(error)
+        }
+      }
+      
+      return Disposables.create()
+    }
+  }
+
+  // 특정 유저의 팔로워 수 가져오기
+  func rxFetchFollowerCount(userId: String) -> Observable<Int> {
+    .create { [weak self] observer in
+      Task { [weak self] in
+        do {
+          guard let self = self else { return }
+          let count = try await self.client
+            .from("Follow")
+            .select("*", head: true, count: .exact)
+            .eq("follow_id", value: userId)
+            .execute()
+            .count
+
+          observer.onNext(count ?? 0)
+          observer.onCompleted()
+        } catch {
+          print(error)
+          observer.onError(error)
+        }
+      }
+      
       return Disposables.create()
     }
   }
