@@ -162,6 +162,25 @@ class TagCheckViewController: UIViewController {
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    reactor.state.compactMap { $0.errorMessage }
+      .observe(on: MainScheduler.instance)
+      .bind { [weak self] message in
+        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
+        alert.addAction(.init(title: "확인", style: .default))
+        self?.present(alert, animated: true)
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state.map { $0.isLoading }
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .bind { [weak self] isLoading in
+        self?.view.isUserInteractionEnabled = !isLoading
+        self?.nextButton.isEnabled = !isLoading
+        self?.beLaterButton.isEnabled = !isLoading
+      }
+      .disposed(by: disposeBag)
   }
 
   private func debugPrintFavoriteTagsFromUserDefaults() {

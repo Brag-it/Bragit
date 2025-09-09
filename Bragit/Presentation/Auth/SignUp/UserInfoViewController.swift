@@ -116,13 +116,13 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     pwTextField.do {
-      $0.placeholder = "8-24자 영문/숫자/특수기호"
+      $0.placeholder = "8-24자 사이 영문, 숫자, 특수문자"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
       $0.isEnabled = true
       $0.isSecureTextEntry = true
-      $0.textContentType = .oneTimeCode
+      $0.textContentType = .password
       $0.clearButtonMode = .whileEditing
       $0.font = textFont
       $0.textColor = fontColor
@@ -153,13 +153,13 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     rePwTextField.do {
-      $0.placeholder = "8-24자 영문/숫자/특수기호"
+      $0.placeholder = "8-24자 사이 영문, 숫자, 특수문자"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
       $0.isEnabled = true
       $0.isSecureTextEntry = true
-      $0.textContentType = .oneTimeCode
+      $0.textContentType = .password
       $0.clearButtonMode = .whileEditing
       $0.font = textFont
       $0.textColor = fontColor
@@ -555,23 +555,29 @@ extension UserInfoViewController {
       let confirm = confirmRaw.trimmingCharacters(in: .whitespacesAndNewlines)
 
       passwordValid = UserInfoValidator.isValidPassword(pwd)
-      confirmMatched = (pwd == confirm) && !pwd.isEmpty
+      // let confirm = formView.rePwTextField.text ?? ""
+
+      if !confirm.isEmpty {
+        confirmMatched = (pwd == confirm)
+      }
 
       applyCheckState(
         icon: formView.pwCheckIcon,
         label: formView.pwCheckLabel,
         okStatus: passwordValid,
         okText: "사용 가능한 비밀번호입니다",
-        failText: "형식에 맞지 않는 비밀번호입니다"
+        failText: "사용 불가한 비밀번호입니다"
       )
 
-      applyCheckState(
-        icon: formView.rePwCheckIcon,
-        label: formView.rePwCheckLabel,
-        okStatus: confirmMatched,
-        okText: "비밀번호가 일치합니다",
-        failText: "비밀번호가 불일치합니다"
-      )
+      if !confirm.isEmpty {
+        applyCheckState(
+          icon: formView.rePwCheckIcon,
+          label: formView.rePwCheckLabel,
+          okStatus: confirmMatched,
+          okText: "비밀번호가 일치합니다",
+          failText: "비밀번호가 불일치합니다"
+        )
+      }
     }
     updateNextButton()
   }

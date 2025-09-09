@@ -29,8 +29,19 @@ final class LoginFlow: Flow, Stepper {
       return showSignupPhoto()
     case .signSelectTag(let profileURL):
       return showSignSelectTag(profileURL: profileURL)
+    case .signInMail:
+      return showMailLogin()
     case .home:
       return .end(forwardToParentFlowWithStep: AppStep.home)
+
+    // 추가: 뒤로 가기(pop) / dismiss 처리
+    case .pop:
+      nav.popViewController(animated: true)
+      return .none
+    case .dismiss:
+      nav.dismiss(animated: true)
+      return .none
+
     default:
       return .none
     }
@@ -98,4 +109,23 @@ final class LoginFlow: Flow, Stepper {
         )
     )
   }
+
+  private func showMailLogin() -> FlowContributors {
+    let reactor = MailLoginReactor()
+    let mailLoginVC = MailLoginViewController(reactor: reactor)
+
+    // 시스템 내비게이션 바의 뒤로가기 버튼 숨김
+    mailLoginVC.navigationItem.hidesBackButton = true
+    mailLoginVC.navigationItem.leftBarButtonItem = nil
+    mailLoginVC.navigationItem.title = ""
+
+    nav.pushViewController(mailLoginVC, animated: true)
+    return .one(
+      flowContributor: .contribute(
+        withNextPresentable: mailLoginVC,
+        withNextStepper: reactor
+      )
+    )
+  }
 }
+

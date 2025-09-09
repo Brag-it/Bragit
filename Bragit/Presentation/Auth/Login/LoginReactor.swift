@@ -28,6 +28,7 @@ final class LoginReactor: Reactor, Stepper {
     case tapAppleButton
     case tapSignUp
     case tapNext
+    case tapMailLogin
   }
 
   // 내부 상태 변경
@@ -80,6 +81,9 @@ final class LoginReactor: Reactor, Stepper {
       let raw = Self.randomNonce()
       let hashed = Self.sha256(raw)
       return .just(.setNonce(raw: raw, hashed: hashed))
+    case .tapMailLogin:
+      steps.accept(AppStep.signInMail)
+      return .empty()
     case .tapSignUp:
       steps.accept(AppStep.signup(initialMail: nil, refreshToken: nil))
       return .empty()

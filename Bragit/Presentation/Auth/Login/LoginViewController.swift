@@ -37,12 +37,14 @@ final class LoginViewController: UIViewController, View {
     $0.backgroundColor = .white
     $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
     $0.setTitle("Google로 로그인(아직)", for: .normal)
+    $0.isEnabled = false
   }
 
   let kakaoButton = UIButton(type: .system).then {
     $0.layer.cornerRadius = 12
     $0.backgroundColor = UIColor(red: 0.996, green: 0.898, blue: 0, alpha: 1)
     $0.setTitle("카카오로 로그인􀀲", for: .normal)
+    $0.isEnabled = false
   }
 
   let appleButton = ASAuthorizationAppleIDButton(type: .signIn, style: .black).then {
@@ -60,11 +62,13 @@ final class LoginViewController: UIViewController, View {
     $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
     $0.layer.cornerRadius = 12
     $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
+    $0.isEnabled = false
   }
 
   let signUpButton = UIButton(type: .system).then {
     $0.setTitle("회원 가입하기", for: .normal)
     $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
+    $0.isEnabled = false
   }
 
   init(reactor: LoginReactor) {
@@ -149,6 +153,12 @@ final class LoginViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    mailButton.rx.controlEvent(.touchUpInside)
+      .subscribe(with: self) { owner, _ in
+        owner.reactor?.action.onNext(.tapMailLogin)
+      }
+      .disposed(by: disposeBag)
+
     // 회원가입 버튼
     signUpButton.rx.controlEvent(.touchUpInside)
       .subscribe(with: self) { owner, _ in
@@ -192,6 +202,10 @@ extension LoginViewController:
     controller.delegate = self
     controller.presentationContextProvider = self
     controller.performRequests()
+  }
+
+  private func showEmailLoginAlert() {
+  //
   }
 
   func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {

@@ -76,12 +76,34 @@ final class TagCheckReactor: Reactor, Stepper {
 
       Task {
         do {
+          print("📝: 회원가입 시작 >>> isAppleLogin = \(self.userInfo.isAppleLogin)")
           observer.onNext(.setLoading(true))
 
-          let session = try await self.supabase.auth.session
-          let userUUID = session.user.id
-          let userId = userUUID.uuidString
+          var userId: String
 
+          if !self.userInfo.isAppleLogin {
+            print("📝: 이메일 회원가입 진행 중")
+            guard let password = self.userInfo.password else {
+              print("📝: 비밀번호 없음")
+              observer.onNext(.setError("비밀번호 필요"))
+              observer.onNext(.setLoading(false))
+              observer.onCompleted()
+              return
+            }
+
+            print("📝: signUp 호출 >>> mail = \(self.userInfo.mail)")
+            let signUpResult = try await self.supabase.auth.signUp(
+              email: self.userInfo.mail,
+              password: password
+            )
+            print("📝: signUp 성공")
+
+            let user = signUpResult.user
+            userId = user.id.uuidString
+          } else {
+            let session = try await self.supabase.auth.session
+            userId = session.user.id.uuidString
+          }
           // 현재 로그인한 유저를 로컬에 기억
           UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
 
@@ -112,27 +134,20 @@ final class TagCheckReactor: Reactor, Stepper {
               print("[signup] User_Info.email update failed: \(error)")
             }
           }
-
-          if !trimmedMail.isEmpty {
-            do {
-              try await self.supabase.auth.update(
-                user: UserAttributes(
-                  data: ["email": AnyJSON.string(trimmedMail)]
-                )
-              )
-              print("[signup] auth.user_metadata.email backfilled")
-            } catch {
-              print("[signup] auth.user_metadata.email backfill failed: \(error)")
-            }
-          }
-
           observer.onNext(.setRegistrationComplete(true))
           observer.onNext(.setLoading(false))
           observer.onCompleted()
 
           await MainActor.run { self.steps.accept(AppStep.home) }
         } catch {
-          observer.onNext(.setError("회원가입 중 오류 발생"))
+          print("📝: 에러 >>> \(error)")
+          let errorMessage =
+            if error.localizedDescription.contains("already registered") {
+              "이미 가입된 이메일"
+            } else {
+              "회원가입 중 오류 발생: \(error.localizedDescription)"
+            }
+          observer.onNext(.setError(errorMessage))
           observer.onNext(.setLoading(false))
           observer.onCompleted()
         }
