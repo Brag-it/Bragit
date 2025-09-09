@@ -1,17 +1,8 @@
-//
-//  UserInfoScreen.swift
-//  Bragit
-//
-//  Created by luca on 8/25/25.
-//
-
 import SnapKit
 import Then
 import UIKit
 
-// MARK: UI
 final class UserInfoFormView: UIView {
-  // UI
   let descriptionLabel = UILabel()
   let scrollView = UIScrollView()
   let contentView = UIView()
@@ -41,7 +32,6 @@ final class UserInfoFormView: UIView {
 
   let nextButton = UIButton(type: .system)
 
-  // Style tokens
   let descFont = UIFont.pretendard(size: 20, weight: .semibold)
   let textFont = UIFont.pretendard(size: 14, weight: .regular)
   let labelFont = UIFont.pretendard(size: 13, weight: .medium)
@@ -52,7 +42,6 @@ final class UserInfoFormView: UIView {
   let acceptColor = UIColor.systemSafe
   let rejectColor = UIColor.systemDanger
 
-  // Private stacks
   private let mailStack = UIStackView()
   private let pwStack = UIStackView()
   private let rePwStack = UIStackView()
@@ -127,7 +116,7 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     pwTextField.do {
-      $0.placeholder = "8-24자 사이 영문 소문자, 특수문자"
+      $0.placeholder = "8-24자 영문/숫자/특수기호"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
@@ -164,7 +153,7 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     rePwTextField.do {
-      $0.placeholder = "8-24자 사이 영문 소문자, 특수문자"
+      $0.placeholder = "8-24자 영문/숫자/특수기호"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
@@ -239,11 +228,6 @@ final class UserInfoFormView: UIView {
       $0.backgroundColor = buttonColor
     }
 
-    //    [mailCheckIcon, mailCheckLabel].forEach { mailCheckStack.addArrangedSubview($0) }
-    //    [pwCheckIcon, pwCheckLabel].forEach { pwCheckStack.addArrangedSubview($0) }
-    //    [rePwCheckIcon, rePwCheckLabel].forEach { rePwCheckStack.addArrangedSubview($0) }
-    //    [nicknameCheckIcon, nicknameCheckLabel].forEach { nicknameCheckStack.addArrangedSubview($0) }
-
     [mailLabel, mailTextField, mailCheckStack].forEach { mailStack.addArrangedSubview($0) }
     [pwLabel, pwTextField, pwCheckStack].forEach { pwStack.addArrangedSubview($0) }
     [rePwLabel, rePwTextField, rePwCheckStack].forEach { rePwStack.addArrangedSubview($0) }
@@ -268,13 +252,15 @@ final class UserInfoFormView: UIView {
     }
 
     scrollView.snp.makeConstraints {
-      $0.top.equalTo(descriptionLabel.snp.bottom).offset(16)
-      $0.leading.trailing.bottom.equalToSuperview()
+      $0.top.equalTo(descriptionLabel.snp.bottom)
+      $0.leading.trailing.equalToSuperview()
+      $0.bottom.equalTo(safeAreaLayoutGuide)
     }
 
     contentView.snp.makeConstraints {
       $0.edges.equalTo(scrollView.contentLayoutGuide)
       $0.width.equalTo(scrollView.frameLayoutGuide)
+      $0.height.greaterThanOrEqualTo(scrollView.frameLayoutGuide)
     }
 
     descriptionLabel.snp.makeConstraints {
@@ -299,34 +285,28 @@ final class UserInfoFormView: UIView {
       $0.leading.trailing.equalTo(contentView).inset(20)
     }
     nextButton.snp.makeConstraints {
-      $0.top.equalTo(nicknameStack.snp.bottom).offset(24)
+      $0.top.greaterThanOrEqualTo(nicknameStack.snp.bottom).offset(24)
       $0.leading.trailing.equalTo(contentView).inset(20)
       $0.height.equalTo(52)
-      $0.bottom.equalTo(contentView.snp.bottom).inset(24)
-      //      $0.leading.trailing.equalTo(contentView).inset(20)
+      $0.bottom.equalTo(contentView.safeAreaLayoutGuide).inset(24)
     }
   }
 }
 
-// MARK: VC 본체
 final class UserInfoViewController: UIViewController {
   var onNext: ((UserRegistrationInfo) -> Void)?
 
-  // 초기 상태
   private let initialMail: String?
   private var isAppleLogin: Bool { initialMail?.isEmpty == false }
   private let refreshToken: String?
 
-  // 검증 상태
   fileprivate var mailValid = false
   fileprivate var passwordValid = false
   fileprivate var confirmMatched = false
   fileprivate var nicknameValid = false
 
-  // 폼 뷰
   private let formView = UserInfoFormView()
 
-  // 포커스 순서
   private lazy var inputOrder: [UITextField] = [
     formView.mailTextField,
     formView.pwTextField,
@@ -338,10 +318,7 @@ final class UserInfoViewController: UIViewController {
   private weak var currentFirstResponder: UITextField?
 
   init(initialMail: String?, refreshToken: String?) {
-    //    self.initialMail = initialMail
-    if let space = initialMail?.trimmingCharacters(
-      in: .whitespacesAndNewlines
-    ), !space.isEmpty {
+    if let space = initialMail?.trimmingCharacters(in: .whitespacesAndNewlines), !space.isEmpty {
       self.initialMail = space
     } else {
       self.initialMail = nil
@@ -404,14 +381,12 @@ final class UserInfoViewController: UIViewController {
       let curve = UIView.AnimationCurve(rawValue: curveRaw)
     else { return }
 
-    // Convert to this view's coordinate space and compute the covering height
     let kbFrameInView = view.convert(endFrame, from: nil)
     let overlap = max(0, view.bounds.intersection(kbFrameInView).height - view.safeAreaInsets.bottom)
-    let bottomInset = overlap + 8  // small padding
+    let bottomInset = overlap + 8
 
     updateScrollInsets(bottom: bottomInset, duration: duration, curve: curve)
 
-    // Ensure current field is visible
     if let field = currentFirstResponder {
       let target = field.convert(field.bounds, to: formView.scrollView)
       formView.scrollView.scrollRectToVisible(target.insetBy(dx: 0, dy: -24), animated: true)
@@ -525,7 +500,6 @@ final class UserInfoViewController: UIViewController {
   @objc private func dismissKeyboard() { view.endEditing(true) }
 }
 
-// MARK: Validation
 extension UserInfoViewController {
 
   @objc func onMailEditingEnd() {
@@ -575,17 +549,20 @@ extension UserInfoViewController {
         failText: "비밀번호가 불일치합니다"
       )
     } else {
-      let pwd = formView.pwTextField.text ?? ""
+      let pwdRaw = formView.pwTextField.text ?? ""
+      let confirmRaw = formView.rePwTextField.text ?? ""
+      let pwd = pwdRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+      let confirm = confirmRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+
       passwordValid = UserInfoValidator.isValidPassword(pwd)
-      let confirm = formView.rePwTextField.text ?? ""
       confirmMatched = (pwd == confirm) && !pwd.isEmpty
 
       applyCheckState(
         icon: formView.pwCheckIcon,
         label: formView.pwCheckLabel,
-        okStatus: (confirmMatched && passwordValid),
+        okStatus: passwordValid,
         okText: "사용 가능한 비밀번호입니다",
-        failText: "사용 불가한 비밀번호입니다"
+        failText: "형식에 맞지 않는 비밀번호입니다"
       )
 
       applyCheckState(
@@ -611,8 +588,8 @@ extension UserInfoViewController {
         failText: "비밀번호가 불일치합니다"
       )
     } else {
-      let pwd = formView.pwTextField.text ?? ""
-      let confirm = formView.rePwTextField.text ?? ""
+      let pwd = (formView.pwTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+      let confirm = (formView.rePwTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
       confirmMatched = (pwd == confirm) && !pwd.isEmpty
 
       applyCheckState(
@@ -655,11 +632,9 @@ class InsetTextField: UITextField {
   }
 }
 
-// MARK: Delegate
 extension UserInfoViewController: UITextFieldDelegate {
   public func textFieldDidBeginEditing(_ textField: UITextField) {
     currentFirstResponder = textField
-    // If keyboard is already visible, nudge to visible immediately
     let target = textField.convert(textField.bounds, to: formView.scrollView)
     formView.scrollView.scrollRectToVisible(target.insetBy(dx: 0, dy: -24), animated: true)
   }

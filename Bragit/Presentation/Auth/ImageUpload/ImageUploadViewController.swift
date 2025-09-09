@@ -45,12 +45,32 @@ class ImageUploadViewController: UIViewController, View {
 
   let imageButton = UIButton(type: .system).then {
     $0.setTitle(nil, for: .normal)
-    $0.backgroundColor = UIColor.secondarySystemBackground
+    $0.backgroundColor = UIColor.grayScale100
     $0.clipsToBounds = true
-    $0.imageView?.contentMode = .scaleAspectFill
-    let config = UIImage.SymbolConfiguration(pointSize: 44, weight: .regular)
-    let placeholder = UIImage(systemName: "person", withConfiguration: config)
+    $0.imageView?.contentMode = .center
+    $0.tintColor = .grayScale600
+    let placeholder = UIImage.mypage
+      .resized(to: CGSize(width: 60, height: 60))
+      .withRenderingMode(.alwaysTemplate)
     $0.setImage(placeholder, for: .normal)
+  }
+
+  let cameraButton = UIButton(type: .system).then {
+    $0.setTitle(nil, for: .normal)
+    $0.backgroundColor = .black
+    $0.layer.cornerRadius = 24
+    $0.layer.masksToBounds = true
+    $0.layer.borderWidth = 1
+    $0.layer.borderColor = UIColor.separator.cgColor
+    $0.isUserInteractionEnabled = false
+    $0.isAccessibilityElement = false
+
+    let icon = UIImage.camera
+      .resized(to: CGSize(width: 24, height: 24))
+      .withRenderingMode(.alwaysTemplate)
+    $0.setImage(icon, for: .normal)
+    $0.tintColor = .white
+    $0.imageView?.contentMode = .scaleAspectFit
   }
 
   let imagePicker = UIImagePickerController().then {
@@ -74,6 +94,8 @@ class ImageUploadViewController: UIViewController, View {
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
     imageButton.layer.cornerRadius = 75
+    cameraButton.layer.cornerRadius = 24
+    view.bringSubviewToFront(cameraButton)
   }
 
   override func viewDidLoad() {
@@ -97,7 +119,7 @@ class ImageUploadViewController: UIViewController, View {
     nextButton.titleLabel?.font = nextFont
     nextButton.titleLabel?.textColor = color900
 
-    [descriptionLabel, imageButton, beLaterButton, nextButton].forEach {
+    [descriptionLabel, imageButton, cameraButton, beLaterButton, nextButton].forEach {
       view.addSubview($0)
     }
 
@@ -112,6 +134,12 @@ class ImageUploadViewController: UIViewController, View {
       $0.width.height.equalTo(150)
     }
 
+    cameraButton.snp.makeConstraints {
+      $0.width.height.equalTo(48)
+      $0.trailing.equalTo(imageButton.snp.trailing)
+      $0.bottom.equalTo(imageButton.snp.bottom)
+    }
+
     beLaterButton.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.bottom.equalTo(nextButton.snp.top).offset(-8)
@@ -123,6 +151,8 @@ class ImageUploadViewController: UIViewController, View {
       $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(24)
       $0.height.equalTo(52)
     }
+
+    view.bringSubviewToFront(cameraButton)
   }
 }
 
@@ -130,7 +160,7 @@ extension ImageUploadViewController {
   func bind(reactor: ImageUploadReactor) {
 
     imageButton.rx.tap
-      .bind(with: self) {owner, _ in
+      .bind(with: self) { owner, _ in
         owner.present(owner.imagePicker, animated: true)
       }
       .disposed(by: disposeBag)
