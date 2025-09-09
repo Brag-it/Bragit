@@ -61,12 +61,12 @@ final class LicenseViewController: UIViewController, View {
 
     backButton.snp.makeConstraints {
       $0.leading.equalToSuperview().offset(20)
-      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.centerY.equalTo(headerView)
     }
 
     titleLabel.snp.makeConstraints {
-      $0.centerX.equalTo(headerView.snp.centerX)
-      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.centerX.equalTo(headerView)
+      $0.centerY.equalTo(headerView)
       $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
     }
     view.addSubview(collectionView)

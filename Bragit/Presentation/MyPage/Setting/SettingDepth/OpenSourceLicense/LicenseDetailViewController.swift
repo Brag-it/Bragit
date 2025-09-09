@@ -14,9 +14,7 @@ final class LicenseDetailViewController: UIViewController {
   // 표시할 항목
   private let item: LicenseItem
 
-  private let headerView = UIView().then {
-    $0.backgroundColor = .white
-  }
+  private let headerView = UIView()
 
   private let titleLabel = UILabel().then {
     $0.font = .pretendard(size: 20, weight: .medium)
@@ -25,12 +23,18 @@ final class LicenseDetailViewController: UIViewController {
 
   private let subLabel = UILabel().then {
     $0.font = .pretendard(size: 14)
-    $0.textColor = .grayScale900
+    $0.textColor = .grayScale700
   }
 
   private let backButton = UIButton().then {
     $0.setImage(.back, for: .normal)
     $0.tintColor = .grayScale900
+  }
+
+  private let labelStack = UIStackView().then {
+    $0.axis = .vertical
+    $0.alignment = .center
+    $0.spacing = 2
   }
 
   // 라이선스 전문을 보여줄 텍스트뷰
@@ -54,11 +58,35 @@ final class LicenseDetailViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
+    config()
+    view.addSubview(headerView)
+    headerView.addSubview(backButton)
+    headerView.addSubview(labelStack)
+    labelStack.addArrangedSubview(titleLabel)
+    labelStack.addArrangedSubview(subLabel)
 
-    // UI 배치
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(58)
+    }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(20)
+      $0.centerY.equalTo(headerView)
+    }
+
+    labelStack.snp.makeConstraints {
+      $0.centerY.equalTo(headerView)
+      $0.centerX.equalToSuperview()
+    }
+
     view.addSubview(textView)
+
     textView.snp.makeConstraints {
-      $0.edges.equalTo(view.safeAreaLayoutGuide)
+      $0.top.equalTo(headerView.snp.bottom).offset(24)
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalToSuperview().inset(20)
     }
 
     loadLicenseText()
@@ -69,14 +97,14 @@ final class LicenseDetailViewController: UIViewController {
     let name = item.bundleFileName
     if let url = Bundle.main.url(forResource: name, withExtension: "txt"),
        let text = try? String(contentsOf: url, encoding: .utf8) {
-      textView.text = headerText() + "\n\n" + text
+      textView.text = text
     } else {
-      textView.text = headerText() + "\n\n(라이선스 파일을 찾을 수 없습니다: \(name).txt)"
+      textView.text = "라이선스 파일을 찾을 수 없습니다: \(name).txt)"
     }
   }
 
-  // 상단에 간단한 메타 정보 표시
-  private func headerText() -> String {
-    return "\(item.name)\nLicense: \(item.licenseType)"
+  private func config() {
+    titleLabel.text = item.name
+    subLabel.text = item.licenseType
   }
 }
