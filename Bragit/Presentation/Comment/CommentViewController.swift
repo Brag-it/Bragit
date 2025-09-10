@@ -81,16 +81,17 @@ final class CommentViewController: UIViewController, View {
   private var textContainerHeightConstraint: Constraint?
   private var bottomBarHeightConstraint: Constraint?
 
+  private let lockImageView = UIImageView(image: .unlock).then {
+    $0.contentMode = .scaleAspectFit
+    $0.setContentHuggingPriority(.required, for: .horizontal)
+    $0.setContentCompressionResistancePriority(.required, for: .horizontal)
+  }
+  private var textContainerLeadingWithLock: Constraint?
+  private var textContainerLeadingWithoutLock: Constraint?
+
   private lazy var bottomBar: UIView = {
     let bar = UIView()
     bar.backgroundColor = .grayScale50
-
-    let lockImageView = UIImageView(image: .unlock).then {
-      $0.contentMode = .scaleAspectFit
-      $0.setContentHuggingPriority(.required, for: .horizontal)
-      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
-      $0.isHidden = true
-    }
 
     let textContainer = UIView().then {
       $0.backgroundColor = .white
@@ -126,7 +127,6 @@ final class CommentViewController: UIViewController, View {
     textContainer.addSubview(commentTextView)
     textContainer.addSubview(bottomBarTapButton)
 
-    // 초기 바 높이 54 기준으로, 아이콘은 bottom에서 27pt 위에 고정
     let initialBarHalf: CGFloat = 27
 
     lockImageView.snp.makeConstraints {
@@ -136,12 +136,18 @@ final class CommentViewController: UIViewController, View {
     }
 
     textContainer.snp.makeConstraints {
-      $0.leading.equalTo(lockImageView.snp.trailing).offset(10)
       $0.trailing.equalTo(bar.snp.trailing).inset(12)
-      // 텍스트 컨테이너는 바의 중심에 위치(아이콘은 bottom 기준 고정)
       $0.centerY.equalTo(bar.snp.centerY)
       self.textContainerHeightConstraint = $0.height.equalTo(42).constraint
     }
+
+    self.textContainerLeadingWithLock = textContainer.snp.prepareConstraints {
+      $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
+    }.first
+    self.textContainerLeadingWithoutLock = textContainer.snp.prepareConstraints {
+      $0.leading.equalTo(bar.snp.leading).offset(12)
+    }.first
+    self.textContainerLeadingWithoutLock?.activate()
 
     sendImageView.snp.makeConstraints {
       $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
@@ -166,6 +172,8 @@ final class CommentViewController: UIViewController, View {
     commentTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 34)
 
     bar.bringSubviewToFront(sendButton)
+
+    updateLockVisibility(visible: false)
 
     return bar
   }()
@@ -452,12 +460,11 @@ final class CommentViewController: UIViewController, View {
       .disposed(by: disposeBag)
   }
 
-  // 최대 3줄까지 높이 증가, 이후 내부 스크롤
   private func adjustInputHeight(animated: Bool) {
     view.layoutIfNeeded()
 
     let minHeight: CGFloat = 42 // 1줄 기본
-    let verticalPadding: CGFloat = 12 // bottomBar 상하 여백(= 6 + 6)
+    let verticalPadding: CGFloat = 12
     let insets = commentTextView.textContainerInset
     let lineHeight = commentTextView.font?.lineHeight ?? 17
     let maxTextHeight = (lineHeight * 3) + insets.top + insets.bottom
@@ -469,7 +476,6 @@ final class CommentViewController: UIViewController, View {
     let targetTextHeight = min(maxTextHeight, max(minHeight, ceil(calculated)))
     let targetBarHeight = targetTextHeight + verticalPadding
 
-    // 3줄 초과 시 내부 스크롤 활성화
     let shouldScroll = calculated > maxTextHeight + 0.5
     if commentTextView.isScrollEnabled != shouldScroll {
       commentTextView.isScrollEnabled = shouldScroll
@@ -489,6 +495,24 @@ final class CommentViewController: UIViewController, View {
     }
 
     commentTextView.scrollRangeToVisible(commentTextView.selectedRange)
+  }
+
+  // MARK: - Lock 아이콘 노출/숨김에 따라 레이아웃 전환
+  private func updateLockVisibility(visible: Bool, animated: Bool = false) {
+    lockImageView.isHidden = !visible
+    if visible {
+      textContainerLeadingWithoutLock?.deactivate()
+      textContainerLeadingWithLock?.activate()
+    } else {
+      textContainerLeadingWithLock?.deactivate()
+      textContainerLeadingWithoutLock?.activate()
+    }
+    let updates = { self.view.layoutIfNeeded() }
+    if animated {
+      UIView.animate(withDuration: 0.2, animations: updates)
+    } else {
+      updates()
+    }
   }
 }
 
