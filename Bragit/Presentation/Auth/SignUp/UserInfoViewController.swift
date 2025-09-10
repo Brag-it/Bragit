@@ -45,6 +45,7 @@ final class UserInfoFormView: UIView {
   let buttonColor = UIColor.primary400
   let acceptColor = UIColor.systemSafe
   let rejectColor = UIColor.systemDanger
+  let warningColor = UIColor.systemWarning
 
   private let mailStack = UIStackView()
   private let pwStack = UIStackView()
@@ -197,7 +198,7 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     nicknameTextField.do {
-      $0.placeholder = "사용할 닉네임을 입력해 주세요"
+      $0.placeholder = "2-8자 사이 영문, 숫자"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
@@ -415,7 +416,7 @@ final class UserInfoViewController: UIViewController {
           owner.formView.nicknameCheckLabel.textColor = owner.formView.rejectColor
           owner.formView.nicknameCheckIcon.image = UIImage.reject.withRenderingMode(.alwaysOriginal)
         case "중복 확인 중...":
-          owner.formView.nicknameCheckLabel.textColor = owner.formView.labelColor
+          owner.formView.nicknameCheckLabel.textColor = owner.formView.warningColor
           owner.formView.nicknameCheckIcon.image = nil
         default:
           break

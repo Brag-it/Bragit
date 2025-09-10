@@ -317,8 +317,19 @@ private extension SignTermsViewController {
   }
 
   func updateAllAcceptCheckboxImage(service: Bool, privacy: Bool, marketing: Bool) {
-    let allOn = service && privacy && marketing
-    let allOff = !service && !privacy && !marketing
+    let includeMarketing = !marketingAcceptStack.isHidden
+
+    let allOn: Bool
+    let allOff: Bool
+
+    if includeMarketing {
+      allOn = service && privacy && marketing
+      allOff = !service && !privacy && !marketing
+    } else {
+      allOn = service && privacy
+      allOff = !service && !privacy
+    }
+
     let imageName: String = allOn ? "checkmark.square.fill" : (allOff ? "square.fill" : "minus.square.fill")
     allAcceptCheckbox.setImage(UIImage(systemName: imageName), for: .normal)
   }

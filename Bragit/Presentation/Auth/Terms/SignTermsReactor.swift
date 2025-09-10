@@ -17,7 +17,7 @@ final class SignTermsReactor: Reactor, Stepper {
   // View -> Reactor
   enum Action {
     case tapBack
-    case tapAll
+    case tapAllㄴ
     case tapService
     case tapPrivacy
     case tapMarketing
