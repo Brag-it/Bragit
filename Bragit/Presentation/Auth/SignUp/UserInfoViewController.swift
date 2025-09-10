@@ -198,7 +198,7 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     nicknameTextField.do {
-      $0.placeholder = "2-8자 사이 영문, 숫자"
+      $0.placeholder = "2-8글자 내로 입력해 주세요"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
