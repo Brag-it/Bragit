@@ -30,6 +30,7 @@ class HomeReactor: Reactor, Stepper {
     case refresh
     case nowPostsRefresh
     case searchTapped
+    case didTapUser(Post)
   }
 
   enum Mutation {
@@ -129,6 +130,22 @@ class HomeReactor: Reactor, Stepper {
     case .searchTapped:
       steps.accept(AppStep.searchFeed)
       return .empty()
+    case .didTapUser(let post):
+      guard let authorId = post.author?.id, !authorId.isEmpty else {
+        return .empty()
+      }
+
+      return userManager
+        .rxfetchUsersBy(ids: [authorId])
+        .compactMap { $0.first }
+        .do { [weak self] user in
+          self?.steps.accept(AppStep.userProfile(user: user))
+        }
+        .flatMap { _ in Observable<Mutation>.empty() }
+        .catch { error in
+          print("fetch user failed:", error)
+          return .empty()
+        }
     }
   }
   // swiftlint:enable cyclomatic_complexity

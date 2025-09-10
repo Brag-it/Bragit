@@ -114,12 +114,7 @@ class SettingReactor: Reactor, Stepper {
   private func cancelAccount() -> Observable<Mutation> {
     return Observable<Mutation>.deferred { [weak self] in
       guard let self else { return .empty() }
-
-      // Clear local persisted data similar to logout
-      UserDefaults.standard.removeObject(forKey: LocalStorageCase.nowUser.rawValue)
       // KeychainMailStore.clear()
-
-      // Route to the cancel account flow
       self.steps.accept(AppStep.cancelAccount)
 
       return .just(.noop)

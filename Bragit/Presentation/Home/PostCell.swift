@@ -18,12 +18,14 @@ final class PostCell: UICollectionViewCell {
   private let profileImageView = UIImageView().then {
     $0.layer.cornerRadius = 18
     $0.layer.masksToBounds = true
+    $0.isUserInteractionEnabled = true
   }
 
   private let userNameLabel = UILabel().then {
     $0.font = .pretendard(size: 15, weight: .medium)
     $0.text = "닉네임"
     $0.numberOfLines = 1
+    $0.isUserInteractionEnabled = true
   }
 
   private let dateLabel = UILabel().then {
@@ -105,6 +107,7 @@ final class PostCell: UICollectionViewCell {
   }
 
   let followDidTap = PublishRelay<Post>()
+  let userDidTap = PublishRelay<Post>()
   var reusableDisposeBag = DisposeBag()
   private let permanentDisposeBag = DisposeBag()
   private var post: Post?
@@ -113,6 +116,27 @@ final class PostCell: UICollectionViewCell {
     super.init(frame: frame)
 
     setUI()
+
+    let profileTapGesture = UITapGestureRecognizer()
+    profileImageView.addGestureRecognizer(profileTapGesture)
+
+    let nameTapGesture = UITapGestureRecognizer()
+    userNameLabel.addGestureRecognizer(nameTapGesture)
+
+    nameTapGesture.rx.event
+      .bind {
+        [weak self] _ in
+        guard let self = self, self.post != nil else { return }
+        self.userDidTap.accept(self.post!)
+      }.disposed(by: permanentDisposeBag)
+
+    profileTapGesture.rx.event
+      .bind {
+        [weak self] _ in
+        guard let self = self, self.post != nil else { return }
+        self.userDidTap.accept(self.post!)
+      }.disposed(by: permanentDisposeBag)
+
     followButton.rx.tap.bind {
       [weak self] in
       guard let self = self, self.post != nil else { return }
@@ -205,7 +229,7 @@ final class PostCell: UICollectionViewCell {
     userNameLabel.snp.makeConstraints {
       $0.leading.equalTo(profileImageView.snp.trailing).offset(12)
       $0.centerY.equalTo(profileImageView)
-      $0.trailing.equalTo(followButton.snp.leading).inset(12)
+      $0.trailing.lessThanOrEqualTo(followButton.snp.leading).inset(12)
     }
 
     followButton.snp.makeConstraints {

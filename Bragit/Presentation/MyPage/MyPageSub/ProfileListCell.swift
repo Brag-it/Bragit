@@ -92,7 +92,7 @@ final class ProfileListCell: UICollectionViewCell {
       imageView.image = .union
       imageView.layer.cornerRadius = 0
       imageView.snp.updateConstraints {
-        $0.width.height.equalTo(24)
+        $0.width.height.equalTo(16.5)
       }
       textLabel.text = tag.tag
       @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?

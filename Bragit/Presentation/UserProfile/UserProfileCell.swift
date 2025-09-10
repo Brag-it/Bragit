@@ -126,5 +126,12 @@ final class UserProfileCell: UICollectionViewCell {
     } else {
       followButton.isSelected = false
     }
+
+    @LocalStorage(location: .nowUser) var nowUser: String?
+    if profile.id == nowUser?.lowercased() {
+      followButton.isHidden = true
+    } else {
+      followButton.isHidden = false
+    }
   }
 }

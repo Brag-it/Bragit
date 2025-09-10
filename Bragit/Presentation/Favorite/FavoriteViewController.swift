@@ -33,6 +33,7 @@ class FavoriteViewController: UIViewController, View {
     fatalError("init(coder:) has not been implemented")
   }
 
+  // swiftlint:disable cyclomatic_complexity
   func bind(reactor: FavoriteReactor) {
     favoriteView.feedView.refreshRelay
       .map { .refresh }
@@ -70,6 +71,7 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // state 바인딩
     reactor.state
       .bind { [weak self] state in
         guard let self = self else { return }
@@ -118,8 +120,23 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    self.rx.viewWillAppear
+      .map { _ in
+        let postType = reactor.currentState.postType
+        switch postType {
+        case .emptyTag, .tag:
+          return .menuTapped(0)
+        case .emptyUser, .user:
+          return .menuTapped(1)
+        }
+      }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     // 태그 탭
     favoriteView.feedView.tagDidTap
+      .do { [weak self] _ in self?.scrollToTop() }
+      .delay(.milliseconds(300), scheduler: MainScheduler.instance)
       .map { tag in .tagTapped(tag) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
@@ -134,6 +151,12 @@ class FavoriteViewController: UIViewController, View {
     favoriteView.feedView.followDidTap
       .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
       .map { post in .followButtonTapped(post) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    // 유저 프로필 탭
+    favoriteView.feedView.userDidTap
+      .map { .userProfileTapped($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -165,7 +188,15 @@ class FavoriteViewController: UIViewController, View {
       .map { post in .didTapPost(post) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    // 화면 갱신
+    reactor.doReload
+      .observe(on: MainScheduler.instance)
+      .bind { [favoriteView] in
+        favoriteView.feedView.collectionView.reloadData()
+      }.disposed(by: disposeBag)
   }
+  // swiftlint:enable cyclomatic_complexity
 
   func scrollToTop() {
     favoriteView.feedView.collectionView.setContentOffset(.zero, animated: true)

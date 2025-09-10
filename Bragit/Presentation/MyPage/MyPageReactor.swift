@@ -47,10 +47,12 @@ class MyPageReactor: Reactor, Stepper {
     case setLoading(Bool)
     case appendPosts([Post])
     case setProfileImage(String)
+    case setUserId(String)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
   struct State: Then {
+    var userId: String = ""
     var followers: [String] = []
     var followings: [String] = []
     var favoriteTags: [Tag] = []
@@ -91,6 +93,7 @@ class MyPageReactor: Reactor, Stepper {
       return .merge([
         .just(.setFollowings(followUsers ?? [])),
         .just(.setFavoriteTags(favoriteTags ?? [])),
+        .just(.setUserId(nowUserId ?? "")),
         userManager.rxFetchFollowers().map { .setFollowers($0) },
         userManager.rxfetchUsersBy(ids: [nowUserId ?? ""]).flatMap { users -> Observable<Mutation> in
           guard let user = users.first else { return .empty() }
@@ -189,6 +192,10 @@ class MyPageReactor: Reactor, Stepper {
       return state.with {
         KingfisherManager.shared.cache.removeImage(forKey: profileImage)
         $0.profileImage = profileImage
+      }
+    case .setUserId(let userId):
+      return state.with {
+        $0.userId = userId
       }
     }
   }
