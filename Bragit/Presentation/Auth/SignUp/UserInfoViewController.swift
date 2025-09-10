@@ -45,6 +45,7 @@ final class UserInfoFormView: UIView {
   let buttonColor = UIColor.primary400
   let acceptColor = UIColor.systemSafe
   let rejectColor = UIColor.systemDanger
+  let warningColor = UIColor.systemWarning
 
   private let mailStack = UIStackView()
   private let pwStack = UIStackView()
@@ -197,7 +198,7 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     nicknameTextField.do {
-      $0.placeholder = "사용할 닉네임을 입력해 주세요"
+      $0.placeholder = "2-8글자 내로 입력해 주세요"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
@@ -312,6 +313,18 @@ final class UserInfoViewController: UIViewController {
   fileprivate var confirmMatched = false
   fileprivate var nicknameValid = false
 
+  private let headerView = UIView()
+  private let backButton = UIButton(type: .system).then {
+    $0.setImage(.back, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+  private let headerLabel = UILabel().then {
+    $0.text = "회원가입"
+    $0.font = .pretendard(size: 18, weight: .medium)
+    $0.textColor = .grayScale900
+    $0.textAlignment = .center
+  }
+
   private let formView = UserInfoFormView()
   private var inputOrder: [UITextField] = []
   private var keyboardBottomInset: CGFloat = 0
@@ -332,10 +345,17 @@ final class UserInfoViewController: UIViewController {
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-  override func loadView() { view = formView }
+  override func viewWillAppear(_ animated: Bool) {
+    super.viewWillAppear(animated)
+    navigationController?.setNavigationBarHidden(true, animated: false)
+  }
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    view.backgroundColor = .white
+
+    setupHeaderAndContentLayout()
+
     title = "회원가입"
     configureInitialState()
     configureInputOrder()
@@ -344,10 +364,44 @@ final class UserInfoViewController: UIViewController {
     addKeyboardDismissGesture()
     registerKeyboardNotifications()
     bindNicknameReactor()
+
+    backButton.rx.tap
+      .bind(with: self) { owner, _ in
+        owner.navigationController?.popViewController(animated: true)
+      }
+      .disposed(by: reactorBag)
+  }
+
+  private func setupHeaderAndContentLayout() {
+    view.addSubview(headerView)
+    headerView.addSubview(backButton)
+    headerView.addSubview(headerLabel)
+    view.addSubview(formView)
+
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(58)
+    }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
+    headerLabel.snp.makeConstraints {
+      $0.centerX.equalTo(headerView.snp.centerX)
+      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
+    }
+
+    formView.snp.makeConstraints {
+      $0.top.equalTo(headerView.snp.bottom)
+      $0.leading.trailing.bottom.equalToSuperview()
+    }
   }
 
   private func bindNicknameReactor() {
-    // State -> UI
     nicknameReactor.state
       .map(\.nicknameStatusText)
       .distinctUntilChanged()
@@ -362,7 +416,7 @@ final class UserInfoViewController: UIViewController {
           owner.formView.nicknameCheckLabel.textColor = owner.formView.rejectColor
           owner.formView.nicknameCheckIcon.image = UIImage.reject.withRenderingMode(.alwaysOriginal)
         case "중복 확인 중...":
-          owner.formView.nicknameCheckLabel.textColor = owner.formView.labelColor
+          owner.formView.nicknameCheckLabel.textColor = owner.formView.warningColor
           owner.formView.nicknameCheckIcon.image = nil
         default:
           break

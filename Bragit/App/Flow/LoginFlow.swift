@@ -81,14 +81,15 @@ final class LoginFlow: Flow, Stepper {
 
   private func showTermsConsent() -> FlowContributors {
     guard let info = pendingUserInfo else { return .none }
-    let termsVC = TermsViewController(userInfo: info)
+    let reactor = SignTermsReactor()
+    let termsVC = SignTermsViewController(userInfo: info, reactor: reactor)
     termsVC.onAgree = { [weak self] agreed in
       self?.pendingUserInfo = agreed
-      self?.steps.accept(AppStep.signupPhoto)
+      reactor.steps.accept(AppStep.signupPhoto)
     }
     nav.pushViewController(termsVC, animated: true)
     return .one(
-      flowContributor: .contribute(withNextPresentable: termsVC, withNextStepper: self)
+      flowContributor: .contribute(withNextPresentable: termsVC, withNextStepper: reactor)
     )
   }
 

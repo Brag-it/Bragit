@@ -79,9 +79,15 @@ final class SettingTermsDetailViewController: UIViewController, Stepper {
 
     loadLicenseText()
 
+    // 직접 네비게이션 pop (RxFlow 미연동 상황에서도 동작하도록)
     backButton.rx.tap
-      .bind { [weak self] in
-        self?.steps.accept(AppStep.pop)
+      .bind(with: self) { owner, _ in
+        if let nav = owner.navigationController {
+          nav.popViewController(animated: true)
+        } else {
+          // 네비게이션이 없을 경우 RxFlow로 전달 (옵션)
+          owner.steps.accept(AppStep.pop)
+        }
       }
       .disposed(by: disposeBag)
   }
@@ -91,7 +97,7 @@ final class SettingTermsDetailViewController: UIViewController, Stepper {
     let bundle = Bundle.main
 
     if let url = bundle.url(forResource: name, withExtension: "txt"),
-    let text = try? String(contentsOf: url, encoding: .utf8) {
+       let text = try? String(contentsOf: url, encoding: .utf8) {
       textView.text = text
       return
     }
@@ -102,3 +108,4 @@ final class SettingTermsDetailViewController: UIViewController, Stepper {
     titleLabel.text = item.name
   }
 }
+
