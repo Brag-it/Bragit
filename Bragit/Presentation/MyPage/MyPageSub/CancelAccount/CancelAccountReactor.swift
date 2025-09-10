@@ -5,6 +5,8 @@
 //  Created by seongjun cho on 9/4/25.
 //
 
+import Foundation
+
 import ReactorKit
 import RxSwift
 import RxFlow
@@ -74,7 +76,7 @@ class CancelAccountReactor: Reactor, Stepper {
           return Single.create { single in
             let task = Task {
               do {
-                _ = try await self.supabase.functions
+                try await self.supabase.functions
                   .invoke(
                     "apple-revoke",
                     options: FunctionInvokeOptions(body: ["refresh_token": refreshToken])
@@ -89,6 +91,7 @@ class CancelAccountReactor: Reactor, Stepper {
         }
         .flatMap { self.userManager.rxCancelAccount() }
         .flatMap { _ -> Observable<Mutation> in
+          UserDefaults.standard.removeObject(forKey: LocalStorageCase.nowUser.rawValue)
           self.steps.accept(AppStep.login)
           return .empty()
         }

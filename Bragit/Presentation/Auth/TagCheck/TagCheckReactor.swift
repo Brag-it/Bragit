@@ -48,10 +48,9 @@ final class TagCheckReactor: Reactor, Stepper {
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .tapLater:
-      return registerUserAndFinish(profileURL: nil)
+      return registerUserAndFinish(profileURL: nil, tags: [])
     case .tapNext(let tags):
-      self.favoriteTags = tags
-      return registerUserAndFinish(profileURL: self.profileURL)
+      return registerUserAndFinish(profileURL: self.profileURL, tags: tags)
     }
   }
 
@@ -68,7 +67,7 @@ final class TagCheckReactor: Reactor, Stepper {
     return newState
   }
 
-  private func registerUserAndFinish(profileURL: String?) -> Observable<Mutation> {
+  private func registerUserAndFinish(profileURL: String?, tags: [Tag]) -> Observable<Mutation> {
     return Observable.create { [weak self] observer in
       guard let self else {
         observer.onCompleted()
@@ -107,6 +106,9 @@ final class TagCheckReactor: Reactor, Stepper {
           }
           // 현재 로그인한 유저를 로컬에 기억
           UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
+
+          // 로컬에 favoriteTags 저장
+          self.favoriteTags = tags
 
           // 회원 정보 저장
           let user = User(

@@ -8,6 +8,7 @@
 import Foundation
 
 struct Profile: Hashable {
+  let id: String
   let nickName: String
   let profileImage: String
   let follwerCount: Int

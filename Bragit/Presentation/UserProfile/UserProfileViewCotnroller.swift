@@ -51,6 +51,7 @@ class UserProfileViewCotnroller: UIViewController, View {
     // 스테이트 바인딩
     reactor.state.bind { [userProfileView] in
       let profile = Profile(
+        id: reactor.user.id,
         nickName: $0.nickName,
         profileImage: $0.profileImage,
         follwerCount: $0.followersCount,
