@@ -37,7 +37,7 @@ class DetailPostViewController: UIViewController, View {
 
   private let headerLabel = UILabel().then {
     $0.text = "게시물"
-    $0.font = UIFont.systemFont(ofSize: 16)
+    $0.font = .pretendard(size: 18)
     $0.textColor = .grayScale900
     $0.textAlignment = .center
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
