@@ -26,11 +26,12 @@ final class PostCell: UICollectionViewCell {
     $0.text = "닉네임"
     $0.numberOfLines = 1
     $0.isUserInteractionEnabled = true
+    $0.textColor = .grayScale700
   }
 
   private let dateLabel = UILabel().then {
     $0.font = .pretendard(size: 13)
-    $0.textColor = .systemGray
+    $0.textColor = .grayScale600
     $0.textAlignment = .right
     $0.text = "2분전"
   }
@@ -44,12 +45,14 @@ final class PostCell: UICollectionViewCell {
     $0.font = .pretendard(size: 16, weight: .semibold)
     $0.text = "제목"
     $0.numberOfLines = 2
+    $0.textColor = .grayScale900
   }
 
   private let descriptionLabel = UILabel().then {
     $0.font = .pretendard(size: 14)
     $0.text = "미리보기글"
     $0.numberOfLines = 3
+    $0.textColor = .grayScale700
   }
 
   private let postStackView = UIStackView().then {
@@ -63,24 +66,24 @@ final class PostCell: UICollectionViewCell {
 
   private let commentLabel = UILabel().then {
     $0.font = .pretendard(size: 14, weight: .medium)
-    $0.textColor = .systemGray
+    $0.textColor = .grayScale700
     $0.text = "0"
   }
 
   private let commentImageView = UIImageView().then {
     $0.image = .comment.withRenderingMode(.alwaysTemplate)
-    $0.tintColor = .systemGray
+    $0.tintColor = .grayScale600
   }
 
   private let favoriteLabel = UILabel().then {
     $0.font = .pretendard(size: 14, weight: .medium)
-    $0.textColor = .systemGray
+    $0.textColor = .grayScale700
     $0.text = "0"
   }
 
   private let favoriteImageView = UIImageView().then {
     $0.image = .favorite.withRenderingMode(.alwaysTemplate)
-    $0.tintColor = .systemGray
+    $0.tintColor = .grayScale600
   }
 
   private let followButton = UIButton().then {
