@@ -34,4 +34,3 @@ enum UserInfoValidator {
     return regex.firstMatch(in: text, options: [], range: range) != nil
   }
 }
-

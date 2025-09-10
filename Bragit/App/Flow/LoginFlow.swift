@@ -21,16 +21,27 @@ final class LoginFlow: Flow, Stepper {
     switch step {
     case .login:
       return showLogin()
-    case .signup(let initialMail, let refreshToken):
-      return showSignup(initialMail: initialMail, refreshToken: refreshToken)
+    case .signup(let initialMail, let refreshToken, let isAppleLogin):
+      return showSignup(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
     case .signTermsConset:
       return showTermsConsent()
     case .signupPhoto:
       return showSignupPhoto()
     case .signSelectTag(let profileURL):
       return showSignSelectTag(profileURL: profileURL)
+    case .signInMail:
+      return showMailLogin()
     case .home:
       return .end(forwardToParentFlowWithStep: AppStep.home)
+
+    // 추가: 뒤로 가기(pop) / dismiss 처리
+    case .pop:
+      nav.popViewController(animated: true)
+      return .none
+    case .dismiss:
+      nav.dismiss(animated: true)
+      return .none
+
     default:
       return .none
     }
@@ -50,8 +61,12 @@ final class LoginFlow: Flow, Stepper {
     )
   }
 
-  private func showSignup(initialMail: String?, refreshToken: String?) -> FlowContributors {
-    let userInfoVC = UserInfoViewController(initialMail: initialMail, refreshToken: refreshToken)
+  private func showSignup(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) -> FlowContributors {
+    let userInfoVC = UserInfoViewController(
+      initialMail: initialMail,
+      refreshToken: refreshToken,
+      isAppleLogin: isAppleLogin
+    )
     userInfoVC.onNext = { [weak self] (info: UserRegistrationInfo) in
       print("[Flow]: \(initialMail as Any)")
       self?.pendingUserInfo = info
@@ -96,6 +111,24 @@ final class LoginFlow: Flow, Stepper {
           withNextPresentable: tagVC,
           withNextStepper: reactor
         )
+    )
+  }
+
+  private func showMailLogin() -> FlowContributors {
+    let reactor = MailLoginReactor()
+    let mailLoginVC = MailLoginViewController(reactor: reactor)
+
+    // 시스템 내비게이션 바의 뒤로가기 버튼 숨김
+    mailLoginVC.navigationItem.hidesBackButton = true
+    mailLoginVC.navigationItem.leftBarButtonItem = nil
+    mailLoginVC.navigationItem.title = ""
+
+    nav.pushViewController(mailLoginVC, animated: true)
+    return .one(
+      flowContributor: .contribute(
+        withNextPresentable: mailLoginVC,
+        withNextStepper: reactor
+      )
     )
   }
 }
