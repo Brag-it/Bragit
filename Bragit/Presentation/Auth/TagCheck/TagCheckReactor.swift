@@ -51,8 +51,10 @@ final class TagCheckReactor: Reactor, Stepper {
     case .tapBack:
       steps.accept(AppStep.pop)
       return .empty()
+
     case .tapLater:
       return registerUserAndFinish(profileURL: nil, tags: [])
+
     case .tapNext(let tags):
       return registerUserAndFinish(profileURL: self.profileURL, tags: tags)
     }
@@ -80,74 +82,72 @@ final class TagCheckReactor: Reactor, Stepper {
 
       Task {
         do {
-          print("📝: 회원가입 시작 >>> isAppleLogin = \(self.userInfo.isAppleLogin)")
           observer.onNext(.setLoading(true))
 
-          var userId: String
-
-          if !self.userInfo.isAppleLogin {
-            print("📝: 이메일 회원가입 진행 중")
-            guard let password = self.userInfo.password else {
-              print("📝: 비밀번호 없음")
-              observer.onNext(.setError("비밀번호 필요"))
-              observer.onNext(.setLoading(false))
-              observer.onCompleted()
-              return
+          let userId: String = try await {
+            if !self.userInfo.isAppleLogin {
+              guard let password = self.userInfo.password else {
+                observer.onNext(.setError("비밀번호 필요"))
+                observer.onNext(.setLoading(false))
+                observer.onCompleted()
+                throw NSError(domain: "Signup", code: -1, userInfo: [NSLocalizedDescriptionKey: "Password missing"])
+              }
+              let signUpResult = try await self.supabase.auth.signUp(
+                email: self.userInfo.mail,
+                password: password
+              )
+              return signUpResult.user.id.uuidString
+            } else {
+              let session = try await self.supabase.auth.session
+              return session.user.id.uuidString
             }
+          }()
 
-            print("📝: signUp 호출 >>> mail = \(self.userInfo.mail)")
-            let signUpResult = try await self.supabase.auth.signUp(
-              email: self.userInfo.mail,
-              password: password
-            )
-            print("📝: signUp 성공")
-
-            let user = signUpResult.user
-            userId = user.id.uuidString
-          } else {
-            let session = try await self.supabase.auth.session
-            userId = session.user.id.uuidString
-          }
-          // 현재 로그인한 유저를 로컬에 기억
           UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
-
-          // 로컬에 favoriteTags 저장
           self.favoriteTags = tags
 
-          // 회원 정보 저장
-          let user = User(
-            id: userId,
-            nickname: self.userInfo.nickname,
-            profile: profileURL,
-            provider: self.userInfo.isAppleLogin ? "apple" : "mail",
-            signDate: Date(),
-            latestUploaded: nil,
-            refreshToken: self.userInfo.refreshToken
-          )
+          await MainActor.run {
+            self.steps.accept(AppStep.home)
+          }
 
-          try await self.saveUserInfo(user)
-
-          // 1) Apple/이메일 가입 모두에서 User_Info.email 컬럼에 저장
-          let trimmedMail = self.userInfo.mail.trimmingCharacters(in: .whitespacesAndNewlines)
-          if !trimmedMail.isEmpty {
+          // 백그라운드 처리
+          Task.detached(priority: .background) { [userInfo = self.userInfo, supabase = self.supabase] in
             do {
-              try await self.supabase
-                .from("User_Info")
-                .update(["email": trimmedMail])
-                .eq("id", value: userId)
-                .execute()
-              print("[signup] User_Info.email updated")
+              // 유저 정보 저장
+              let user = User(
+                id: userId,
+                nickname: userInfo.nickname,
+                profile: profileURL,
+                provider: userInfo.isAppleLogin ? "apple" : "mail",
+                signDate: Date(),
+                latestUploaded: nil,
+                refreshToken: userInfo.refreshToken
+              )
+              _ = try await supabase.from("User_Info").insert(user).execute()
+
+              let trimmedMail = userInfo.mail.trimmingCharacters(in: .whitespacesAndNewlines)
+              if !trimmedMail.isEmpty {
+                do {
+                  try await supabase
+                    .from("User_Info")
+                    .update(["email": trimmedMail])
+                    .eq("id", value: userId)
+                    .execute()
+                } catch {
+                  print("[signup] User_Info.email update failed: \(error)")
+                }
+              }
             } catch {
-              print("[signup] User_Info.email update failed: \(error)")
+              print("Post-signup background work failed: \(error)")
             }
           }
+
+          // 뷰 상태 마무리
           observer.onNext(.setRegistrationComplete(true))
           observer.onNext(.setLoading(false))
           observer.onCompleted()
 
-          await MainActor.run { self.steps.accept(AppStep.home) }
         } catch {
-          print("📝: 에러 >>> \(error)")
           let errorMessage =
             if error.localizedDescription.contains("already registered") {
               "이미 가입된 이메일"
@@ -161,13 +161,5 @@ final class TagCheckReactor: Reactor, Stepper {
       }
       return Disposables.create()
     }
-  }
-
-  private func saveUserInfo(_ user: User) async throws {
-    _ =
-      try await supabase
-      .from("User_Info")
-      .insert(user)
-      .execute()
   }
 }
