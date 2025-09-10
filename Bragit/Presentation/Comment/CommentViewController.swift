@@ -89,6 +89,7 @@ final class CommentViewController: UIViewController, View {
       $0.contentMode = .scaleAspectFit
       $0.setContentHuggingPriority(.required, for: .horizontal)
       $0.setContentCompressionResistancePriority(.required, for: .horizontal)
+      $0.isHidden = true
     }
 
     let textContainer = UIView().then {
