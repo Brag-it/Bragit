@@ -90,7 +90,8 @@ final class UserProfileView: UIView {
 
     collectionView.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom)
-      $0.leading.trailing.bottom.equalTo(self.safeAreaLayoutGuide)
+      $0.leading.trailing.equalTo(self.safeAreaLayoutGuide)
+      $0.bottom.equalToSuperview()
     }
   }
 
