@@ -2,9 +2,7 @@
 included:
   - Bragit/App
   - Bragit/Presentation
-  - Bragit/Model
-  - Bragit/Managers
-  
+
 # 검사에서 제외할 디렉토리 (외부 의존성, 설정 등)
 excluded:
   - Pods                    # CocoaPods 의존성 제외
@@ -28,6 +26,9 @@ disabled_rules:
   - redundant_string_enum_value   # enum 중복 rawValue 허용
   - empty_enum_arguments          # 빈 enum 파라미터 허용
   - let_var_whitespace            # let/var 선언 간 공백 규칙 비활성화
+  - closure_parameter_position    # 클로져 파라마터는 옆에 사용 해제
+  - large_tuple                   # 튜플 크기 제한 비활성화
+  - type_body_length              # 타입(클래스/구조체) 본문 길이 제한 비활성
 
 # 기본 비활성화된 룰 중, 유용한 것만 선택적으로 활성화
 opt_in_rules:
@@ -59,8 +60,12 @@ identifier_name:
     error: 2                     # 2자 미만일 경우 에러
   excluded:                      # 아래 예외 이름은 허용
     - id                         # 일반적으로 자주 쓰임
+    - i
+    - j
     - x                          # 좌표, 수학적 계산 등에 자주 사용
     - y
+    - z
+    - to
 
 # 들여쓰기 스타일 설정
 indentation_width:

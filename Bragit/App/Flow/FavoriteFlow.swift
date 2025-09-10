@@ -1,0 +1,34 @@
+//
+//  FavoriteFlow.swift
+//  Bragit
+//
+//  Created by 이태윤 on 8/26/25.
+//
+import UIKit
+
+import RxFlow
+
+final class FavoriteFlow: Flow {
+  var root: Presentable { nav }
+  private let nav = UINavigationController()
+
+  func navigate(to step: Step) -> FlowContributors {
+    guard let step = step as? AppStep else { return .none }
+    switch step {
+    case .favorite:
+      return showFavoriteRoot()
+    default:
+      return .one(flowContributor: .forwardToParentFlow(withStep: step))
+    }
+  }
+
+  private func showFavoriteRoot() -> FlowContributors {
+    let reactor = FavoriteReactor()
+    let favoriteVC = FavoriteViewController(reactor: reactor)
+    nav.setViewControllers([favoriteVC], animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: favoriteVC,
+      withNextStepper: reactor
+    ))
+  }
+}
