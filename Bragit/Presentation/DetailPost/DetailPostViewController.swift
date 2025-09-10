@@ -205,7 +205,7 @@ class DetailPostViewController: UIViewController, View {
 
     titleLabel.snp.makeConstraints {
       $0.top.equalTo(uploadDateLabel.snp.bottom).offset(8)
-      $0.leading.equalToSuperview()
+      $0.leading.trailing.equalToSuperview()
     }
 
     profileImage.snp.makeConstraints {
