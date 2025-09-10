@@ -439,9 +439,9 @@ class UserManager: UserManagerProtocol {
 
   // 탈퇴하기
   func rxCancelAccount() -> Single<Void> {
-    
-    Single.create { [weak self] observer in
-      guard let self = self, let userId = self.userId else {
+    @LocalStorage(location: .nowUser) var userId: String?
+    return Single<Void>.create { [weak self] observer in
+      guard let self = self, let userId = userId else {
         observer(.failure(
           NSError(
             domain: "UserManagerError",
