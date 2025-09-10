@@ -45,6 +45,7 @@ class MyPageViewController: UIViewController, View {
 
     reactor.state.bind { [myPageView] in
       let profile = Profile(
+        id: "",
         nickName: $0.nickName,
         profileImage: $0.profileImage,
         follwerCount: $0.followers.count,
