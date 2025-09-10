@@ -192,6 +192,10 @@ class ImageUploadViewController: UIViewController, View {
 
 extension ImageUploadViewController {
   func bind(reactor: ImageUploadReactor) {
+    backButton.rx.tap
+      .map { Reactor.Action.tapBack }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
     imageButton.rx.tap
       .bind(with: self) { owner, _ in

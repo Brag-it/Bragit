@@ -13,10 +13,20 @@ import RxSwift
 import SnapKit
 import Then
 
-final class TermsViewController: UIViewController, View {
-
-  // ReactorKit
+final class SignTermsViewController: UIViewController, View {
   var disposeBag = DisposeBag()
+
+  private let headerView = UIView()
+  private let backButton = UIButton(type: .system).then {
+    $0.setImage(.back, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+  private let headerLabel = UILabel().then {
+    $0.text = "회원가입"
+    $0.font = UIFont.systemFont(ofSize: 16)
+    $0.textColor = .grayScale900
+    $0.textAlignment = .center
+  }
 
   private let userInfo: UserRegistrationInfo
 
@@ -65,9 +75,8 @@ final class TermsViewController: UIViewController, View {
     $0.tintColor = .orange
   }
 
-  let serviceAcceptLabel = UILabel().then {
-    $0.text = "서비스 이용약관 (필수)"
-  }
+  // Label + Forward를 버튼 컨테이너로 구성
+  let serviceDetailButton = UIButton(type: .system)
 
   let serviceAcceptStack = UIStackView().then {
     $0.axis = .horizontal
@@ -81,9 +90,7 @@ final class TermsViewController: UIViewController, View {
     $0.tintColor = .orange
   }
 
-  let privacyAcceptLabel = UILabel().then {
-    $0.text = "개인정보 수집 및 처리 방침 (필수)"
-  }
+  let privacyDetailButton = UIButton(type: .system)
 
   let privacyAcceptStack = UIStackView().then {
     $0.axis = .horizontal
@@ -97,16 +104,13 @@ final class TermsViewController: UIViewController, View {
     $0.tintColor = .orange
   }
 
-  let marketingAcceptLabel = UILabel().then {
-    $0.text = "마케팅 정보 수집 및 수신 (선택)"
-  }
+  let marketingDetailButton = UIButton(type: .system)
 
   let marketingAcceptStack = UIStackView().then {
     $0.axis = .horizontal
     $0.spacing = 8
     $0.alignment = .center
-    // TODO: 마케팅 필수로 들어가야 되나? 우리 홍보도 없고, 지금 선택 허용 여부 받을 곳도 없는데
-    //    $0.isHidden = true
+    $0.isHidden = true
   }
 
   // nextButton
@@ -121,11 +125,10 @@ final class TermsViewController: UIViewController, View {
   init(userInfo: UserRegistrationInfo) {
     self.userInfo = userInfo
     super.init(nibName: nil, bundle: nil)
-    // 기본 패턴을 유지하기 위해 내부에서 Reactor를 생성해 주입
+    // 내부에서 Reactor 생성
     self.reactor = SignTermsReactor()
   }
 
-  // Reactor를 외부에서 주입하고 싶을 때 사용할 수 있는 초기화 메서드
   init(userInfo: UserRegistrationInfo, reactor: SignTermsReactor) {
     self.userInfo = userInfo
     super.init(nibName: nil, bundle: nil)
@@ -146,9 +149,13 @@ final class TermsViewController: UIViewController, View {
 }
 
 // MARK: - Layout & UI setup
-private extension TermsViewController {
+private extension SignTermsViewController {
   func setupLayout() {
-    // TODO: Font Setting
+    view.addSubview(headerView)
+    headerView.addSubview(backButton)
+    headerView.addSubview(headerLabel)
+
+      // Font/Color 설정
     descriptionLabel.textColor = descColor
     descriptionLabel.font = descFont
     [allAcceptCheckbox, privacyAcceptCheckbox, serviceAcceptCheckbox, marketingAcceptCheckbox, nextButton].forEach {
@@ -156,21 +163,22 @@ private extension TermsViewController {
     }
     allAcceptLabel.font = allLabelFont
     nextButton.titleLabel?.font = allLabelFont
-    [privacyAcceptLabel, serviceAcceptLabel, marketingAcceptLabel].forEach {
-      $0.font = checkboxFont
-    }
+
+    configureDetailButton(serviceDetailButton, title: "서비스 이용 약관 (필수)")
+    configureDetailButton(privacyDetailButton, title: "개인정보 수집 및 처리 방침 (필수)")
+    configureDetailButton(marketingDetailButton, title: "마케팅 정보 수집 및 수신 (선택)")
 
     // all accept stack
     [allAcceptCheckbox, allAcceptLabel].forEach { allAcceptStack.addArrangedSubview($0) }
 
     // service accept stack
-    [serviceAcceptCheckbox, serviceAcceptLabel].forEach { serviceAcceptStack.addArrangedSubview($0) }
+    [serviceAcceptCheckbox, serviceDetailButton].forEach { serviceAcceptStack.addArrangedSubview($0) }
 
     // privacy accept stack
-    [privacyAcceptCheckbox, privacyAcceptLabel].forEach { privacyAcceptStack.addArrangedSubview($0) }
+    [privacyAcceptCheckbox, privacyDetailButton].forEach { privacyAcceptStack.addArrangedSubview($0) }
 
     // marketing accept stack
-    [marketingAcceptCheckbox, marketingAcceptLabel].forEach { marketingAcceptStack.addArrangedSubview($0) }
+    [marketingAcceptCheckbox, marketingDetailButton].forEach { marketingAcceptStack.addArrangedSubview($0) }
 
     // add view
     [
@@ -185,6 +193,21 @@ private extension TermsViewController {
       view.addSubview($0)
     }
 
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(58)
+    }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(20)
+      $0.centerY.equalToSuperview()
+    }
+
+    headerLabel.snp.makeConstraints {
+      $0.centerX.centerY.equalToSuperview()
+    }
+
     // 체크박스 크기 고정
     [allAcceptCheckbox, serviceAcceptCheckbox, privacyAcceptCheckbox, marketingAcceptCheckbox].forEach {
       $0.snp.makeConstraints { make in
@@ -192,9 +215,15 @@ private extension TermsViewController {
       }
     }
 
+    // 버튼이 체크박스 옆에서 남은 영역을 채우도록
+    [serviceDetailButton, privacyDetailButton, marketingDetailButton].forEach {
+      $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    }
+
     // snapkit
     descriptionLabel.snp.makeConstraints {
-      $0.top.equalTo(view.safeAreaLayoutGuide).offset(32)
+      $0.top.equalTo(headerView.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 
@@ -235,6 +264,42 @@ private extension TermsViewController {
     }
   }
 
+  func configureDetailButton(_ button: UIButton, title: String) {
+    button.tintColor = .grayScale700
+    button.contentHorizontalAlignment = .fill
+
+    let titleLabel = UILabel().then {
+      $0.text = title
+      $0.font = checkboxFont
+      $0.textColor = .grayScale700
+      $0.numberOfLines = 1
+      $0.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+      $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    }
+
+    let chevron = UIImageView(image: .forward).then {
+      $0.tintColor = .grayScale700
+      $0.contentMode = .scaleAspectFit
+      $0.setContentHuggingPriority(.required, for: .horizontal)
+      $0.setContentCompressionResistancePriority(.required, for: .horizontal)
+    }
+
+    button.addSubview(titleLabel)
+    button.addSubview(chevron)
+
+    titleLabel.snp.makeConstraints {
+      $0.leading.equalTo(button.snp.leading)
+      $0.centerY.equalTo(button.snp.centerY)
+      $0.trailing.lessThanOrEqualTo(chevron.snp.leading).offset(-8)
+    }
+
+    chevron.snp.makeConstraints {
+      $0.trailing.equalTo(button.snp.trailing)
+      $0.centerY.equalTo(button.snp.centerY)
+      $0.width.height.equalTo(16)
+    }
+  }
+
   func applyInitialUI() {
     setCheckboxImage(allAcceptCheckbox, checked: false)
     setCheckboxImage(serviceAcceptCheckbox, checked: false)
@@ -263,12 +328,22 @@ private extension TermsViewController {
     nextButton.backgroundColor = primaryColor
     nextButton.alpha = enabled ? 1.0 : 0.5
   }
+
+  func pushTermsDetail(item: TermsItem) {
+    let viewController = SettingTermsDetailViewController(item: item)
+    navigationController?.pushViewController(viewController, animated: true)
+  }
 }
 
 // MARK: - Reactor Binding
-extension TermsViewController {
+extension SignTermsViewController {
   func bind(reactor: SignTermsReactor) {
     // Actions
+    backButton.rx.tap
+      .map { SignTermsReactor.Action.tapBack }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     allAcceptCheckbox.rx.tap
       .map { SignTermsReactor.Action.tapAll }
       .bind(to: reactor.action)
@@ -294,36 +369,55 @@ extension TermsViewController {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // State -> UI: individual checkboxes
+    serviceDetailButton.rx.tap
+      .bind(with: self) { owner, _ in
+        let item = TermsItem(name: "서비스 이용 약관", bundleFileName: "Terms_Service")
+        owner.pushTermsDetail(item: item)
+      }
+      .disposed(by: disposeBag)
+
+    privacyDetailButton.rx.tap
+      .bind(with: self) { owner, _ in
+        let item = TermsItem(name: "개인정보 수집 및 처리 방침", bundleFileName: "Terms_PersonalInfo")
+        owner.pushTermsDetail(item: item)
+      }
+      .disposed(by: disposeBag)
+
+    marketingDetailButton.rx.tap
+      .bind(with: self) { owner, _ in
+        let item = TermsItem(name: "마케팅 정보 수집 및 수신", bundleFileName: "Terms_Marketing")
+        owner.pushTermsDetail(item: item)
+      }
+      .disposed(by: disposeBag)
+
     reactor.state.map(\.serviceAccepted)
       .distinctUntilChanged()
-      .subscribe(with: self) { owner, accepted in
+      .bind(with: self) { owner, accepted in
         owner.setCheckboxImage(owner.serviceAcceptCheckbox, checked: accepted)
       }
       .disposed(by: disposeBag)
 
     reactor.state.map(\.privacyAccepted)
       .distinctUntilChanged()
-      .subscribe(with: self) { owner, accepted in
+      .bind(with: self) { owner, accepted in
         owner.setCheckboxImage(owner.privacyAcceptCheckbox, checked: accepted)
       }
       .disposed(by: disposeBag)
 
     reactor.state.map(\.marketingAccepted)
       .distinctUntilChanged()
-      .subscribe(with: self) { owner, accepted in
+      .bind(with: self) { owner, accepted in
         owner.setCheckboxImage(owner.marketingAcceptCheckbox, checked: accepted)
       }
       .disposed(by: disposeBag)
 
-    // State -> UI: all-accept image
     Observable
       .combineLatest(
         reactor.state.map(\.serviceAccepted).distinctUntilChanged(),
         reactor.state.map(\.privacyAccepted).distinctUntilChanged(),
         reactor.state.map(\.marketingAccepted).distinctUntilChanged()
       )
-      .subscribe(with: self) { owner, tuple in
+      .bind(with: self) { owner, tuple in
         owner.updateAllAcceptCheckboxImage(service: tuple.0, privacy: tuple.1, marketing: tuple.2)
       }
       .disposed(by: disposeBag)
@@ -331,16 +425,15 @@ extension TermsViewController {
     // State -> UI: next button enable
     reactor.state.map { $0.serviceAccepted && $0.privacyAccepted }
       .distinctUntilChanged()
-      .subscribe(with: self) { owner, enabled in
+      .bind(with: self) { owner, enabled in
         owner.updateNextButtonState(enabled: enabled)
       }
       .disposed(by: disposeBag)
 
-    // Proceed to next step (bridge to existing onAgree closure)
     reactor.state.map(\.proceed)
       .distinctUntilChanged()
       .filter { $0 == true }
-      .subscribe(with: self) { owner, _ in
+      .bind(with: self) { owner, _ in
         owner.onAgree?(owner.userInfo)
       }
       .disposed(by: disposeBag)
@@ -354,4 +447,3 @@ struct UserRegistrationInfo {
   let isAppleLogin: Bool
   let refreshToken: String?
 }
-

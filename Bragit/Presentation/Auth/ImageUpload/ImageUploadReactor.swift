@@ -18,6 +18,7 @@ import Supabase
 
 final class ImageUploadReactor: Reactor, Stepper {
   enum Action {
+    case tapBack
     case tapNext
     case tapLater
     case pickedImageData(Data)
@@ -51,6 +52,9 @@ final class ImageUploadReactor: Reactor, Stepper {
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .tapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
     case .tapNext:
       print("[REACTOR] Action .tapNext received")
       if currentState.imageData != nil {

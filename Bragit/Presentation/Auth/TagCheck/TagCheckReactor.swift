@@ -16,6 +16,7 @@ import Supabase
 
 final class TagCheckReactor: Reactor, Stepper {
   enum Action {
+    case tapBack
     case tapLater
     case tapNext(tags: [Tag])
   }
@@ -47,6 +48,9 @@ final class TagCheckReactor: Reactor, Stepper {
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .tapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
     case .tapLater:
       return registerUserAndFinish(profileURL: nil)
     case .tapNext(let tags):

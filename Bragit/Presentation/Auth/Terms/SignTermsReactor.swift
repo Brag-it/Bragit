@@ -8,12 +8,15 @@
 import Foundation
 
 import ReactorKit
+import RxFlow
 import RxSwift
+import RxRelay
 
-final class SignTermsReactor: Reactor {
+final class SignTermsReactor: Reactor, Stepper {
 
   // View -> Reactor
   enum Action {
+    case tapBack
     case tapAll
     case tapService
     case tapPrivacy
@@ -37,10 +40,18 @@ final class SignTermsReactor: Reactor {
     var proceed: Bool = false
   }
 
-  let initialState = State()
+  let initialState: State
+  let steps = PublishRelay<Step>()
+
+  init() {
+    self.initialState = State()
+  }
 
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .tapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
     case .tapAll:
       let service = currentState.serviceAccepted
       let privacy = currentState.privacyAccepted

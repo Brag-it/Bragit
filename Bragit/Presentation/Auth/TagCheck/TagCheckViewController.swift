@@ -12,10 +12,12 @@ import RxCocoa
 import RxSwift
 import SnapKit
 import Then
+import ReactorKit
 
 typealias PopularTag = Tag
 
 class TagCheckViewController: UIViewController {
+  typealias Reactor = TagCheckReactor
   @Dependency(\.tagManager) private var tagManager
   @LocalStorage(location: .favoriteTags) private var favoriteTags: [Tag]?
   private let userInfo: UserRegistrationInfo
@@ -173,6 +175,11 @@ class TagCheckViewController: UIViewController {
   }
 
   func bind(reactor: TagCheckReactor) {
+    backButton.rx.tap
+      .map { Reactor.Action.tapBack }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+    
     beLaterButton.rx.tap
       .map {
         TagCheckReactor.Action.tapLater
