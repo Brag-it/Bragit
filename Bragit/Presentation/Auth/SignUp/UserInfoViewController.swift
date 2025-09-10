@@ -320,7 +320,7 @@ final class UserInfoViewController: UIViewController {
   }
   private let headerLabel = UILabel().then {
     $0.text = "회원가입"
-    $0.font = UIFont.systemFont(ofSize: 16)
+    $0.font = .pretendard(size: 18, weight: .medium)
     $0.textColor = .grayScale900
     $0.textAlignment = .center
   }

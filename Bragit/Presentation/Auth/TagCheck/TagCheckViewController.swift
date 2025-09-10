@@ -36,7 +36,6 @@ class TagCheckViewController: UIViewController {
     $0.font = .pretendard(size: 18, weight: .medium)
     $0.textColor = .grayScale900
     $0.textAlignment = .center
-    $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
   }
 
   let descFont = UIFont.pretendard(size: 20, weight: .semibold)
