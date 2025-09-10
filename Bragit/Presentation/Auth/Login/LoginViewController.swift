@@ -85,7 +85,7 @@ final class LoginViewController: UIViewController, View {
     super.viewDidLoad()
     // TODO: 테스트
     //    title = "로그인"
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
 
     //    if reactor == nil { reactor = LoginReactor() }
 

@@ -92,8 +92,8 @@ final class TabFlow: NSObject, Flow, Stepper {
 
       let appearance = UITabBarAppearance()
       appearance.configureWithOpaqueBackground()
-      appearance.backgroundColor = .systemBackground
-      appearance.shadowColor = .lightGray
+      appearance.backgroundColor = .white
+      appearance.shadowColor = .grayScale400
 
       let fontAttributes: [NSAttributedString.Key: Any] = [
         .font: UIFont.pretendard(size: 12, weight: .medium)

@@ -33,7 +33,7 @@ final class CommentViewController: UIViewController, View {
 
   private let titleLabel = UILabel().then {
     $0.text = "댓글"
-    $0.font = UIFont.systemFont(ofSize: 16)
+    $0.font = .pretendard(size: 18, weight: .medium)
     $0.textColor = .grayScale900
     $0.textAlignment = .center
     $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -45,7 +45,7 @@ final class CommentViewController: UIViewController, View {
     $0.estimatedRowHeight = 100
     $0.tableFooterView = UIView()
     $0.separatorStyle = .none
-    $0.backgroundColor = .systemBackground
+    $0.backgroundColor = .white
     $0.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
     $0.keyboardDismissMode = .interactive
     $0.separatorStyle = .singleLine

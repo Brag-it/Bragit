@@ -16,16 +16,12 @@
 		E70E4F742E55D9CC00CE935E /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F732E55D9CC00CE935E /* RxRelay */; };
 		E70E4F762E55D9CC00CE935E /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F752E55D9CC00CE935E /* RxSwift */; };
 		E70E4F792E55D9E400CE935E /* ReactorKit in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F782E55D9E400CE935E /* ReactorKit */; };
-		E70E4F7C2E55DA1100CE935E /* Down in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F7B2E55DA1100CE935E /* Down */; };
 		E70E4F7F2E55DA4600CE935E /* RxFlow in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F7E2E55DA4600CE935E /* RxFlow */; };
 		E70E4F822E55DA8A00CE935E /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F812E55DA8A00CE935E /* Kingfisher */; };
 		E70E4F852E55DAC700CE935E /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F842E55DAC700CE935E /* Dependencies */; };
 		E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F872E55DAEE00CE935E /* LookinServer */; };
-		E70E4F8B2E55DB0A00CE935E /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F8A2E55DB0A00CE935E /* SwiftSoup */; };
 		E746A9292E6A751C00F285E7 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = E746A9282E6A751C00F285E7 /* Lottie */; };
 		E75DA8FA2E616AD700C324D3 /* RichTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = E75DA8F92E616AD700C324D3 /* RichTextKit */; };
-		E7A7368B2E55DCD100E0B9F1 /* Moya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368A2E55DCD100E0B9F1 /* Moya */; };
-		E7A7368D2E55DCD100E0B9F1 /* RxMoya in Frameworks */ = {isa = PBXBuildFile; productRef = E7A7368C2E55DCD100E0B9F1 /* RxMoya */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,21 +75,17 @@
 				E70E4F7F2E55DA4600CE935E /* RxFlow in Frameworks */,
 				E70E4F722E55D9CC00CE935E /* RxCocoa in Frameworks */,
 				E70E4F6F2E55D99E00CE935E /* Supabase in Frameworks */,
-				E70E4F7C2E55DA1100CE935E /* Down in Frameworks */,
 				E70E4F742E55D9CC00CE935E /* RxRelay in Frameworks */,
 				E70E4F6D2E55D99E00CE935E /* Storage in Frameworks */,
 				E746A9292E6A751C00F285E7 /* Lottie in Frameworks */,
 				E70E4F792E55D9E400CE935E /* ReactorKit in Frameworks */,
 				E70E4F652E55D95D00CE935E /* Then in Frameworks */,
 				E70E4F682E55D96B00CE935E /* SnapKit in Frameworks */,
-				E7A7368B2E55DCD100E0B9F1 /* Moya in Frameworks */,
 				E70E4F852E55DAC700CE935E /* Dependencies in Frameworks */,
-				E7A7368D2E55DCD100E0B9F1 /* RxMoya in Frameworks */,
 				E70E4F762E55D9CC00CE935E /* RxSwift in Frameworks */,
 				E75DA8FA2E616AD700C324D3 /* RichTextKit in Frameworks */,
 				E70E4F6B2E55D99E00CE935E /* Auth in Frameworks */,
 				E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */,
-				E70E4F8B2E55DB0A00CE935E /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -155,14 +147,10 @@
 				E70E4F732E55D9CC00CE935E /* RxRelay */,
 				E70E4F752E55D9CC00CE935E /* RxSwift */,
 				E70E4F782E55D9E400CE935E /* ReactorKit */,
-				E70E4F7B2E55DA1100CE935E /* Down */,
 				E70E4F7E2E55DA4600CE935E /* RxFlow */,
 				E70E4F812E55DA8A00CE935E /* Kingfisher */,
 				E70E4F842E55DAC700CE935E /* Dependencies */,
 				E70E4F872E55DAEE00CE935E /* LookinServer */,
-				E70E4F8A2E55DB0A00CE935E /* SwiftSoup */,
-				E7A7368A2E55DCD100E0B9F1 /* Moya */,
-				E7A7368C2E55DCD100E0B9F1 /* RxMoya */,
 				E75DA8F92E616AD700C324D3 /* RichTextKit */,
 				E746A9282E6A751C00F285E7 /* Lottie */,
 			);
@@ -213,11 +201,12 @@
 				};
 			};
 			buildConfigurationList = E70E4E832E55D60D00CE935E /* Build configuration list for PBXProject "Bragit" */;
-			developmentRegion = en;
+			developmentRegion = ko;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				ko,
 			);
 			mainGroup = E70E4E7F2E55D60D00CE935E;
 			minimizedProjectReferenceProxies = 1;
@@ -227,13 +216,10 @@
 				E70E4F692E55D99E00CE935E /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				E70E4F702E55D9CC00CE935E /* XCRemoteSwiftPackageReference "RxSwift" */,
 				E70E4F772E55D9E400CE935E /* XCRemoteSwiftPackageReference "ReactorKit" */,
-				E70E4F7A2E55DA1100CE935E /* XCRemoteSwiftPackageReference "Down" */,
 				E70E4F7D2E55DA4600CE935E /* XCRemoteSwiftPackageReference "RxFlow" */,
 				E70E4F802E55DA8A00CE935E /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				E70E4F832E55DAC700CE935E /* XCRemoteSwiftPackageReference "swift-dependencies" */,
 				E70E4F862E55DAEE00CE935E /* XCRemoteSwiftPackageReference "LookinServer" */,
-				E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */,
-				E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */,
 				E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */,
 				E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
@@ -392,6 +378,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -458,6 +445,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -619,14 +607,6 @@
 				minimumVersion = 3.2.0;
 			};
 		};
-		E70E4F7A2E55DA1100CE935E /* XCRemoteSwiftPackageReference "Down" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/iwasrobbed/Down";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
 		E70E4F7D2E55DA4600CE935E /* XCRemoteSwiftPackageReference "RxFlow" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxFlow";
@@ -659,14 +639,6 @@
 				minimumVersion = 1.2.8;
 			};
 		};
-		E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/scinfu/SwiftSoup";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.10.3;
-			};
-		};
 		E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/airbnb/lottie-ios";
@@ -681,14 +653,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.2.0;
-			};
-		};
-		E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Moya/Moya";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 15.0.3;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -739,11 +703,6 @@
 			package = E70E4F772E55D9E400CE935E /* XCRemoteSwiftPackageReference "ReactorKit" */;
 			productName = ReactorKit;
 		};
-		E70E4F7B2E55DA1100CE935E /* Down */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E70E4F7A2E55DA1100CE935E /* XCRemoteSwiftPackageReference "Down" */;
-			productName = Down;
-		};
 		E70E4F7E2E55DA4600CE935E /* RxFlow */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E70E4F7D2E55DA4600CE935E /* XCRemoteSwiftPackageReference "RxFlow" */;
@@ -764,11 +723,6 @@
 			package = E70E4F862E55DAEE00CE935E /* XCRemoteSwiftPackageReference "LookinServer" */;
 			productName = LookinServer;
 		};
-		E70E4F8A2E55DB0A00CE935E /* SwiftSoup */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E70E4F892E55DB0A00CE935E /* XCRemoteSwiftPackageReference "SwiftSoup" */;
-			productName = SwiftSoup;
-		};
 		E746A9282E6A751C00F285E7 /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */;
@@ -778,16 +732,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */;
 			productName = RichTextKit;
-		};
-		E7A7368A2E55DCD100E0B9F1 /* Moya */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */;
-			productName = Moya;
-		};
-		E7A7368C2E55DCD100E0B9F1 /* RxMoya */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E7A736892E55DCD100E0B9F1 /* XCRemoteSwiftPackageReference "Moya" */;
-			productName = RxMoya;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
