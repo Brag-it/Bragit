@@ -24,6 +24,7 @@ final class LoginViewController: UIViewController, View {
   // MARK: - 임시 버튼
   private let nextButton = UIButton(type: .system).then {
     $0.setTitle("Next", for: .normal)
+    $0.isHidden = true
   }
 
   private let logo = UIImageView().then {
@@ -38,6 +39,7 @@ final class LoginViewController: UIViewController, View {
     $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
     $0.setTitle("Google로 로그인(아직)", for: .normal)
     $0.isEnabled = false
+    $0.isHidden = true
   }
 
   let kakaoButton = UIButton(type: .system).then {
@@ -45,6 +47,7 @@ final class LoginViewController: UIViewController, View {
     $0.backgroundColor = UIColor(red: 0.996, green: 0.898, blue: 0, alpha: 1)
     $0.setTitle("카카오로 로그인􀀲", for: .normal)
     $0.isEnabled = false
+    $0.isHidden = true
   }
 
   let appleButton = ASAuthorizationAppleIDButton(type: .signIn, style: .black).then {
@@ -63,12 +66,14 @@ final class LoginViewController: UIViewController, View {
     $0.layer.cornerRadius = 12
     $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
     $0.isEnabled = true
+    $0.isHidden = true
   }
 
   let signUpButton = UIButton(type: .system).then {
     $0.setTitle("회원 가입하기", for: .normal)
     $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
     $0.isEnabled = true
+    $0.isHidden = false
   }
 
   init(reactor: LoginReactor) {
