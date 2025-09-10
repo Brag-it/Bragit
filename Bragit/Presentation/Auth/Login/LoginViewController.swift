@@ -73,7 +73,7 @@ final class LoginViewController: UIViewController, View {
     $0.setTitle("회원 가입하기", for: .normal)
     $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
     $0.isEnabled = true
-    $0.isHidden = false
+    $0.isHidden = true
   }
 
   init(reactor: LoginReactor) {
