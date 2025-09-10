@@ -179,7 +179,7 @@ class TagCheckViewController: UIViewController {
       .map { Reactor.Action.tapBack }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
-    
+
     beLaterButton.rx.tap
       .map {
         TagCheckReactor.Action.tapLater

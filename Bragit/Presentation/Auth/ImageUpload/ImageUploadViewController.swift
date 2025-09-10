@@ -83,7 +83,7 @@ class ImageUploadViewController: UIViewController, View {
       .withRenderingMode(.alwaysTemplate)
     $0.setImage(icon, for: .normal)
     $0.tintColor = .white
-    $0.imageView?.contentMode = .scaleAspectFit
+    $0.imageView?.contentMode = .scaleAspectFill
   }
 
   let imagePicker = UIImagePickerController().then {
