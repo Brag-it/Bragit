@@ -19,6 +19,19 @@ class ImageUploadViewController: UIViewController, View {
   private let userInfo: UserRegistrationInfo
   private let injectReactor: ImageUploadReactor
 
+  private let headerView = UIView()
+  private let backButton = UIButton(type: .system).then {
+    $0.setImage(.back, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+  private let headerLabel = UILabel().then {
+    $0.text = "회원가입"
+    $0.font = .pretendard(size: 18, weight: .medium)
+    $0.textColor = .grayScale900
+    $0.textAlignment = .center
+    $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
+  }
+
   let descFont = UIFont.pretendard(size: 20, weight: .semibold)
   let beLaterFont = UIFont.pretendard(size: 16, weight: .regular)
   let nextFont = UIFont.pretendard(size: 16, weight: .medium)
@@ -119,12 +132,33 @@ class ImageUploadViewController: UIViewController, View {
     nextButton.titleLabel?.font = nextFont
     nextButton.titleLabel?.textColor = color900
 
+    view.addSubview(headerView)
+    headerView.addSubview(backButton)
+    headerView.addSubview(headerLabel)
+
     [descriptionLabel, imageButton, cameraButton, beLaterButton, nextButton].forEach {
       view.addSubview($0)
     }
 
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(58)
+    }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
+    headerLabel.snp.makeConstraints {
+      $0.centerX.equalTo(headerView.snp.centerX)
+      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
+    }
+
     descriptionLabel.snp.makeConstraints {
-      $0.top.equalTo(view.safeAreaLayoutGuide).offset(32)
+      $0.top.equalTo(headerView.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 

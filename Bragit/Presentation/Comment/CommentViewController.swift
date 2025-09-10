@@ -31,7 +31,7 @@ final class CommentViewController: UIViewController, View {
     $0.tintColor = .grayScale900
   }
 
-  private let titleLabel = UILabel().then {
+  private let headerLabel = UILabel().then {
     $0.text = "댓글"
     $0.font = .pretendard(size: 18, weight: .medium)
     $0.textColor = .grayScale900
@@ -182,7 +182,7 @@ final class CommentViewController: UIViewController, View {
   private func setupLayout() {
     view.addSubview(headerView)
     headerView.addSubview(backButton)
-    headerView.addSubview(titleLabel)
+    headerView.addSubview(headerLabel)
 
     view.addSubview(bottomSafeAreaBackground)
     view.addSubview(tableView)
@@ -203,7 +203,7 @@ final class CommentViewController: UIViewController, View {
       $0.centerY.equalTo(headerView.snp.centerY)
     }
 
-    titleLabel.snp.makeConstraints {
+    headerLabel.snp.makeConstraints {
       $0.centerX.equalTo(headerView.snp.centerX)
       $0.centerY.equalTo(headerView.snp.centerY)
       $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)

@@ -16,14 +16,26 @@ import Then
 typealias PopularTag = Tag
 
 class TagCheckViewController: UIViewController {
-  private let disposeBag = DisposeBag()
   @Dependency(\.tagManager) private var tagManager
-  private var tags: [PopularTag] = []
-
   @LocalStorage(location: .favoriteTags) private var favoriteTags: [Tag]?
   private let userInfo: UserRegistrationInfo
   private let injectReactor: TagCheckReactor
+  private let disposeBag = DisposeBag()
+  private var tags: [PopularTag] = []
   var reactor: TagCheckReactor?
+
+  private let headerView = UIView()
+  private let backButton = UIButton(type: .system).then {
+    $0.setImage(.back, for: .normal)
+    $0.tintColor = .grayScale900
+  }
+  private let headerLabel = UILabel().then {
+    $0.text = "회원가입"
+    $0.font = .pretendard(size: 18, weight: .medium)
+    $0.textColor = .grayScale900
+    $0.textAlignment = .center
+    $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
+  }
 
   let descFont = UIFont.pretendard(size: 20, weight: .semibold)
   let beLaterFont = UIFont.pretendard(size: 16, weight: .regular)
@@ -98,6 +110,10 @@ class TagCheckViewController: UIViewController {
   }
 
   private func setupLayout() {
+    view.addSubview(headerView)
+    headerView.addSubview(backButton)
+    headerView.addSubview(headerLabel)
+
     [
       mainDescriptionLabel,
       subDescriptionLabel,
@@ -108,8 +124,25 @@ class TagCheckViewController: UIViewController {
       view.addSubview($0)
     }
 
+    headerView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide)
+      $0.leading.trailing.equalToSuperview()
+      $0.height.equalTo(58)
+    }
+
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(20)
+      $0.centerY.equalTo(headerView.snp.centerY)
+    }
+
+    headerLabel.snp.makeConstraints {
+      $0.centerX.equalTo(headerView.snp.centerX)
+      $0.centerY.equalTo(headerView.snp.centerY)
+      $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
+    }
+
     mainDescriptionLabel.snp.makeConstraints {
-      $0.top.equalTo(view.safeAreaLayoutGuide).offset(32)
+      $0.top.equalTo(headerView.snp.bottom).offset(32)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 
@@ -316,7 +349,7 @@ extension TagCheckViewController: UICollectionViewDelegate,
 class TagButtonCell: UICollectionViewCell {
   static let identifier = "TagButtonCell"
   private let containerView = UIView()
-  private let titleLabel = UILabel()
+  private let headerLabel = UILabel()
 
   override var isSelected: Bool {
     didSet { updateStyle() }
@@ -336,12 +369,12 @@ class TagButtonCell: UICollectionViewCell {
 
   private func setupHierarchy() {
     contentView.addSubview(containerView)
-    containerView.addSubview(titleLabel)
+    containerView.addSubview(headerLabel)
   }
 
   private func setupLayout() {
     containerView.snp.makeConstraints { $0.edges.equalToSuperview() }
-    titleLabel.snp.makeConstraints {
+    headerLabel.snp.makeConstraints {
       $0.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14))
     }
   }
@@ -351,27 +384,27 @@ class TagButtonCell: UICollectionViewCell {
     containerView.layer.cornerRadius = 21
     containerView.layer.masksToBounds = true
 
-    titleLabel.textAlignment = .center
-    titleLabel.font = UIFont.pretendard(size: 15, weight: .medium)
-    titleLabel.numberOfLines = 1
-    titleLabel.lineBreakMode = .byTruncatingTail
-    titleLabel.setContentHuggingPriority(.required, for: .horizontal)
-    titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+    headerLabel.textAlignment = .center
+    headerLabel.font = UIFont.pretendard(size: 15, weight: .medium)
+    headerLabel.numberOfLines = 1
+    headerLabel.lineBreakMode = .byTruncatingTail
+    headerLabel.setContentHuggingPriority(.required, for: .horizontal)
+    headerLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
   }
 
   private func updateStyle() {
     if isSelected {
       containerView.backgroundColor = .primary100
       containerView.layer.borderColor = UIColor.primary100.cgColor
-      titleLabel.textColor = .grayScale900
+      headerLabel.textColor = .grayScale900
     } else {
       containerView.backgroundColor = .white
       containerView.layer.borderColor = UIColor.grayScale100.cgColor
-      titleLabel.textColor = .grayScale600
+      headerLabel.textColor = .grayScale600
     }
   }
 
-  func configure(with tag: PopularTag) { titleLabel.text = tag.tag }
+  func configure(with tag: PopularTag) { headerLabel.text = tag.tag }
 }
 
 private func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {

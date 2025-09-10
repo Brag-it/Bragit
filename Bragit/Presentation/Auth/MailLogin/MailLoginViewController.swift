@@ -23,7 +23,7 @@ final class MailLoginViewController: UIViewController, View {
     $0.tintColor = .grayScale900
   }
 
-  private let titleLabel = UILabel().then {
+  private let headerLabel = UILabel().then {
     $0.text = "로그인"
     $0.font = UIFont.systemFont(ofSize: 16)
     $0.textColor = .grayScale900
@@ -137,7 +137,7 @@ final class MailLoginViewController: UIViewController, View {
   private func setupLayout() {
     view.addSubview(headerView)
     headerView.addSubview(backButton)
-    headerView.addSubview(titleLabel)
+    headerView.addSubview(headerLabel)
     view.addSubview(scrollView)
     scrollView.addSubview(contentView)
     view.addSubview(activityIndicator)
@@ -157,7 +157,7 @@ final class MailLoginViewController: UIViewController, View {
       $0.centerY.equalToSuperview()
     }
 
-    titleLabel.snp.makeConstraints {
+    headerLabel.snp.makeConstraints {
       $0.centerX.centerY.equalToSuperview()
     }
 
