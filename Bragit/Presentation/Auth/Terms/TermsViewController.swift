@@ -7,16 +7,18 @@
 // 약관 동의를 받는 뷰
 import UIKit
 
+import ReactorKit
+import RxCocoa
+import RxSwift
 import SnapKit
 import Then
 
-final class TermsViewController: UIViewController {
+final class TermsViewController: UIViewController, View {
+
+  // ReactorKit
+  var disposeBag = DisposeBag()
 
   private let userInfo: UserRegistrationInfo
-
-  private var serviceAccepted = false
-  private var privacyAccepted = false
-  private var marketingAccepted = false
 
   let descFont = UIFont.pretendard(size: 20, weight: .semibold)
   let allLabelFont = UIFont.pretendard(size: 16, weight: .medium)
@@ -115,9 +117,19 @@ final class TermsViewController: UIViewController {
     $0.isEnabled = false
   }
 
+  // MARK: - Initializers
   init(userInfo: UserRegistrationInfo) {
     self.userInfo = userInfo
     super.init(nibName: nil, bundle: nil)
+    // 기본 패턴을 유지하기 위해 내부에서 Reactor를 생성해 주입
+    self.reactor = SignTermsReactor()
+  }
+
+  // Reactor를 외부에서 주입하고 싶을 때 사용할 수 있는 초기화 메서드
+  init(userInfo: UserRegistrationInfo, reactor: SignTermsReactor) {
+    self.userInfo = userInfo
+    super.init(nibName: nil, bundle: nil)
+    self.reactor = reactor
   }
 
   required init?(coder: NSCoder) {
@@ -129,10 +141,7 @@ final class TermsViewController: UIViewController {
     view.backgroundColor = .white
     title = "회원가입"
     setupLayout()
-    setupActions()
     applyInitialUI()
-    updateAllAcceptCheckboxImage()
-    updateNextButtonState()
   }
 }
 
@@ -226,14 +235,6 @@ private extension TermsViewController {
     }
   }
 
-  func setupActions() {
-    allAcceptCheckbox.addTarget(self, action: #selector(didTapAllAccept), for: .touchUpInside)
-    serviceAcceptCheckbox.addTarget(self, action: #selector(didTapService), for: .touchUpInside)
-    privacyAcceptCheckbox.addTarget(self, action: #selector(didTapPrivacy), for: .touchUpInside)
-    marketingAcceptCheckbox.addTarget(self, action: #selector(didTapMarketing), for: .touchUpInside)
-    nextButton.addTarget(self, action: #selector(didTapNext), for: .touchUpInside)
-  }
-
   func applyInitialUI() {
     setCheckboxImage(allAcceptCheckbox, checked: false)
     setCheckboxImage(serviceAcceptCheckbox, checked: false)
@@ -250,60 +251,99 @@ private extension TermsViewController {
     button.setImage(UIImage(systemName: name), for: .normal)
   }
 
-  func updateAllAcceptCheckboxImage() {
-    let allOn = serviceAccepted && privacyAccepted && marketingAccepted
-    let allOff = !serviceAccepted && !privacyAccepted && !marketingAccepted
+  func updateAllAcceptCheckboxImage(service: Bool, privacy: Bool, marketing: Bool) {
+    let allOn = service && privacy && marketing
+    let allOff = !service && !privacy && !marketing
     let imageName: String = allOn ? "checkmark.square.fill" : (allOff ? "square.fill" : "minus.square.fill")
     allAcceptCheckbox.setImage(UIImage(systemName: imageName), for: .normal)
   }
 
-  func updateNextButtonState() {
-    let enabled = serviceAccepted && privacyAccepted
+  func updateNextButtonState(enabled: Bool) {
     nextButton.isEnabled = enabled
     nextButton.backgroundColor = primaryColor
     nextButton.alpha = enabled ? 1.0 : 0.5
   }
 }
 
-// MARK: - Actions
-private extension TermsViewController {
-  @objc func didTapAllAccept() {
-    let shouldCheckAll = !(serviceAccepted && privacyAccepted && marketingAccepted)
-    serviceAccepted = shouldCheckAll
-    privacyAccepted = shouldCheckAll
-    marketingAccepted = shouldCheckAll
+// MARK: - Reactor Binding
+extension TermsViewController {
+  func bind(reactor: SignTermsReactor) {
+    // Actions
+    allAcceptCheckbox.rx.tap
+      .map { SignTermsReactor.Action.tapAll }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
-    setCheckboxImage(serviceAcceptCheckbox, checked: serviceAccepted)
-    setCheckboxImage(privacyAcceptCheckbox, checked: privacyAccepted)
-    setCheckboxImage(marketingAcceptCheckbox, checked: marketingAccepted)
-    updateAllAcceptCheckboxImage()
-    updateNextButtonState()
-  }
+    serviceAcceptCheckbox.rx.tap
+      .map { SignTermsReactor.Action.tapService }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
-  @objc func didTapService() {
-    serviceAccepted.toggle()
-    setCheckboxImage(serviceAcceptCheckbox, checked: serviceAccepted)
-    updateAllAcceptCheckboxImage()
-    updateNextButtonState()
-  }
+    privacyAcceptCheckbox.rx.tap
+      .map { SignTermsReactor.Action.tapPrivacy }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
-  @objc func didTapPrivacy() {
-    privacyAccepted.toggle()
-    setCheckboxImage(privacyAcceptCheckbox, checked: privacyAccepted)
-    updateAllAcceptCheckboxImage()
-    updateNextButtonState()
-  }
+    marketingAcceptCheckbox.rx.tap
+      .map { SignTermsReactor.Action.tapMarketing }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
-  @objc func didTapMarketing() {
-    marketingAccepted.toggle()
-    setCheckboxImage(marketingAcceptCheckbox, checked: marketingAccepted)
-    updateAllAcceptCheckboxImage()
-    updateNextButtonState()
-  }
+    nextButton.rx.tap
+      .map { SignTermsReactor.Action.tapNext }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
 
-  @objc func didTapNext() {
-    guard serviceAccepted && privacyAccepted else { return }
-    onAgree?(userInfo)
+    // State -> UI: individual checkboxes
+    reactor.state.map(\.serviceAccepted)
+      .distinctUntilChanged()
+      .subscribe(with: self) { owner, accepted in
+        owner.setCheckboxImage(owner.serviceAcceptCheckbox, checked: accepted)
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state.map(\.privacyAccepted)
+      .distinctUntilChanged()
+      .subscribe(with: self) { owner, accepted in
+        owner.setCheckboxImage(owner.privacyAcceptCheckbox, checked: accepted)
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state.map(\.marketingAccepted)
+      .distinctUntilChanged()
+      .subscribe(with: self) { owner, accepted in
+        owner.setCheckboxImage(owner.marketingAcceptCheckbox, checked: accepted)
+      }
+      .disposed(by: disposeBag)
+
+    // State -> UI: all-accept image
+    Observable
+      .combineLatest(
+        reactor.state.map(\.serviceAccepted).distinctUntilChanged(),
+        reactor.state.map(\.privacyAccepted).distinctUntilChanged(),
+        reactor.state.map(\.marketingAccepted).distinctUntilChanged()
+      )
+      .subscribe(with: self) { owner, tuple in
+        owner.updateAllAcceptCheckboxImage(service: tuple.0, privacy: tuple.1, marketing: tuple.2)
+      }
+      .disposed(by: disposeBag)
+
+    // State -> UI: next button enable
+    reactor.state.map { $0.serviceAccepted && $0.privacyAccepted }
+      .distinctUntilChanged()
+      .subscribe(with: self) { owner, enabled in
+        owner.updateNextButtonState(enabled: enabled)
+      }
+      .disposed(by: disposeBag)
+
+    // Proceed to next step (bridge to existing onAgree closure)
+    reactor.state.map(\.proceed)
+      .distinctUntilChanged()
+      .filter { $0 == true }
+      .subscribe(with: self) { owner, _ in
+        owner.onAgree?(owner.userInfo)
+      }
+      .disposed(by: disposeBag)
   }
 }
 
@@ -314,3 +354,4 @@ struct UserRegistrationInfo {
   let isAppleLogin: Bool
   let refreshToken: String?
 }
+
