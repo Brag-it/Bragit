@@ -33,6 +33,7 @@ class FavoriteViewController: UIViewController, View {
     fatalError("init(coder:) has not been implemented")
   }
 
+  // swiftlint:disable cyclomatic_complexity
   func bind(reactor: FavoriteReactor) {
     favoriteView.feedView.refreshRelay
       .map { .refresh }
@@ -153,6 +154,12 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // 유저 프로필 탭
+    favoriteView.feedView.userDidTap
+      .map { .userProfileTapped($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     // 특정 포스트들 갱신
     reactor.state.map { $0.postsToReconfigure }
       .distinctUntilChanged()
@@ -189,6 +196,7 @@ class FavoriteViewController: UIViewController, View {
         favoriteView.feedView.collectionView.reloadData()
       }.disposed(by: disposeBag)
   }
+  // swiftlint:enable cyclomatic_complexity
 
   func scrollToTop() {
     favoriteView.feedView.collectionView.setContentOffset(.zero, animated: true)

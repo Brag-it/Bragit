@@ -77,6 +77,12 @@ class HomeViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // 유저 프로필 탭
+    homeView.feedView.userDidTap
+      .map { .didTapUser($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     // 태그 탭
     homeView.feedView.tagDidTap
       .map { tag in .goToTagDetail(tag) }

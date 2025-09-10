@@ -39,6 +39,7 @@ class FavoriteReactor: Reactor, Stepper {
     case refresh
     case searchTapped
     case didTapPost(Post)
+    case userProfileTapped(Post)
   }
 
   enum Mutation {
@@ -232,6 +233,18 @@ class FavoriteReactor: Reactor, Stepper {
     case .didTapPost(let post):
       self.steps.accept(AppStep.feedDetail(post: post))
       return .empty()
+    case .userProfileTapped(let post):
+      guard let authorId = post.author?.id, !authorId.isEmpty else {
+        return .empty()
+      }
+
+      return userManager
+        .rxfetchUsersBy(ids: [authorId])
+        .compactMap { $0.first }
+        .do { [weak self] user in
+          self?.steps.accept(AppStep.userProfile(user: user))
+        }
+        .flatMap { _ in Observable<Mutation>.empty() }
     }
   }
   // swiftlint:enable cyclomatic_complexity

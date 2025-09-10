@@ -21,6 +21,7 @@ final class FavoriteFeedView: UIView {
   let tagDidTap = PublishRelay<Tag>()
   let postTagDidTap = PublishRelay<Tag>()
   let followDidTap = PublishRelay<Post>()
+  let userDidTap = PublishRelay<Post>()
   let refreshRelay = PublishRelay<Void>()
   let refreshControl = UIRefreshControl()
   private let disposeBag = DisposeBag()
@@ -110,6 +111,11 @@ final class FavoriteFeedView: UIView {
         cell.followDidTap
           .bind(to: self.followDidTap)
           .disposed(by: cell.reusableDisposeBag)
+
+        cell.userDidTap
+          .bind(to: self.userDidTap)
+          .disposed(by: cell.reusableDisposeBag)
+
         cell.tagsView.tagDidTap
           .bind(to: self.postTagDidTap)
           .disposed(by: cell.reusableDisposeBag)
