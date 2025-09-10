@@ -34,4 +34,3 @@ class UpdateFeedViewController: UIViewController, View {
   func bind(reactor: UpdateFeedReactor) {
   }
 }
-

@@ -70,7 +70,7 @@ final class PreviewViewController: UIViewController, View {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
     print("넘어온 데이터 : \(String(describing: self.reactor?.draft))")
@@ -513,14 +513,4 @@ extension PreviewViewController: PHPickerViewControllerDelegate {
       }
     }
   }
-}
-
-@available(iOS 17.0, *)
-#Preview {
-  let sampleDraft = PostDraft(
-    title: "샘플 제목",
-    content: NSAttributedString(string: "샘플 내용")
-  )
-  let reactor = PreviewReactor(draft: sampleDraft)
-  return UINavigationController(rootViewController: PreviewViewController(reactor: reactor))
 }

@@ -9,6 +9,8 @@ import UIKit
 
 import SnapKit
 import Then
+import RxSwift
+import RxCocoa
 
 final class SettingView: UIView {
 
@@ -35,6 +37,8 @@ final class SettingView: UIView {
     let subtitle: String
   }
 
+  let itemSelected = PublishRelay<SettingItem>() // 셀 선택 이벤트 방출
+
   let logoutButton = UIButton().then {
     $0.setTitle("로그아웃", for: .normal)
     $0.setTitleColor(.grayScale600, for: .normal)
@@ -50,13 +54,13 @@ final class SettingView: UIView {
   private let settingItems: [SettingItem] = [
     SettingItem(title: "이용 약관", subtitle: ""),
     SettingItem(title: "오픈소스 라이선스", subtitle: ""),
-    SettingItem(title: "비밀번호 변경", subtitle: ""),
+    //    SettingItem(title: "비밀번호 변경", subtitle: ""),
     SettingItem(title: "앱 버전", subtitle: "1.0.0")
   ]
 
   override init(frame: CGRect) {
     super.init(frame: frame)
-    backgroundColor = .systemBackground
+    backgroundColor = .white
     setupUI()
     applySnapshot()
   }
@@ -91,6 +95,7 @@ final class SettingView: UIView {
       $0.top.equalTo(headerView.snp.bottom)
       $0.leading.trailing.bottom.equalTo(self.safeAreaLayoutGuide)
     }
+    collectionView.delegate = self
 
     logoutButton.snp.makeConstraints {
       $0.bottom.equalTo(self.safeAreaLayoutGuide).inset(31)
@@ -146,5 +151,13 @@ final class SettingView: UIView {
     snapshot.appendSections([0])
     snapshot.appendItems(settingItems, toSection: 0)
     dataSource.apply(snapshot, animatingDifferences: true)
+  }
+}
+
+extension SettingView: UICollectionViewDelegate {
+  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    collectionView.deselectItem(at: indexPath, animated: true)
+    guard indexPath.item < settingItems.count else { return }
+    itemSelected.accept(settingItems[indexPath.item])
   }
 }

@@ -101,7 +101,7 @@ class ImageUploadViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "회원가입"
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     self.reactor = injectReactor
     setupLayout()
     imagePicker.delegate = self
@@ -177,12 +177,48 @@ extension ImageUploadViewController {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    reactor.state
+    // 로딩 상태
+    let loading = reactor.state
       .map(\.isLoading)
       .distinctUntilChanged()
-      .bind(with: self) { owner, loading in
-        owner.view.isUserInteractionEnabled = !loading
-        print("[UI] isLoading=\(loading), interactionEnabled=\(!loading)")
+      .share(replay: 1)
+
+    loading
+      .bind(with: self) { owner, isLoading in
+        owner.view.isUserInteractionEnabled = !isLoading
+        print("[UI] isLoading=\(isLoading), interactionEnabled=\(!isLoading)")
+      }
+      .disposed(by: disposeBag)
+
+    // 이미지 선택 여부
+    let hasImage = reactor.state
+      .map { $0.imageData != nil }
+      .distinctUntilChanged()
+      .share(replay: 1)
+
+    // 이미지가 있을 때 next 활성, 로딩 중엔 비활성
+    Observable.combineLatest(hasImage, loading)
+      .map { hasImage, isLoading in hasImage && !isLoading }
+      .bind(to: nextButton.rx.isEnabled)
+      .disposed(by: disposeBag)
+
+    Observable.combineLatest(hasImage, loading)
+      .map { hasImage, isLoading in (hasImage && !isLoading) ? 1.0 : 0.5 }
+      .bind(with: self) { owner, alpha in
+        owner.nextButton.alpha = alpha
+      }
+      .disposed(by: disposeBag)
+
+    // 이미지가 없을 때 beLater 활성, 로딩 중엔 비활성
+    Observable.combineLatest(hasImage, loading)
+      .map { hasImage, isLoading in !hasImage && !isLoading }
+      .bind(to: beLaterButton.rx.isEnabled)
+      .disposed(by: disposeBag)
+
+    Observable.combineLatest(hasImage, loading)
+      .map { hasImage, isLoading in (!hasImage && !isLoading) ? 1.0 : 0.5 }
+      .bind(with: self) { owner, alpha in
+        owner.beLaterButton.alpha = alpha
       }
       .disposed(by: disposeBag)
   }

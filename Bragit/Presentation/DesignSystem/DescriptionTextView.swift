@@ -6,8 +6,6 @@
 //
 import UIKit
 
-import Then
-import SnapKit
 final class DescriptionTextView: UITextView {
 
   private let placeholderLabel = UILabel()

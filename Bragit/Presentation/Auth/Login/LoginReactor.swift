@@ -10,9 +10,10 @@
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 // 아 리액트 어렵다
 
+import Foundation
+
 import CryptoKit
 import Dependencies
-import Foundation
 import Functions
 import ReactorKit
 import RxFlow
@@ -28,6 +29,7 @@ final class LoginReactor: Reactor, Stepper {
     case tapAppleButton
     case tapSignUp
     case tapNext
+    case tapMailLogin
   }
 
   // 내부 상태 변경
@@ -74,14 +76,18 @@ final class LoginReactor: Reactor, Stepper {
             return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
           },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil)),
+        .just(.setNonce(raw: nil, hashed: nil))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
       let hashed = Self.sha256(raw)
       return .just(.setNonce(raw: raw, hashed: hashed))
+    case .tapMailLogin:
+      steps.accept(AppStep.signInMail)
+      return .empty()
     case .tapSignUp:
-      steps.accept(AppStep.signup(initialMail: nil, refreshToken: nil))
+      // 일반(메일) 회원가입 시작
+      steps.accept(AppStep.signup(initialMail: nil, refreshToken: nil, isAppleLogin: false))
       return .empty()
     case .tapNext:
       steps.accept(AppStep.home)
@@ -149,7 +155,15 @@ final class LoginReactor: Reactor, Stepper {
             await MainActor.run { self.steps.accept(AppStep.home) }
           } else {
             // 미가입: 회원가입 플로우로 (TagCheckReactor에서 nowUser 저장)
-            await MainActor.run { self.steps.accept(AppStep.signup(initialMail: mail, refreshToken: refreshToken)) }
+            await MainActor.run {
+              self.steps.accept(
+                AppStep.signup(
+                  initialMail: mail,
+                  refreshToken: refreshToken,
+                  isAppleLogin: true
+                )
+              )
+            }
           }
           observer.onCompleted()
         } catch {

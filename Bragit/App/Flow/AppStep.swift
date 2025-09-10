@@ -15,13 +15,14 @@ enum AppStep: Step {
 
   // 인증/가입
   case login                           // 로그인 화면 (최초 진입)
-  case signup(initialMail: String?, refreshToken: String?)    // 회원가입 시작
+  case signup(initialMail: String?, refreshToken: String?, isAppleLogin: Bool)    // 회원가입 시작
   case signTermsConset                 // 약관 동의
   case signServiceConsent              // 서비스 이용 약관 동의
   case signPersonalInfoConsent         // 개인정보 수집 동의
   case signMarketingConsent            // 마케팅 정보 수집 동의
   case signupPhoto                     // 프로필 사진 설정
   case signSelectTag(profileURL: String?)                   // 선호 태그 선택
+  case signInMail                      // 메일 로그인
   case findPwd                         // 비밀번호 찾기
   case setPwd                          // 비밀번호 재설정
 
@@ -56,11 +57,12 @@ enum AppStep: Step {
   // 설정
   case setting                         // 설정
   case notification                    // 공지사항
-  case personalInfo                    // 개인정보 수집 방침
-  case marketing                       // 마케팅 정보 수집 방침
+  case terms                           // 이용 약관
+  case termsDetails(TermsItem)         // 이용 약관 상세
   case service                         // 이용방법
   case report                          // 의견/오류 신고
   case openSource                      // 오픈소스 라이선스
+  case openSourceDetails(LicenseItem)  // 오픈소스 라이선스 상세
   case cancelAccount                   // 탈퇴하기
 
   // 태그

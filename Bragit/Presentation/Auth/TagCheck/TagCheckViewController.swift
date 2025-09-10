@@ -5,12 +5,13 @@
 //  Created by luca on 8/27/25.
 //
 
+import UIKit
+
 import Dependencies
 import RxCocoa
 import RxSwift
 import SnapKit
 import Then
-import UIKit
 
 typealias PopularTag = Tag
 
@@ -87,7 +88,7 @@ class TagCheckViewController: UIViewController {
     // 가입할 때 태그 있으면 안 되니 아예 초기화
     self.favoriteTags = []
 
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .white
     title = "회원가입"
     setupLayout()
     loadTags()
@@ -162,6 +163,66 @@ class TagCheckViewController: UIViewController {
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    reactor.state.compactMap { $0.errorMessage }
+      .observe(on: MainScheduler.instance)
+      .bind { [weak self] message in
+        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
+        alert.addAction(.init(title: "확인", style: .default))
+        self?.present(alert, animated: true)
+      }
+      .disposed(by: disposeBag)
+
+    // isLoading 스트림
+    let loading = reactor.state
+      .map { $0.isLoading }
+      .distinctUntilChanged()
+      .share(replay: 1)
+
+    // 토글마다 업데이트
+    let selectionChanged = Observable.merge(
+      tagCollectionView.rx.itemSelected.map { _ in () },
+      tagCollectionView.rx.itemDeselected.map { _ in () }
+    )
+    .startWith(())
+    .share(replay: 1)
+
+    let hasSelection = selectionChanged
+      .map { [weak self] in
+        guard let self else { return false }
+        let isEmpty = self.tagCollectionView.indexPathsForSelectedItems?.isEmpty ?? true
+        return !isEmpty
+      }
+      .distinctUntilChanged()
+      .share(replay: 1)
+
+    loading
+      .bind { [weak self] isLoading in
+        self?.view.isUserInteractionEnabled = !isLoading
+      }
+      .disposed(by: disposeBag)
+
+    // 선택된 게 있을 때 nextButton 활성, 로딩 중엔 비활성
+    Observable.combineLatest(hasSelection, loading)
+      .map { has, isLoading in has && !isLoading }
+      .bind(to: nextButton.rx.isEnabled)
+      .disposed(by: disposeBag)
+
+    Observable.combineLatest(hasSelection, loading)
+      .map { has, isLoading in (has && !isLoading) ? 1.0 : 0.5 }
+      .bind { [weak self] alpha in self?.nextButton.alpha = alpha }
+      .disposed(by: disposeBag)
+
+    // 선택된 게 없을 때 beLaterButton 활성, 로딩 중엔 비활성
+    Observable.combineLatest(hasSelection, loading)
+      .map { has, isLoading in !has && !isLoading }
+      .bind(to: beLaterButton.rx.isEnabled)
+      .disposed(by: disposeBag)
+
+    Observable.combineLatest(hasSelection, loading)
+      .map { has, isLoading in (!has && !isLoading) ? 1.0 : 0.5 }
+      .bind { [weak self] alpha in self?.beLaterButton.alpha = alpha }
+      .disposed(by: disposeBag)
   }
 
   private func debugPrintFavoriteTagsFromUserDefaults() {
@@ -187,12 +248,22 @@ class TagCheckViewController: UIViewController {
             }
             self.tagCollectionView.reloadData()
           }
+          self.applyButtonStateAccordingToSelection()
         },
         onError: { error in
           print("[ERROR] 태그 로딩 에러: \(error)")
         }
       )
       .disposed(by: disposeBag)
+  }
+
+  private func applyButtonStateAccordingToSelection() {
+    let hasSelection = (tagCollectionView.indexPathsForSelectedItems?.isEmpty == false)
+    let isLoading = reactor?.currentState.isLoading ?? false
+    nextButton.isEnabled = hasSelection && !isLoading
+    nextButton.alpha = nextButton.isEnabled ? 1.0 : 0.5
+    beLaterButton.isEnabled = !hasSelection && !isLoading
+    beLaterButton.alpha = beLaterButton.isEnabled ? 1.0 : 0.5
   }
 
   private func printFavoriteTags(from collectionView: UICollectionView) {
