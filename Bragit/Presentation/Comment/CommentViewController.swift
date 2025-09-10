@@ -61,7 +61,6 @@ final class CommentViewController: UIViewController, View {
   private let commentTextView = UITextView()
   private let sendButton = UIButton(type: .custom)
 
-  // 화면 빈 곳 탭 시 키보드 내리기용 제스처
   private lazy var dismissTapGesture: UITapGestureRecognizer = {
     let tap = UITapGestureRecognizer()
     tap.cancelsTouchesInView = false
@@ -73,16 +72,18 @@ final class CommentViewController: UIViewController, View {
   private var menuTargetIndexPath: IndexPath?
   private var deleteIndexPath: IndexPath?
 
-  // 하단 안전영역(홈 인디케이터) + 키보드 둥근 모서리 뒤 배경 색 채움용
   private let bottomSafeAreaBackground = UIView().then {
     $0.backgroundColor = .grayScale50
     $0.isUserInteractionEnabled = false
   }
 
+  // 동적 높이 업데이트용 제약 레퍼런스
+  private var textContainerHeightConstraint: Constraint?
+  private var bottomBarHeightConstraint: Constraint?
+
   private lazy var bottomBar: UIView = {
     let bar = UIView()
     bar.backgroundColor = .grayScale50
-    bar.snp.makeConstraints { $0.height.equalTo(54) }
 
     let lockImageView = UIImageView(image: .unlock).then {
       $0.contentMode = .scaleAspectFit
@@ -107,9 +108,12 @@ final class CommentViewController: UIViewController, View {
     commentTextView.font = .pretendard(size: 15, weight: .regular)
     commentTextView.textColor = .grayScale900
     commentTextView.isScrollEnabled = false
+    commentTextView.alwaysBounceVertical = true
     commentTextView.returnKeyType = .send
     commentTextView.enablesReturnKeyAutomatically = true
     commentTextView.delegate = self
+    commentTextView.textContainer.lineBreakMode = .byWordWrapping
+    commentTextView.textContainer.widthTracksTextView = true
 
     sendButton.backgroundColor = .clear
     bottomBarTapButton.backgroundColor = .clear
@@ -121,22 +125,26 @@ final class CommentViewController: UIViewController, View {
     textContainer.addSubview(commentTextView)
     textContainer.addSubview(bottomBarTapButton)
 
+    // 초기 바 높이 54 기준으로, 아이콘은 bottom에서 27pt 위에 고정
+    let initialBarHalf: CGFloat = 27
+
     lockImageView.snp.makeConstraints {
       $0.leading.equalTo(bar.snp.leading).offset(12)
-      $0.centerY.equalTo(bar.snp.centerY)
+      $0.centerY.equalTo(bar.snp.bottom).offset(-initialBarHalf)
       $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
     textContainer.snp.makeConstraints {
       $0.leading.equalTo(lockImageView.snp.trailing).offset(10)
       $0.trailing.equalTo(bar.snp.trailing).inset(12)
+      // 텍스트 컨테이너는 바의 중심에 위치(아이콘은 bottom 기준 고정)
       $0.centerY.equalTo(bar.snp.centerY)
-      $0.height.equalTo(42)
+      self.textContainerHeightConstraint = $0.height.equalTo(42).constraint
     }
 
     sendImageView.snp.makeConstraints {
       $0.trailing.equalTo(textContainer.snp.trailing).inset(12)
-      $0.centerY.equalTo(textContainer.snp.centerY)
+      $0.centerY.equalTo(bar.snp.bottom).offset(-initialBarHalf)
       $0.size.equalTo(CGSize(width: 20, height: 20))
     }
 
@@ -147,7 +155,6 @@ final class CommentViewController: UIViewController, View {
 
     commentTextView.snp.makeConstraints {
       $0.edges.equalToSuperview()
-      $0.height.equalTo(42)
     }
 
     bottomBarTapButton.snp.makeConstraints {
@@ -177,6 +184,9 @@ final class CommentViewController: UIViewController, View {
     view.backgroundColor = .white
     setupLayout()
     view.addGestureRecognizer(dismissTapGesture)
+
+    // 초기 높이 보정
+    adjustInputHeight(animated: false)
   }
 
   private func setupLayout() {
@@ -212,7 +222,7 @@ final class CommentViewController: UIViewController, View {
     bottomBar.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview()
       $0.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
-      $0.height.equalTo(54)
+      self.bottomBarHeightConstraint = $0.height.equalTo(54).constraint
     }
 
     bottomSafeAreaBackground.snp.makeConstraints {
@@ -233,56 +243,79 @@ final class CommentViewController: UIViewController, View {
   }
 
   func bind(reactor: CommentReactor) {
-    // 뒤로가기
+    bindNavigation(reactor)
+    bindInitialRefresh(reactor)
+    bindPullToRefresh(reactor)
+    bindBottomBarInteractions()
+    bindSendButton(reactor)
+    bindDismissTap()
+    bindDeleteAlerts(reactor)
+    bindComments(reactor)
+    bindMenus()
+    bindLoadingAndRefreshing(reactor)
+    bindErrors(reactor)
+    bindSendSuccessHandling(reactor)
+  }
+
+  // MARK: - Binding helpers (split to reduce cyclomatic complexity)
+
+  private func bindNavigation(_ reactor: CommentReactor) {
     backButton.rx.tap
       .map { Reactor.Action.didTapBack }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
 
-    // 화면 진입 시 댓글 로드
+  private func bindInitialRefresh(_ reactor: CommentReactor) {
     rx.viewDidLoad
       .map { Reactor.Action.refresh }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
 
-    // 당겨서 새로고침: 손을 뗐을 때만 트리거
+  private func bindPullToRefresh(_ reactor: CommentReactor) {
     tableView.rx.didEndDragging
       .filter { [weak self] _ in
-        // 사용자가 드래그를 끝냈고, 임계치를 넘어 refreshControl이 활성화된 경우에만
         self?.refreshControl.isRefreshing == true
       }
       .map { _ in Reactor.Action.refresh }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
 
-    // bottomBar 탭 -> 키보드 올리기
+  private func bindBottomBarInteractions() {
     bottomBarTapButton.rx.tap
       .bind(with: self) { owner, _ in
         owner.commentTextView.becomeFirstResponder()
       }
       .disposed(by: disposeBag)
+  }
 
-    // 전송 버튼 탭
+  private func bindSendButton(_ reactor: CommentReactor) {
     sendButton.rx.tap
       .withLatestFrom(commentTextView.rx.text.orEmpty)
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .filter { !$0.isEmpty }
       .map { Reactor.Action.sendComment($0) }
       .do { [weak self] _ in
-        self?.commentTextView.text = ""
-        self?.commentTextView.resignFirstResponder()
+        guard let self else { return }
+        self.commentTextView.text = ""
+        self.commentTextView.resignFirstResponder()
+        self.adjustInputHeight(animated: true)
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
 
-    // 화면 빈 곳 탭 -> 키보드 내리기
+  private func bindDismissTap() {
     dismissTapGesture.rx.event
       .bind(with: self) { owner, _ in
         owner.view.endEditing(true)
       }
       .disposed(by: disposeBag)
+  }
 
-    // 삭제 확인
+  private func bindDeleteAlerts(_ reactor: CommentReactor) {
     deleteAlert.rightTap
       .compactMap { [weak self] in self?.deleteIndexPath }
       .do { [weak self] _ in self?.deleteIndexPath = nil }
@@ -290,15 +323,14 @@ final class CommentViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    // 삭제 취소
     deleteAlert.leftTap
       .bind { [weak self] in self?.deleteIndexPath = nil }
       .disposed(by: disposeBag)
+  }
 
-    // 댓글 목록 바인딩
+  private func bindComments(_ reactor: CommentReactor) {
     reactor.state
       .map { $0.comments.sorted { $0.date > $1.date } }
-      // .distinctUntilChanged() // 동일 데이터라도 새로고침 시 셀 재구성을 위해 제거
       .observe(on: MainScheduler.instance)
       .bind(
         to: tableView.rx.items(
@@ -321,7 +353,6 @@ final class CommentViewController: UIViewController, View {
           .bind { [weak self, weak cell] in
             guard let self, let cell else { return }
 
-            // 버튼 위치 기준 메뉴 표시 위치 계산
             let buttonFrameInView = cell.kebabButton.convert(cell.kebabButton.bounds, to: self.view)
             let menuWidth: CGFloat = 120
             let spacing: CGFloat = 8
@@ -333,7 +364,6 @@ final class CommentViewController: UIViewController, View {
             guard let indexPath = self.tableView.indexPath(for: cell) else { return }
             self.menuTargetIndexPath = indexPath
 
-            // 작성자 여부 판별
             let currentUserId = reactor.currentState.currentUserId
             let commenterId = row.commenterId
             let isSelf = (currentUserId != nil && commenterId != nil && currentUserId == commenterId)
@@ -347,8 +377,9 @@ final class CommentViewController: UIViewController, View {
           .disposed(by: cell.disposeBag)
       }
       .disposed(by: disposeBag)
+  }
 
-    // 본인 댓글 삭제 메뉴
+  private func bindMenus() {
     commentSelfMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
@@ -358,7 +389,6 @@ final class CommentViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // 남 댓글 신고 메뉴
     commentOtherMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
@@ -366,8 +396,9 @@ final class CommentViewController: UIViewController, View {
         owner.reportAlert.show(in: owner.view)
       }
       .disposed(by: disposeBag)
+  }
 
-    // 로딩 인디케이터 + 당겨서 새로고침 종료
+  private func bindLoadingAndRefreshing(_ reactor: CommentReactor) {
     reactor.state
       .map(\.isLoading)
       .distinctUntilChanged()
@@ -380,14 +411,14 @@ final class CommentViewController: UIViewController, View {
           if owner.refreshControl.isRefreshing {
             owner.refreshControl.endRefreshing()
           }
-          // 새로고침 후 상대 시간 재계산을 위해 강제 리로드
           owner.tableView.reloadData()
         }
         owner.view.isUserInteractionEnabled = !loading
       }
       .disposed(by: disposeBag)
+  }
 
-    // 에러 표시
+  private func bindErrors(_ reactor: CommentReactor) {
     reactor.state
       .compactMap(\.errorMessage)
       .observe(on: MainScheduler.instance)
@@ -397,17 +428,20 @@ final class CommentViewController: UIViewController, View {
         owner.present(alert, animated: true)
       }
       .disposed(by: disposeBag)
+  }
 
-    // 댓글 전송 성공 시 텍스트뷰 초기화 및 스크롤
+  private func bindSendSuccessHandling(_ reactor: CommentReactor) {
     reactor.state
       .map(\.commentSent)
       .filter { $0 }
       .observe(on: MainScheduler.instance)
       .subscribe { [weak self] _ in
-        self?.commentTextView.text = ""
-        if let tableView = self?.tableView,
-          tableView.numberOfRows(inSection: 0) > 0 {
-          tableView.scrollToRow(
+        guard let self else { return }
+        self.commentTextView.text = ""
+        self.adjustInputHeight(animated: true)
+
+        if self.tableView.numberOfRows(inSection: 0) > 0 {
+          self.tableView.scrollToRow(
             at: IndexPath(row: 0, section: 0),
             at: .top,
             animated: true
@@ -415,6 +449,45 @@ final class CommentViewController: UIViewController, View {
         }
       }
       .disposed(by: disposeBag)
+  }
+
+  // 최대 3줄까지 높이 증가, 이후 내부 스크롤
+  private func adjustInputHeight(animated: Bool) {
+    view.layoutIfNeeded()
+
+    let minHeight: CGFloat = 42 // 1줄 기본
+    let verticalPadding: CGFloat = 12 // bottomBar 상하 여백(= 6 + 6)
+    let insets = commentTextView.textContainerInset
+    let lineHeight = commentTextView.font?.lineHeight ?? 17
+    let maxTextHeight = (lineHeight * 3) + insets.top + insets.bottom
+
+    let fittingWidth = max(0, commentTextView.bounds.width)
+    let fittingSize = CGSize(width: fittingWidth, height: .greatestFiniteMagnitude)
+    let calculated = commentTextView.sizeThatFits(fittingSize).height
+
+    let targetTextHeight = min(maxTextHeight, max(minHeight, ceil(calculated)))
+    let targetBarHeight = targetTextHeight + verticalPadding
+
+    // 3줄 초과 시 내부 스크롤 활성화
+    let shouldScroll = calculated > maxTextHeight + 0.5
+    if commentTextView.isScrollEnabled != shouldScroll {
+      commentTextView.isScrollEnabled = shouldScroll
+    }
+
+    textContainerHeightConstraint?.update(offset: targetTextHeight)
+    bottomBarHeightConstraint?.update(offset: targetBarHeight)
+
+    let updates = {
+      self.view.layoutIfNeeded()
+    }
+
+    if animated {
+      UIView.animate(withDuration: 0.2, animations: updates)
+    } else {
+      updates()
+    }
+
+    commentTextView.scrollRangeToVisible(commentTextView.selectedRange)
   }
 }
 
@@ -553,10 +626,15 @@ extension CommentViewController: UITextViewDelegate {
         reactor?.action.onNext(.sendComment(trimmedText))
         textView.text = ""
         textView.resignFirstResponder()
+        adjustInputHeight(animated: true)
       }
       return false
     }
     return true
+  }
+
+  func textViewDidChange(_ textView: UITextView) {
+    adjustInputHeight(animated: true)
   }
 }
 

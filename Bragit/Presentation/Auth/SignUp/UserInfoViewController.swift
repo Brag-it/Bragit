@@ -417,7 +417,7 @@ final class UserInfoViewController: UIViewController {
           owner.formView.nicknameCheckIcon.image = UIImage.reject.withRenderingMode(.alwaysOriginal)
         case "중복 확인 중...":
           owner.formView.nicknameCheckLabel.textColor = owner.formView.warningColor
-          owner.formView.nicknameCheckIcon.image = nil
+          owner.formView.nicknameCheckIcon.image = UIImage.loading.withRenderingMode(.alwaysOriginal)
         default:
           break
         }

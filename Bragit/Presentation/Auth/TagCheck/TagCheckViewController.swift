@@ -86,6 +86,21 @@ class TagCheckViewController: UIViewController {
     $0.backgroundColor = primaryColor
   }
 
+  // 화면 전체 로딩 오버레이
+  private let loadingOverlay = UIView().then {
+    $0.backgroundColor = UIColor.black.withAlphaComponent(0.2)
+    $0.isHidden = true
+    $0.alpha = 0.0
+    $0.isUserInteractionEnabled = true // 터치 차단
+    $0.accessibilityViewIsModal = true
+    $0.accessibilityLabel = "로딩 중"
+  }
+
+  private let activityIndicator = UIActivityIndicatorView(style: .large).then {
+    $0.hidesWhenStopped = true
+    $0.color = .grayScale900
+  }
+
   init(userInfo: UserRegistrationInfo, reactor: TagCheckReactor) {
     self.userInfo = userInfo
     self.injectReactor = reactor
@@ -124,6 +139,10 @@ class TagCheckViewController: UIViewController {
     ].forEach {
       view.addSubview($0)
     }
+
+    // 로딩 오버레이 추가 (항상 맨 위에)
+    view.addSubview(loadingOverlay)
+    loadingOverlay.addSubview(activityIndicator)
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide)
@@ -170,6 +189,13 @@ class TagCheckViewController: UIViewController {
       $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(24)
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
+    }
+
+    loadingOverlay.snp.makeConstraints {
+      $0.edges.equalToSuperview()
+    }
+    activityIndicator.snp.makeConstraints {
+      $0.center.equalToSuperview()
     }
   }
 
@@ -236,8 +262,9 @@ class TagCheckViewController: UIViewController {
       .share(replay: 1)
 
     loading
-      .bind { [weak self] isLoading in
-        self?.view.isUserInteractionEnabled = !isLoading
+      .observe(on: MainScheduler.instance)
+      .bind(with: self) { owner, isLoading in
+        owner.view.isUserInteractionEnabled = !isLoading
       }
       .disposed(by: disposeBag)
 
@@ -249,7 +276,7 @@ class TagCheckViewController: UIViewController {
 
     Observable.combineLatest(hasSelection, loading)
       .map { has, isLoading in (has && !isLoading) ? 1.0 : 0.5 }
-      .bind { [weak self] alpha in self?.nextButton.alpha = alpha }
+      .bind(to: nextButton.rx.alpha)
       .disposed(by: disposeBag)
 
     // 선택된 게 없을 때 beLaterButton 활성, 로딩 중엔 비활성
@@ -260,7 +287,28 @@ class TagCheckViewController: UIViewController {
 
     Observable.combineLatest(hasSelection, loading)
       .map { has, isLoading in (!has && !isLoading) ? 1.0 : 0.5 }
-      .bind { [weak self] alpha in self?.beLaterButton.alpha = alpha }
+      .bind(to: beLaterButton.rx.alpha)
+      .disposed(by: disposeBag)
+
+    // 로딩 오버레이 표시/숨김
+    loading
+      .observe(on: MainScheduler.instance)
+      .bind(with: self) { owner, isLoading in
+        if isLoading {
+          owner.loadingOverlay.isHidden = false
+          owner.activityIndicator.startAnimating()
+          UIView.animate(withDuration: 0.2) {
+            owner.loadingOverlay.alpha = 1.0
+          }
+        } else {
+          UIView.animate(withDuration: 0.2, animations: {
+            owner.loadingOverlay.alpha = 0.0
+          }, completion: { _ in
+            owner.activityIndicator.stopAnimating()
+            owner.loadingOverlay.isHidden = true
+          })
+        }
+      }
       .disposed(by: disposeBag)
   }
 
@@ -433,4 +481,13 @@ private func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
   layoutSection.interGroupSpacing = 10
   layoutSection.contentInsetsReference = .none
   return UICollectionViewCompositionalLayout(section: layoutSection)
+}
+
+// MARK: - Rx Binders
+private extension Reactive where Base: UIView {
+  var alpha: Binder<CGFloat> {
+    Binder(base) { view, value in
+      view.alpha = value
+    }
+  }
 }
