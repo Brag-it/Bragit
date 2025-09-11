@@ -155,11 +155,12 @@ class WriteReactor: Reactor, Stepper {
 
     attributedString.enumerateAttribute(
       .attachment, in: NSRange(location: 0, length: attributedString.length)) { value, _, _ in
-      guard let attachment = value as? NSTextAttachment, let image = attachment.image else { return }
+        guard let attachment = value as? NSTextAttachment, let image = attachment.image else { return }
 
-      let aspectRatio = image.size.height / image.size.width
-      let imageHeight = imageWidth * aspectRatio
+        let aspectRatio = image.size.height / image.size.width
+        let imageHeight = imageWidth * aspectRatio
 
-      attachment.bounds = CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight)
-    }
-  }}
+        attachment.bounds = CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight)
+      }
+  }
+}
