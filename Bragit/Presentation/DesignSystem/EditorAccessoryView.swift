@@ -74,14 +74,14 @@ final class EditorAccessoryView: UIView {
     addSubview(keyboardDismissButton)
 
     stackView.snp.makeConstraints {
-      $0.top.bottom.equalTo(self.safeAreaLayoutGuide).inset(8)
-      $0.leading.equalTo(self.safeAreaLayoutGuide).offset(16)
-      $0.trailing.lessThanOrEqualTo(self.keyboardDismissButton.snp.leading).offset(-16)
+      $0.top.bottom.equalToSuperview().inset(8)
+      $0.leading.equalToSuperview().offset(16)
+      $0.trailing.lessThanOrEqualTo(keyboardDismissButton.snp.leading).offset(-16)
     }
 
     keyboardDismissButton.snp.makeConstraints {
-      $0.top.bottom.equalTo(self.safeAreaLayoutGuide).inset(8)
-      $0.trailing.lessThanOrEqualTo(self.safeAreaLayoutGuide).offset(-16)
+      $0.top.bottom.equalToSuperview().inset(8)
+      $0.trailing.lessThanOrEqualToSuperview().offset(-16)
     }
 
     self.snp.makeConstraints {

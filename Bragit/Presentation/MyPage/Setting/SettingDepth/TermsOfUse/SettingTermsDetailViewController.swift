@@ -97,7 +97,7 @@ final class SettingTermsDetailViewController: UIViewController, Stepper {
     let bundle = Bundle.main
 
     if let url = bundle.url(forResource: name, withExtension: "txt"),
-       let text = try? String(contentsOf: url, encoding: .utf8) {
+    let text = try? String(contentsOf: url, encoding: .utf8) {
       textView.text = text
       return
     }
@@ -108,4 +108,3 @@ final class SettingTermsDetailViewController: UIViewController, Stepper {
     titleLabel.text = item.name
   }
 }
-
