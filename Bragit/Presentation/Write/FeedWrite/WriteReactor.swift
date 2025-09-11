@@ -14,12 +14,14 @@ import RxRelay
 class WriteReactor: Reactor, Stepper {
   var initialState: State
   let steps = PublishRelay<Step>()
+  @LocalStorage(location: .postTemporary) var postTemporary: PostTemporary?
   private let disposeBag = DisposeBag()
 
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
     case tapDismiss // 탭 닫기
     case tapDone    // 완료 버튼
+    case tapTemporary   // 임시저장
     case updateTitle(String)
     case updateContent(NSAttributedString)
     case boldTapped
@@ -77,6 +79,15 @@ class WriteReactor: Reactor, Stepper {
 
     case .strikethroughTapped:
       return .just(.setStrikethroughActive(!currentState.isStrikethroughActive))
+    case .tapTemporary:
+      let temporary = PostTemporary(
+        title: currentState.title,
+        content: currentState.content
+      )
+      postTemporary = temporary
+
+      steps.accept(AppStep.dismiss)
+      return .empty()
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
