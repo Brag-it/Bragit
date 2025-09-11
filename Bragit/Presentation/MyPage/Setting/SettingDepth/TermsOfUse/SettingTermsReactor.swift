@@ -46,7 +46,7 @@ class SettingTermsReactor: Reactor, Stepper {
     case .viewDidLoad:
       let items: [TermsItem] = [
         .init(name: "개인정보 처리 방침", bundleFileName: "Terms_InfoProcessing"),
-        .init(name: "서비스 이용 약관", bundleFileName: "Terms_Service"),
+        .init(name: "서비스 이용 약관", bundleFileName: "Terms_Service")
       ]
       return .just(.setItems(items))
 
