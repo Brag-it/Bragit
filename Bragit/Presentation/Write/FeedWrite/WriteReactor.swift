@@ -21,7 +21,9 @@ class WriteReactor: Reactor, Stepper {
   enum Action {
     case tapDismiss // 탭 닫기
     case tapDone    // 완료 버튼
+    case isLoadPost
     case tapTemporary   // 임시저장
+    case tapLoadPost    // 불러오기
     case updateTitle(String)
     case updateContent(NSAttributedString)
     case boldTapped
@@ -36,6 +38,7 @@ class WriteReactor: Reactor, Stepper {
     case setBoldActive(Bool)
     case setUnderlineActive(Bool)
     case setStrikethroughActive(Bool)
+    case setPost(Bool)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -45,6 +48,7 @@ class WriteReactor: Reactor, Stepper {
     var isBoldActive = false
     var isUnderlineActive = false
     var isStrikethroughActive = false
+    var isLoadPost = false
   }
 
   init() {
@@ -79,6 +83,7 @@ class WriteReactor: Reactor, Stepper {
 
     case .strikethroughTapped:
       return .just(.setStrikethroughActive(!currentState.isStrikethroughActive))
+
     case .tapTemporary:
       let temporary = PostTemporary(
         title: currentState.title,
@@ -88,6 +93,24 @@ class WriteReactor: Reactor, Stepper {
 
       steps.accept(AppStep.dismiss)
       return .empty()
+
+    case .isLoadPost:
+      if postTemporary != nil {
+        return .just(.setPost(true))
+      } else {
+        return .empty()
+      }
+
+    case .tapLoadPost:
+      guard let temporary = postTemporary else {
+        return .empty()
+      }
+      postTemporary = nil
+      return .concat(
+        .just(.setTitle(temporary.title)),
+        .just(.setContent(temporary.content)),
+        .just(.setPost(false))
+      )
     }
   }
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
@@ -105,6 +128,8 @@ class WriteReactor: Reactor, Stepper {
       newState.isUnderlineActive = isActive
     case .setStrikethroughActive(let isActive):
       newState.isStrikethroughActive = isActive
+    case .setPost(let loadPost):
+      newState.isLoadPost = loadPost
     }
     return newState
   }
