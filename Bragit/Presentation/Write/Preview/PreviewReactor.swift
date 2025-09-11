@@ -17,6 +17,7 @@ class PreviewReactor: Reactor, Stepper {
   @Dependency(\.postManager) var postManager
   @Dependency(\.tagManager) var tagManager
   @Dependency(\.userManager) var userManager
+  @Dependency(\.imageManager) var imageManager
 
   let draft: PostDraft
   let steps = PublishRelay<Step>()
@@ -138,7 +139,7 @@ class PreviewReactor: Reactor, Stepper {
 
       return Observable.concat([
         .just(.setLoading(true)),
-        // 이미지 업로드
+        // 게시글 업로드
         Observable.zip(thumbnailUploadStream, attachmentsUploadStream)
           .flatMap { thumbnailURL, attachmentURLs -> Observable<Mutation> in
             print("썸네일 URL: \(thumbnailURL?.absoluteString ?? "없음")")
