@@ -52,7 +52,6 @@ final class RichTextViewWithPlaceholder: RichTextView {
 
   private func configurePlaceholder() {
     delegate = self
-    placeholderLabel.font = self.font
     placeholderLabel.textColor = placeholderColor
     placeholderLabel.numberOfLines = 0
     placeholderLabel.isUserInteractionEnabled = false
