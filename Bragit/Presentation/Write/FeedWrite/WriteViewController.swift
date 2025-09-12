@@ -148,7 +148,14 @@ class WriteViewController: UIViewController, View {
     backButton.rx.tap
       .bind { [weak self] in
         guard let self else { return }
-        backAlert.show(in: self.view)
+        let isTitleEmpty = titleTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        let isContentEmpty = editorView.textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        if isTitleEmpty && isContentEmpty {
+          reactor.action.onNext(.tapDismiss)
+        } else {
+          backAlert.show(in: self.view)
+        }
       }
       .disposed(by: disposeBag)
 
