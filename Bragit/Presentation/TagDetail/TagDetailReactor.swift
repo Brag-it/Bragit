@@ -26,6 +26,7 @@ class TagDetailReactor: Reactor, Stepper {
     case setTagInform
     case followDidTap(Post)
     case tagFollowDidTap
+    case didTapPost(Post)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -108,6 +109,9 @@ class TagDetailReactor: Reactor, Stepper {
         favoriteTags = (favoriteTags ?? []) + [tag]
       }
       return .just(.setIsFollow(!currentState.isFollow))
+    case .didTapPost(let post):
+      self.steps.accept(AppStep.feedDetail(post: post))
+      return .empty()
     }
   }
 
