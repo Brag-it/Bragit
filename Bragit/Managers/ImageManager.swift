@@ -23,11 +23,18 @@ final class ImageManager: ImageManagerProtocol {
       var request = URLRequest(url: url)
       request.httpMethod = "POST"
 
-      // Base64 인코딩
-      let base64String = data.base64EncodedString()
-      let bodyString = "image=\(base64String)"
-      request.httpBody = bodyString.data(using: .utf8)
-      request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+      let boundary = UUID().uuidString
+      request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+      var body = Data()
+      body.append("--\(boundary)\r\n".data(using: .utf8)!)
+      body.append("Content-Disposition: form-data; name=\"image\"; filename=\"upload.jpg\"\r\n".data(using: .utf8)!)
+      body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+      body.append(data)
+      body.append("\r\n".data(using: .utf8)!)
+      body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+      request.httpBody = body
 
       let task = URLSession.shared.dataTask(with: request) { data, response, error in
         if let error = error {
@@ -35,8 +42,16 @@ final class ImageManager: ImageManagerProtocol {
           return
         }
 
+        guard let data = data else {
+          observer.onError(NSError(domain: "ImageUpload", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"]))
+          return
+        }
+
+        if let responseString = String(data: data, encoding: .utf8) {
+          print("📥 ImgBB 응답: \(responseString)")
+        }
+
         guard
-          let data = data,
           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
           let dataField = json["data"] as? [String: Any],
           let urlString = dataField["url"] as? String,
