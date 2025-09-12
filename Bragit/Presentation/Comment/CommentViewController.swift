@@ -357,6 +357,17 @@ final class CommentViewController: UIViewController, View {
           content: row.content
         )
 
+        let commenterId = row.commenterId ?? ""
+        cell.profileTap
+          .map { Reactor.Action.didTapUserProfile(commenterId) }
+          .bind(to: reactor.action)
+          .disposed(by: cell.disposeBag)
+
+        cell.nameTap
+          .map { Reactor.Action.didTapUserProfile(commenterId) }
+          .bind(to: reactor.action)
+          .disposed(by: cell.disposeBag)
+
         // 케밥 버튼 탭 시 메뉴 표시
         cell.kebabTap
           .bind { [weak self, weak cell] in
@@ -522,6 +533,8 @@ final class CommentCell: UITableViewCell {
 
   var disposeBag = DisposeBag()
   var kebabTap: ControlEvent<Void> { kebabButton.rx.tap }
+  var profileTap: ControlEvent<Void> { profileImageView.rx.tap }
+  var nameTap: ControlEvent<Void> { nameLabel.rx.tap }
   var kebabButtonFrameInCell: CGRect { kebabButton.frame }
 
   private let profileImageView = UIImageView().then {
@@ -530,6 +543,7 @@ final class CommentCell: UITableViewCell {
     $0.layer.cornerRadius = 18
     $0.backgroundColor = .secondarySystemBackground
     $0.snp.makeConstraints { $0.size.equalTo(CGSize(width: 36, height: 36)) }
+    $0.isUserInteractionEnabled = true
   }
 
   private let nameLabel = UILabel().then {
@@ -537,6 +551,7 @@ final class CommentCell: UITableViewCell {
     $0.textColor = .label
     $0.numberOfLines = 1
     $0.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    $0.isUserInteractionEnabled = true
   }
 
   private let dateLabel = UILabel().then {

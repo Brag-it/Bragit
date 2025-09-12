@@ -18,6 +18,7 @@ final class CommentReactor: Reactor, Stepper {
   let initialState: State
   private let postId: UUID
   @Dependency(\.supabase) var supabase
+  @Dependency(\.userManager) var userManager
   let steps = PublishRelay<Step>()
 
   @LocalStorage(location: .nowUser) private var storedUserId: String?
@@ -30,6 +31,7 @@ final class CommentReactor: Reactor, Stepper {
     case didTapKebab(IndexPath)
     case deleteComment(IndexPath)
     case reportComment(IndexPath)
+    case didTapUserProfile(String)
   }
 
   enum Mutation {
@@ -97,6 +99,15 @@ final class CommentReactor: Reactor, Stepper {
       return mutateDeleteComment(indexPath: indexPath)
     case .reportComment(let indexPath):
       return mutateReportComment(indexPath: indexPath)
+    case .didTapUserProfile(let userId):
+      guard userId.isEmpty == false else { return .empty() }
+      return userManager
+        .rxfetchUsersBy(ids: [userId])
+        .compactMap { $0.first }
+        .do { [weak self] user in
+          self?.steps.accept(AppStep.userProfile(user: user))
+        }
+        .flatMap { _ in Observable<Mutation>.empty() }
     }
   }
 
