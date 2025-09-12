@@ -17,6 +17,7 @@ class PreviewReactor: Reactor, Stepper {
   @Dependency(\.postManager) var postManager
   @Dependency(\.tagManager) var tagManager
   @Dependency(\.userManager) var userManager
+  @Dependency(\.imageManager) var imageManager
 
   let draft: PostDraft
   let steps = PublishRelay<Step>()
@@ -119,26 +120,18 @@ class PreviewReactor: Reactor, Stepper {
       // 업로드
       let thumbnailUploadStream: Observable<URL?> = {
         guard let data = representativeImageData else { return .just(nil) }
-        let fileName = "thumbnail-\(Int(Date().timeIntervalSince1970)).jpg"
-        return self.postManager.rxUploadImage(
-          data: data,
-          fileName: fileName,
-          folder: StoragePath.thumbnail(authorId: author)
-        )
-        .map { $0 as URL? }
+        return self.imageManager.rxUploadImage(data: data)
+          .map { $0 as URL? }
       }()
 
       let attachmentsUploadStream: Observable<[URL]> = {
         guard !attachmentDataList.isEmpty else { return .just([]) }
-        return self.postManager.rxUploadImages(
-          datas: attachmentDataList,
-          folder: StoragePath.contents(authorId: author, postId: postId)
-        )
+        return self.imageManager.rxUploadImages(datas: attachmentDataList)
       }()
 
       return Observable.concat([
         .just(.setLoading(true)),
-        // 이미지 업로드
+        // 게시글 업로드
         Observable.zip(thumbnailUploadStream, attachmentsUploadStream)
           .flatMap { thumbnailURL, attachmentURLs -> Observable<Mutation> in
             print("썸네일 URL: \(thumbnailURL?.absoluteString ?? "없음")")
