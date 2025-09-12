@@ -15,7 +15,7 @@ protocol ImageManagerProtocol {
 
 final class ImageManager: ImageManagerProtocol {
 
-  @Dependency(\.imgBBApiKey) var apiKey: String
+  @Dependency(\.imgBBApiKey) var apiKey
 
   func rxUploadImage(data: Data) -> Observable<URL> {
     return Observable.create { observer in

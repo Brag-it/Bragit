@@ -32,6 +32,15 @@ enum SupabaseDependencyKey: DependencyKey {
   }()
 }
 
+enum ImgBBAPIKeyDependencyKey: DependencyKey {
+  static let liveValue: String = {
+    guard let apiKey = Bundle.main.infoDictionary?["ImgBB api"] as? String, !apiKey.isEmpty else {
+      fatalError("⚠️ ImgBB API 키 누락! Config 설정 빠짐!!")
+    }
+    return apiKey
+  }()
+}
+
 enum TagDependencyKey: DependencyKey {
   static let liveValue: TagManagerProtocol = TagManager()
 }
@@ -52,13 +61,8 @@ enum BlockDependencyKey: DependencyKey {
   static let liveValue: BlockManagerProtocol = BlockManager()
 }
 
-enum ImgBBDependencyKey: DependencyKey {
-  static let liveValue: ImageManagerProtocol = {
-    guard let apiKey = Bundle.main.infoDictionary?["ImgBB api"] as? String, !apiKey.isEmpty else {
-      fatalError("⚠️ ImgBB API 키 누락! Config 설정 빠짐!!")
-    }
-    return ImageManager(apiKey: apiKey)
-  }()
+enum ImageManagerDependencyKey: DependencyKey {
+  static let liveValue: ImageManagerProtocol = ImageManager()
 }
 
 extension DependencyValues {
@@ -102,8 +106,13 @@ extension DependencyValues {
     set { self[ReportDependencyKey.self] = newValue }
   }
 
+  var imgBBApiKey: String {
+    get { self[ImgBBAPIKeyDependencyKey.self] }
+    set { self[ImgBBAPIKeyDependencyKey.self] = newValue }
+  }
+
   var imageManager: ImageManagerProtocol {
-    get { self[ImgBBDependencyKey.self] }
-    set { self[ImgBBDependencyKey.self] = newValue }
+    get { self[ImageManagerDependencyKey.self] }
+    set { self[ImageManagerDependencyKey.self] = newValue }
   }
 }
