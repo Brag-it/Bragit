@@ -10,6 +10,12 @@ final class DescriptionTextView: UITextView {
 
   private let placeholderLabel = UILabel()
 
+  override var font: UIFont? {
+    didSet {
+      placeholderLabel.font = font
+    }
+  }
+
   var placeholder: String? {
     didSet {
       placeholderLabel.text = placeholder
