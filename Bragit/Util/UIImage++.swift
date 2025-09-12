@@ -19,7 +19,7 @@ extension UIImage {
     let targetSize = CGSize(width: originalSize.width * scale, height: originalSize.height * scale)
 
     // CoreGraphics 기반 리사이즈
-    UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
+    UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0) // 배경색 투명설정
     defer { UIGraphicsEndImageContext() }
     draw(in: CGRect(origin: .zero, size: targetSize))
     let resized = UIGraphicsGetImageFromCurrentImageContext()
