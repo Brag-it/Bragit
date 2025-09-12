@@ -47,9 +47,6 @@ final class ImageManager: ImageManagerProtocol {
           return
         }
 
-        if let responseString = String(data: data, encoding: .utf8) {
-          print("📥 ImgBB 응답: \(responseString)")
-        }
 
         guard
           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
