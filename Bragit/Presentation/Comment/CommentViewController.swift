@@ -69,7 +69,7 @@ final class CommentViewController: UIViewController, View {
 
   private let bottomBarTapButton = UIButton(type: .custom)
   private var menuTargetIndexPath: IndexPath?
-  private var deleteIndexPath: IndexPath?
+  private var deleteCommentId: UUID?
 
   private let bottomSafeAreaBackground = UIView().then {
     $0.backgroundColor = .grayScale50
@@ -327,14 +327,14 @@ final class CommentViewController: UIViewController, View {
 
   private func bindDeleteAlerts(_ reactor: CommentReactor) {
     deleteAlert.rightTap
-      .compactMap { [weak self] in self?.deleteIndexPath }
-      .do { [weak self] _ in self?.deleteIndexPath = nil }
+      .compactMap { [weak self] in self?.deleteCommentId }
+      .do { [weak self] _ in self?.deleteCommentId = nil }
       .map { Reactor.Action.deleteComment($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     deleteAlert.leftTap
-      .bind { [weak self] in self?.deleteIndexPath = nil }
+      .bind { [weak self] in self?.deleteCommentId = nil }
       .disposed(by: disposeBag)
   }
 
@@ -388,18 +388,6 @@ final class CommentViewController: UIViewController, View {
             let currentUserId = reactor.currentState.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines)
             let authorId = row.commenterId?.trimmingCharacters(in: .whitespacesAndNewlines)
             let isSelf = currentUserId?.lowercased() == authorId?.lowercased()
-            #if DEBUG
-              print(
-                "[Comment] kebabTap - currentUserId:",
-                currentUserId as Any,
-                "commenterId:",
-                row.commenterId as Any,
-                "authorId(used):",
-                authorId as Any,
-                "isSelf:",
-                isSelf
-              )
-            #endif
 
             if isSelf {
               self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
@@ -416,9 +404,14 @@ final class CommentViewController: UIViewController, View {
     commentSelfMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
-        guard index == 0, let target = owner.menuTargetIndexPath else { return }
-        owner.deleteIndexPath = target
-        owner.deleteAlert.show(in: owner.view)
+        guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
+        if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
+          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+          owner.deleteCommentId = dataSource[targetIndexPath.row].id
+          owner.deleteAlert.show(in: owner.view)
+        } else {
+          owner.deleteCommentId = nil
+        }
       }
       .disposed(by: disposeBag)
 
@@ -699,4 +692,3 @@ extension CommentViewController: UIGestureRecognizerDelegate {
     return true
   }
 }
-

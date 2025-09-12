@@ -29,8 +29,8 @@ final class CommentReactor: Reactor, Stepper {
     case didTapBack
     case sendComment(String)
     case didTapKebab(IndexPath)
-    case deleteComment(IndexPath)
-    case reportComment(IndexPath)
+    case deleteComment(UUID)
+    case reportComment(UUID)
     case didTapUserProfile(String)
   }
 
@@ -95,10 +95,10 @@ final class CommentReactor: Reactor, Stepper {
       return mutateSendComment(content: content)
     case .didTapKebab:
       return .empty()
-    case .deleteComment(let indexPath):
-      return mutateDeleteComment(indexPath: indexPath)
-    case .reportComment(let indexPath):
-      return mutateReportComment(indexPath: indexPath)
+    case .deleteComment(let commentId):
+      return mutateDeleteComment(commentId: commentId)
+    case .reportComment(let commentId):
+      return mutateReportComment(commentId: commentId)
     case .didTapUserProfile(let userId):
       guard userId.isEmpty == false else { return .empty() }
       return userManager
@@ -184,17 +184,23 @@ final class CommentReactor: Reactor, Stepper {
     return .concat([start, send, setSent, resetSent, end])
   }
 
-  private func mutateDeleteComment(indexPath: IndexPath) -> Observable<Mutation> {
+  private func mutateDeleteComment(commentId: UUID) -> Observable<Mutation> {
     guard currentState.isLoading == false else { return .empty() }
 
-    guard let target = comment(atSortedIndexPath: indexPath) else {
-      return .just(.setError("[Delete Comment] 인덱스 에러"))
+    guard let target = currentState.comments.first(where: { $0.id == commentId }) else {
+      return .just(.setError("[Delete Comment] 대상 댓글을 찾을 수 없습니다"))
     }
 
-    if let ownerId = target.commenterId,
-      let currentUserId = storedUserId,
-      ownerId != currentUserId {
-      return .just(.setError("[Delete Comment] 삭제 권한 없음"))
+    // 소유자 검증 (대소문자/공백 무시)
+    if let ownerIdRaw = target.commenterId,
+      let currentUserIdRaw = storedUserId {
+      let ownerId = ownerIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      let currentUserId = currentUserIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      if ownerId != currentUserId {
+        return .just(.setError("[Delete Comment] 삭제 권한 없음"))
+      }
+    } else {
+      return .just(.setError("[Delete Comment] 사용자 정보 없음"))
     }
 
     let start = Observable.just(Mutation.setLoading(true))
@@ -215,15 +221,11 @@ final class CommentReactor: Reactor, Stepper {
     ])
   }
 
-  private func mutateReportComment(indexPath: IndexPath) -> Observable<Mutation> {
+  private func mutateReportComment(commentId: UUID) -> Observable<Mutation> {
     guard currentState.isLoading == false else { return .empty() }
 
-    guard let target = comment(atSortedIndexPath: indexPath) else {
-      return .just(.setError("[Report Comment] 인덱스 에러"))
-    }
-
     let start = Observable.just(Mutation.setLoading(true))
-    let report = rxReportComment(commentId: target.id)
+    let report = rxReportComment(commentId: commentId)
       .map { _ in Mutation.setError(nil) as Mutation }
       .catch { error in
         let message = (error as NSError).localizedDescription
