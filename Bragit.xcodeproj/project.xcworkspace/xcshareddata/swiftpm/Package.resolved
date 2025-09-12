@@ -1,5 +1,5 @@
 {
-  "originHash" : "189390299a2c87cedf571e59a190c765fb56a1bd6af627df204e576bd8658959",
+  "originHash" : "1b93d2d6d8a453eb22b28aeaf6a3bdcc8e18eb5c068f65e38fb18d15ec503b42",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "2015fda791daa72c8058619545a593bf8c1dd59f",
         "version" : "8.5.0"
+      }
+    },
+    {
+      "identity" : "loaf",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/schmidyy/Loaf.git",
+      "state" : {
+        "revision" : "5f78a659666fd1025579ded60960452a4c60eda6",
+        "version" : "0.7.0"
       }
     },
     {

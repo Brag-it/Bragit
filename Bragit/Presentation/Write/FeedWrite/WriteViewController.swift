@@ -127,7 +127,10 @@ class WriteViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     loadPostAlert.leftTap
-      .bind { print("취소 버튼 누름") }
+      .bind { [weak self] in
+        guard let self else { return }
+        
+      }
       .disposed(by: disposeBag)
 
     loadPostAlert.rightTap

@@ -183,8 +183,8 @@ extension AlertView {
       )
     case .loadPost:
       return AlertView(
-        title: "작성중이던 글이 있어요",
-        message: "이어서 작성하시겠습니까?",
+        title: "임시 저장된 글이 있어요",
+        message: "이어서 작성하시겠어요?",
         leftButtonTitle: "취소",
         rightButtonTitle: "불러오기",
         leftButtonColor: .grayScale400,
