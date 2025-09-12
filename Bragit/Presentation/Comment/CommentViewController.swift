@@ -5,14 +5,13 @@
 //  Created by luca on 9/4/25.
 //
 
-import UIKit
-
 import Kingfisher
 import ReactorKit
 import RxCocoa
 import RxSwift
 import SnapKit
 import Then
+import UIKit
 
 final class CommentViewController: UIViewController, View {
   typealias Reactor = CommentReactor
@@ -141,12 +140,14 @@ final class CommentViewController: UIViewController, View {
       self.textContainerHeightConstraint = $0.height.equalTo(42).constraint
     }
 
-    self.textContainerLeadingWithLock = textContainer.snp.prepareConstraints {
-      $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
-    }.first
-    self.textContainerLeadingWithoutLock = textContainer.snp.prepareConstraints {
-      $0.leading.equalTo(bar.snp.leading).offset(12)
-    }.first
+    self.textContainerLeadingWithLock =
+      textContainer.snp.prepareConstraints {
+        $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
+      }.first
+    self.textContainerLeadingWithoutLock =
+      textContainer.snp.prepareConstraints {
+        $0.leading.equalTo(bar.snp.leading).offset(12)
+      }.first
     self.textContainerLeadingWithoutLock?.activate()
 
     sendImageView.snp.makeConstraints {
@@ -384,9 +385,21 @@ final class CommentViewController: UIViewController, View {
             guard let indexPath = self.tableView.indexPath(for: cell) else { return }
             self.menuTargetIndexPath = indexPath
 
-            let currentUserId = reactor.currentState.currentUserId
-            let commenterId = row.commenterId
-            let isSelf = (currentUserId != nil && commenterId != nil && currentUserId == commenterId)
+            let currentUserId = reactor.currentState.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let authorId = row.commenterId?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let isSelf = currentUserId?.lowercased() == authorId?.lowercased()
+            #if DEBUG
+              print(
+                "[Comment] kebabTap - currentUserId:",
+                currentUserId as Any,
+                "commenterId:",
+                row.commenterId as Any,
+                "authorId(used):",
+                authorId as Any,
+                "isSelf:",
+                isSelf
+              )
+            #endif
 
             if isSelf {
               self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
@@ -474,7 +487,7 @@ final class CommentViewController: UIViewController, View {
   private func adjustInputHeight(animated: Bool) {
     view.layoutIfNeeded()
 
-    let minHeight: CGFloat = 42 // 1줄 기본
+    let minHeight: CGFloat = 42  // 1줄 기본
     let verticalPadding: CGFloat = 12
     let insets = commentTextView.textContainerInset
     let lineHeight = commentTextView.font?.lineHeight ?? 17
@@ -504,7 +517,6 @@ final class CommentViewController: UIViewController, View {
     } else {
       updates()
     }
-
     commentTextView.scrollRangeToVisible(commentTextView.selectedRange)
   }
 
@@ -687,3 +699,4 @@ extension CommentViewController: UIGestureRecognizerDelegate {
     return true
   }
 }
+
