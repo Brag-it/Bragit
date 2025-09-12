@@ -48,7 +48,7 @@ class TagDetailView: UIView {
       $0.backgroundColor = .white
     }
 
-  private lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
+  lazy var dataSource = makeCollectionViewDataSource(self.collectionView)
 
   let followDidTap = PublishRelay<Post>()
   let tagFollowDidTap = PublishRelay<Void>()

@@ -67,5 +67,20 @@ class TagDetailViewController: UIViewController, View {
         tagDetailView.reconfigurePosts(posts)
       }
       .disposed(by: disposeBag)
+
+    tagDetailView.collectionView.rx.itemSelected
+      .compactMap { [weak self] indexPath -> Post? in
+        guard let self, let item = tagDetailView.dataSource.itemIdentifier(for: indexPath)
+        else { return nil }
+        switch item {
+        case .post(let post):
+          return post
+        default:
+          return nil
+        }
+      }
+      .map { post in .didTapPost(post) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
