@@ -53,8 +53,9 @@ final class CommentViewController: UIViewController, View {
   }
 
   private let refreshControl = UIRefreshControl()
-  private let activityIndicator = UIActivityIndicatorView(style: .medium).then {
+  private let activityIndicator = UIActivityIndicatorView(style: .large).then {
     $0.hidesWhenStopped = true
+    $0.color = .primary400
   }
 
   private let commentTextView = UITextView()
@@ -248,7 +249,7 @@ final class CommentViewController: UIViewController, View {
     }
 
     activityIndicator.snp.makeConstraints {
-      $0.center.equalToSuperview()
+      $0.center.equalTo(tableView)
     }
   }
 
@@ -692,3 +693,4 @@ extension CommentViewController: UIGestureRecognizerDelegate {
     return true
   }
 }
+
