@@ -69,4 +69,8 @@ class ProfileListViewController<H: Hashable>: UIViewController {
       return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: identifier)
     }
   }
+
+  func reload() {
+    profileListView.collectionView.reloadData()
+  }
 }
