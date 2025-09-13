@@ -41,5 +41,11 @@ class FavoriteTagsViewController: ProfileListViewController<Tag>, View {
       .compactMap { $0 }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    profileListView.collectionView.rx.itemSelected
+      .map { self.tags[$0.row] }
+      .map { .tagDidTap($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
   }
 }
