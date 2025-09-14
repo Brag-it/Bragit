@@ -1,3 +1,5 @@
+import RxFlow
+import RxRelay
 //
 //  LoginFlow.swift
 //  Bragit
@@ -5,9 +7,6 @@
 //  Created by 이태윤 on 8/25/25.
 //
 import UIKit
-
-import RxFlow
-import RxRelay
 
 // 로그인 화면 네비게이션 전담
 final class LoginFlow: Flow, Stepper {
@@ -23,10 +22,10 @@ final class LoginFlow: Flow, Stepper {
       return showLogin()
     case .signupApple(let initialMail, let refreshToken, let isAppleLogin):
       return showSignupApple(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
-      case .signupMail:
-        return showSignupMail()
-      case .signupMailConfirm:
-        return showMailConfirm()
+    case .signupMail:
+      return showSignupMail()
+    case .signupMailConfirm:
+      return showMailConfirm()
     case .signTermsConset:
       return showTermsConsent()
     case .signupPhoto:
@@ -85,7 +84,16 @@ final class LoginFlow: Flow, Stepper {
 
   private func showSignupMail() -> FlowContributors {
     // 메일 주소 입력, 비밃너호, 닉네임 입력 등 뷰
-    return .none
+    let reactor = MailInfoReactor()
+    let mailInfoVC = MailInfoViewController()
+    nav.pushViewController(mailInfoVC, animated: true)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: mailInfoVC,
+          withNextStepper: reactor
+        )
+    )
   }
 
   private func showMailConfirm() -> FlowContributors {

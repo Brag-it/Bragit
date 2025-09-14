@@ -87,7 +87,7 @@ final class MainLoginReactor: Reactor, Stepper {
       return .empty()
     case .tapSignUp:
       // 일반(메일) 회원가입 시작
-      steps.accept(AppStep.signupApple(initialMail: nil, refreshToken: nil, isAppleLogin: false))
+        steps.accept(AppStep.signupMail)
       return .empty()
     case .tapNext:
       steps.accept(AppStep.home)

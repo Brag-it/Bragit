@@ -14,11 +14,7 @@ enum MailInfoValidator {
   }
 
   static func isValidPassword(_ pwd: String) -> Bool {
-      // 길이 8~24자
     guard (8...24).contains(pwd.count) else { return false }
-
-      // 허용 문자(영문 대/소문자, 숫자, 특수기호)로만 구성되었는지 검사
-      // 각각 1개 이상 포함 요건은 없음
     let allowedCharsPattern = "^[A-Za-z0-9!@#$%^&*()_+\\-={}\\[\\]|:;\"'<>,.?/`~\\\\]+$"
     return match(pwd, allowedCharsPattern)
   }
