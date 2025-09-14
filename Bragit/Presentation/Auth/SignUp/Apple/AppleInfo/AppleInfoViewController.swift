@@ -6,7 +6,11 @@ import ReactorKit
 import RxSwift
 import RxCocoa
 
-final class UserInfoFormView: UIView {
+// TODO: 이메일, 비밀번호, 비밀번호 확인 삭제
+// TODO: 이메일 끌어오는 기능 삭제(AppStep, LoginFlow에서 initialMail: String, isAppleLogin: Bool 삭제)
+// TODO: Keychain 삭제
+
+final class AppleInfoFormView: UIView {
   let descriptionLabel = UILabel()
   let scrollView = UIScrollView()
   let contentView = UIView()
@@ -301,7 +305,7 @@ final class UserInfoFormView: UIView {
   }
 }
 
-final class UserInfoViewController: UIViewController {
+final class AppleInfoViewController: UIViewController {
   var onNext: ((UserRegistrationInfo) -> Void)?
 
   private let initialMail: String?
@@ -325,13 +329,13 @@ final class UserInfoViewController: UIViewController {
     $0.textAlignment = .center
   }
 
-  private let formView = UserInfoFormView()
+  private let formView = AppleInfoFormView()
   private var inputOrder: [UITextField] = []
   private var keyboardBottomInset: CGFloat = 0
   private weak var currentFirstResponder: UITextField?
 
   private let reactorBag = DisposeBag()
-  private let nicknameReactor = UserInfoReactor()
+  private let nicknameReactor = AppleInfoReactor()
 
   init(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) {
     if let space = initialMail?.trimmingCharacters(in: .whitespacesAndNewlines), !space.isEmpty {
@@ -625,7 +629,7 @@ final class UserInfoViewController: UIViewController {
   @objc private func dismissKeyboard() { view.endEditing(true) }
 }
 
-extension UserInfoViewController {
+extension AppleInfoViewController {
 
   @objc func onMailEditingEnd() {
     if isAppleLogin {
@@ -640,7 +644,7 @@ extension UserInfoViewController {
       )
     } else {
       let text = formView.mailTextField.text ?? ""
-      mailValid = UserInfoValidator.isValidMail(text)
+      mailValid = AppleInfoValidator.isValidMail(text)
 
       applyCheckState(
         icon: formView.mailCheckIcon,
@@ -679,7 +683,7 @@ extension UserInfoViewController {
       let pwd = pwdRaw.trimmingCharacters(in: .whitespacesAndNewlines)
       let confirm = confirmRaw.trimmingCharacters(in: .whitespacesAndNewlines)
 
-      passwordValid = UserInfoValidator.isValidPassword(pwd)
+      passwordValid = AppleInfoValidator.isValidPassword(pwd)
 
       if !confirm.isEmpty {
         confirmMatched = (pwd == confirm)
@@ -752,7 +756,7 @@ class InsetTextField: UITextField {
   }
 }
 
-extension UserInfoViewController: UITextFieldDelegate {
+extension AppleInfoViewController: UITextFieldDelegate {
   public func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
     if isAppleLogin,
       textField === formView.mailTextField

@@ -133,7 +133,7 @@ final class NickNameChangeViewController: UIViewController {
           return .just(nil)
         }
 
-        if UserInfoValidator.isValidNickname(nickname) == false {
+        if AppleInfoValidator.isValidNickname(nickname) == false {
           return .just(false)
         }
 
@@ -203,7 +203,7 @@ final class NickNameChangeViewController: UIViewController {
           return .error(error)
         }
 
-        if UserInfoValidator.isValidNickname(nickname) == false {
+        if AppleInfoValidator.isValidNickname(nickname) == false {
           let error = NSError(
             domain: "NicknameError",
             code: 412,

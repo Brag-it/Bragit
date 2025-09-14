@@ -21,8 +21,12 @@ final class LoginFlow: Flow, Stepper {
     switch step {
     case .login:
       return showLogin()
-    case .signup(let initialMail, let refreshToken, let isAppleLogin):
-      return showSignup(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
+    case .signupApple(let initialMail, let refreshToken, let isAppleLogin):
+      return showSignupApple(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
+      case .signupMail:
+        return showSignupMail()
+      case .signupMailConfirm:
+        return showMailConfirm()
     case .signTermsConset:
       return showTermsConsent()
     case .signupPhoto:
@@ -48,7 +52,7 @@ final class LoginFlow: Flow, Stepper {
   }
 
   private func showLogin() -> FlowContributors {
-    let reactor = LoginReactor()
+    let reactor = MainLoginReactor()
     let loginVC = LoginViewController(reactor: reactor)
     nav.setViewControllers([loginVC], animated: true)
 
@@ -61,8 +65,8 @@ final class LoginFlow: Flow, Stepper {
     )
   }
 
-  private func showSignup(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) -> FlowContributors {
-    let userInfoVC = UserInfoViewController(
+  private func showSignupApple(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) -> FlowContributors {
+    let userInfoVC = AppleInfoViewController(
       initialMail: initialMail,
       refreshToken: refreshToken,
       isAppleLogin: isAppleLogin
@@ -77,6 +81,16 @@ final class LoginFlow: Flow, Stepper {
       flowContributor:
         .contribute(withNextPresentable: userInfoVC, withNextStepper: self)
     )
+  }
+
+  private func showSignupMail() -> FlowContributors {
+    // 메일 주소 입력, 비밃너호, 닉네임 입력 등 뷰
+    return .none
+  }
+
+  private func showMailConfirm() -> FlowContributors {
+    // 메일로 인증 갔으니 확인해라 + 재전송 버튼
+    return .none
   }
 
   private func showTermsConsent() -> FlowContributors {

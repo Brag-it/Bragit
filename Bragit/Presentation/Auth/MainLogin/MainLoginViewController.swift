@@ -76,7 +76,7 @@ final class LoginViewController: UIViewController, View {
     $0.isHidden = true
   }
 
-  init(reactor: LoginReactor) {
+  init(reactor: MainLoginReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
   }
@@ -143,7 +143,7 @@ final class LoginViewController: UIViewController, View {
   }
 
   // MARK: Reactor Binding
-  func bind(reactor: LoginReactor) {
+  func bind(reactor: MainLoginReactor) {
     // 디버그 강제 홈 이동 버튼
     nextButton.rx.tap
       .subscribe(with: reactor) { reactor, _ in
@@ -248,7 +248,7 @@ extension LoginViewController:
 
   func handleAppleCredential(
     _ credential: ASAuthorizationAppleIDCredential,
-    reactor: LoginReactor,
+    reactor: MainLoginReactor,
     hashedNonce: String
   ) {
     if let email = credential.email {

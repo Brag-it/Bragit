@@ -6,7 +6,7 @@ import Dependencies
 import ReactorKit
 import RxSwift
 
-final class UserInfoReactor: Reactor {
+final class AppleInfoReactor: Reactor {
   enum Action {
     case validateNickname(String)
   }
@@ -35,7 +35,7 @@ final class UserInfoReactor: Reactor {
       let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
 
       // 1) 로컬 형식 검증 먼저
-      guard UserInfoValidator.isValidNickname(name) else {
+      guard AppleInfoValidator.isValidNickname(name) else {
         return .just(.setNickname(valid: false, text: "사용 불가한 닉네임입니다"))
       }
 

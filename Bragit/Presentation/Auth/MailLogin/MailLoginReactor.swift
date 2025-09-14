@@ -60,13 +60,13 @@ final class MailLoginReactor: Reactor, Stepper {
       steps.accept(AppStep.pop)
       return .empty()
     case .updateEmail(let mail):
-      let isValid = UserInfoValidator.isValidMail(mail)
+      let isValid = AppleInfoValidator.isValidMail(mail)
       return .concat([
         .just(.setEmail(mail)),
         .just(.setMailValid(isValid))
       ])
     case .updatePassword(let password):
-      let isValid = UserInfoValidator.isValidPassword(password)
+      let isValid = AppleInfoValidator.isValidPassword(password)
       return .concat([
         .just(.setPassword(password)),
         .just(.setPasswordValid(isValid))

@@ -21,7 +21,7 @@ import RxRelay
 import RxSwift
 import Supabase
 
-final class LoginReactor: Reactor, Stepper {
+final class MainLoginReactor: Reactor, Stepper {
 
   // View -> Reactor
   enum Action {
@@ -87,7 +87,7 @@ final class LoginReactor: Reactor, Stepper {
       return .empty()
     case .tapSignUp:
       // 일반(메일) 회원가입 시작
-      steps.accept(AppStep.signup(initialMail: nil, refreshToken: nil, isAppleLogin: false))
+      steps.accept(AppStep.signupApple(initialMail: nil, refreshToken: nil, isAppleLogin: false))
       return .empty()
     case .tapNext:
       steps.accept(AppStep.home)
@@ -157,7 +157,7 @@ final class LoginReactor: Reactor, Stepper {
             // 미가입: 회원가입 플로우로 (TagCheckReactor에서 nowUser 저장)
             await MainActor.run {
               self.steps.accept(
-                AppStep.signup(
+                AppStep.signupApple(
                   initialMail: mail,
                   refreshToken: refreshToken,
                   isAppleLogin: true
