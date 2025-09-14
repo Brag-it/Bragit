@@ -11,12 +11,14 @@ import RxSwift
 import RxRelay
 import SnapKit
 import Then
+import Kingfisher
 
 final class FavoriteSectionHeaderView: UICollectionReusableView {
 
   static let identifier = "FavoriteSectionHeaderView"
 
   let tagDidTap = PublishRelay<Tag>()
+  let followingUserDidTap = PublishRelay<User>()
   var disposeBag = DisposeBag()
   var postType = FavoriteReactor.PostType.emptyUser
 
@@ -182,16 +184,15 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
       }
 
       tagButton.rx.tap
-        .bind { [weak self] in
-          guard let self = self else { return }
+        .bind { [tagStackView, tagDidTap] in
 
-          self.tagStackView.arrangedSubviews.forEach { view in
+          tagStackView.arrangedSubviews.forEach { view in
             if let button = view as? UIButton {
               button.isSelected = false
             }
           }
           tagButton.isSelected = true
-          self.tagDidTap.accept(tag)
+           tagDidTap.accept(tag)
         }
         .disposed(by: disposeBag)
 
@@ -218,15 +219,21 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
         $0.numberOfLines = 1
       }
 
-      let profileImageView = UIImageView().then {
-        $0.kf.setImage(with: URL(string: user.profile ?? ""), placeholder: UIImage.profilePerson)
+      let profileButton = UIButton().then {
+        $0.kf.setImage(with: URL(string: user.profile ?? ""), for: .normal, placeholder: UIImage.profilePerson)
         $0.frame.size = CGSize(width: 60, height: 60)
         $0.layer.cornerRadius = 30
         $0.layer.masksToBounds = true
         $0.contentMode = .scaleAspectFill
       }
 
-      profileStackView.addArrangedSubview(profileImageView)
+      profileButton.rx.tap
+        .bind { [followingUserDidTap] in
+          followingUserDidTap.accept(user)
+        }
+        .disposed(by: disposeBag)
+
+      profileStackView.addArrangedSubview(profileButton)
       profileStackView.addArrangedSubview(nameLabel)
       profileStackView.snp.makeConstraints {
         $0.width.equalTo(60)

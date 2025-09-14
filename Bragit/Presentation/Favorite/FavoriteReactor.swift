@@ -33,6 +33,7 @@ class FavoriteReactor: Reactor, Stepper {
   enum Action {
     case loadNextPosts
     case tagTapped(Tag)
+    case userTapped(User)
     case menuTapped(Int)
     case followButtonTapped(Post)
     case goToTagDetail(Tag)
@@ -245,6 +246,9 @@ class FavoriteReactor: Reactor, Stepper {
           self?.steps.accept(AppStep.userProfile(user: user))
         }
         .flatMap { _ in Observable<Mutation>.empty() }
+    case .userTapped(let user):
+      steps.accept(AppStep.userProfile(user: user))
+      return .empty()
     }
   }
   // swiftlint:enable cyclomatic_complexity

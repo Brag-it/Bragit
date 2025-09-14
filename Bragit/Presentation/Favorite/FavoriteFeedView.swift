@@ -23,6 +23,7 @@ final class FavoriteFeedView: UIView {
   let followDidTap = PublishRelay<Post>()
   let userDidTap = PublishRelay<Post>()
   let refreshRelay = PublishRelay<Void>()
+  let followingUserTap = PublishRelay<User>()
   let refreshControl = UIRefreshControl()
   private let disposeBag = DisposeBag()
 
@@ -126,6 +127,9 @@ final class FavoriteFeedView: UIView {
       ) { [weak self] supplementaryView, _, _ in
         guard let self = self else { return }
         supplementaryView.configure(postType: self.postType, selectedTag: self.selectedTag)
+        supplementaryView.followingUserDidTap
+          .bind(to: self.followingUserTap)
+          .disposed(by: supplementaryView.disposeBag)
       }
 
       let dataSource = UICollectionViewDiffableDataSource<Int, FavoriteItem>(
