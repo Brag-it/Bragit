@@ -8,6 +8,8 @@
 import UIKit
 import RxSwift
 import Then
+import RxCocoa
+import Dependencies
 
 final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
   private let headerView = UIView()
@@ -23,6 +25,7 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
   }
 
   private let disposeBag = DisposeBag()
+  @Dependency(\.supabase) private var supabase
 
   let descriptionTitleLabel = UILabel().then {
     $0.text = "로그인에 사용할 이메일을 입력해 주세요"
@@ -95,6 +98,7 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     headerConfigureUI()
     setupKeyboardDismiss()
     mailTextField.delegate = self
+    bindActions()
   }
 
   private func headerConfigureUI() {
@@ -135,6 +139,8 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     view.addSubview(mailTextField)
     view.addSubview(mailCheckStack)
     view.addSubview(nextButton)
+    
+    nextButton.alpha = 0.5
 
     [mailCheckIcon, mailCheckLabel].forEach { mailCheckStack.addArrangedSubview($0)}
 
@@ -177,8 +183,66 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     view.addGestureRecognizer(tap)
   }
 
+  private func bindActions() {
+    // 입력 중 유효성에 따라 버튼 활성/비활성 + 투명도 적용
+    mailTextField.rx.text.orEmpty
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .map { [weak self] in self?.isValidEmail($0) == true }
+      .distinctUntilChanged()
+      .bind(with: self) { owner, isValid in
+        owner.nextButton.isEnabled = isValid
+        owner.nextButton.alpha = isValid ? 1.0 : 0.5
+      }
+      .disposed(by: disposeBag)
+
+    mailTextField.rx.controlEvent(.editingDidEnd)
+      .bind(with: self) { owner, _ in
+        owner.dismissKeyboard()
+        let raw = owner.mailTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !raw.isEmpty else {
+          print("[mail] 이메일이 비어 있습니다.")
+          return
+        }
+        guard owner.isValidEmail(raw) else {
+          print("[mail] 유효하지 않은 이메일 형식입니다: \(raw)")
+          return
+        }
+
+        owner.mailCheckLabel.text = "이메일 확인 중..."
+        owner.mailCheckLabel.textColor = .systemWarning
+        owner.mailCheckIcon.image = .loading
+
+        Task { [weak owner] in
+          guard let owner = owner else { return }
+          do {
+            try await owner.supabase.auth.signInWithOTP(email: raw, shouldCreateUser: false)
+            print("[mail] 이미 가입된 이메일입니다: \(raw)")
+            await MainActor.run {
+              owner.mailCheckLabel.text = "이미 가입된 이메일입니다"
+              owner.mailCheckLabel.textColor = .systemDanger
+              owner.mailCheckIcon.image = .reject
+            }
+          } catch {
+            print("[mail] 가입 가능 이메일로 보입니다: \(raw). error=\(error.localizedDescription)")
+            await MainActor.run {
+              owner.mailCheckLabel.text = "가입할 수 있는 이메일입니다"
+              owner.mailCheckLabel.textColor = .systemSafe
+              owner.mailCheckIcon.image = .accept
+            }
+          }
+        }
+      }
+      .disposed(by: disposeBag)
+  }
+
   @objc private func dismissKeyboard() {
     view.endEditing(true)
+  }
+
+  private func isValidEmail(_ email: String) -> Bool {
+    let pattern = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+    let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
+    return predicate.evaluate(with: email)
   }
 
   // MARK: - UITextFieldDelegate
@@ -187,3 +251,4 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     return true
   }
 }
+
