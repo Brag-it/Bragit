@@ -9,7 +9,7 @@ import UIKit
 import RxSwift
 import Then
 
-final class MailOnlyViewController: UIViewController {
+final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
   private let headerView = UIView()
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.back, for: .normal)
@@ -51,7 +51,7 @@ final class MailOnlyViewController: UIViewController {
     $0.clearButtonMode = .whileEditing
     $0.font = .pretendard(size: 14, weight: .regular)
     $0.textColor = .grayScale900
-    $0.returnKeyType = .next
+    $0.returnKeyType = .done
     $0.autocapitalizationType = .none
     $0.spellCheckingType = .no
     $0.autocorrectionType = .no
@@ -93,6 +93,8 @@ final class MailOnlyViewController: UIViewController {
     super.viewDidLoad()
     view.backgroundColor = .white
     headerConfigureUI()
+    setupKeyboardDismiss()
+    mailTextField.delegate = self
   }
 
   private func headerConfigureUI() {
@@ -167,5 +169,21 @@ final class MailOnlyViewController: UIViewController {
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
     }
+  }
+
+  private func setupKeyboardDismiss() {
+    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    tap.cancelsTouchesInView = false
+    view.addGestureRecognizer(tap)
+  }
+
+  @objc private func dismissKeyboard() {
+    view.endEditing(true)
+  }
+
+  // MARK: - UITextFieldDelegate
+  func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    textField.resignFirstResponder()
+    return true
   }
 }
