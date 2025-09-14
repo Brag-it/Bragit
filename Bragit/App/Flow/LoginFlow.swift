@@ -22,6 +22,8 @@ final class LoginFlow: Flow, Stepper {
       return showLogin()
     case .signupApple(let initialMail, let refreshToken, let isAppleLogin):
       return showSignupApple(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
+    case .signupMailInput:
+      return showMailInput()
     case .signupMail:
       return showSignupMail()
     case .signupMailConfirm:
@@ -54,8 +56,6 @@ final class LoginFlow: Flow, Stepper {
     let reactor = MainLoginReactor()
     let loginVC = LoginViewController(reactor: reactor)
     nav.setViewControllers([loginVC], animated: true)
-
-    // 로그인 성공 시 reactor가 .home Step을 방출
     return .one(
       flowContributor: .contribute(
         withNextPresentable: loginVC,
@@ -82,6 +82,25 @@ final class LoginFlow: Flow, Stepper {
     )
   }
 
+  private func showMailInput() -> FlowContributors {
+    // 인증 받기 위한 메일 입력 뷰
+    let reactor = MailOnlyReactor()
+    let mailOnlyVC = MailOnlyViewController()
+    nav.pushViewController(mailOnlyVC, animated: true)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: mailOnlyVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showMailConfirm() -> FlowContributors {
+    // 메일로 인증 갔으니 확인해라 + 재전송 버튼
+    return .none
+  }
+
   private func showSignupMail() -> FlowContributors {
     // 메일 주소 입력, 비밃너호, 닉네임 입력 등 뷰
     let reactor = MailInfoReactor()
@@ -94,11 +113,6 @@ final class LoginFlow: Flow, Stepper {
           withNextStepper: reactor
         )
     )
-  }
-
-  private func showMailConfirm() -> FlowContributors {
-    // 메일로 인증 갔으니 확인해라 + 재전송 버튼
-    return .none
   }
 
   private func showTermsConsent() -> FlowContributors {

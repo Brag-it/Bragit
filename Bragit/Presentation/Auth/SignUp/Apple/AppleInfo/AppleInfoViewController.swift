@@ -743,18 +743,18 @@ extension AppleInfoViewController {
   }
 }
 
-class InsetTextField: UITextField {
-  var textInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-  override func textRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-  override func editingRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-  override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-}
+// class InsetTextField: UITextField {
+//   var textInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+//   override func textRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+//   override func editingRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+//   override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+// }
 
 extension AppleInfoViewController: UITextFieldDelegate {
   public func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {

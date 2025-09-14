@@ -16,8 +16,9 @@ enum AppStep: Step {
   // 인증/가입
   case login                            // 로그인 화면 (최초 진입)
   case signupApple(initialMail: String?, refreshToken: String?, isAppleLogin: Bool)    // 애플 회원가입 시작
-  case signupMail                       // 메일 회원가입 시작
+  case signupMailInput                  // 인증을 위한 메일 입력
   case signupMailConfirm                // 메일 회원가입 인증 요청
+  case signupMail                       // 메일 회원가입 시작
   case signTermsConset                 // 약관 동의
   case signServiceConsent              // 서비스 이용 약관 동의
   case signPersonalInfoConsent         // 개인정보 수집 동의

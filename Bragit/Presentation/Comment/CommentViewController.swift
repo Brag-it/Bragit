@@ -78,7 +78,6 @@ final class CommentViewController: UIViewController, View {
     $0.isUserInteractionEnabled = false
   }
 
-  // 동적 높이 업데이트용 제약 레퍼런스
   private var textContainerHeightConstraint: Constraint?
   private var bottomBarHeightConstraint: Constraint?
 

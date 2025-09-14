@@ -11,6 +11,7 @@ import RxSwift
 import SnapKit
 import Then
 import UIKit
+
 // TODO: 이메일은 앞에서 끌어오기
 // TODO: 비밀번호, 비밀번호 확인, 닉네임 TextField
 // TODO: Validate, 닉네임 중복 체크
@@ -34,6 +35,10 @@ final class MailInfoViewController: UIViewController {
   private var passwordValid = false
   private var confirmMatched = false
   private var nicknameValid = false
+
+  private var inputOrder: [UITextField] = []
+
+  private var keyboardObserver: NSObjectProtocol?
 
   private func updateNextButton() {
     let enabled = passwordValid && confirmMatched && nicknameValid
@@ -92,7 +97,7 @@ final class MailInfoViewController: UIViewController {
     $0.autocapitalizationType = .none
     $0.spellCheckingType = .no
     $0.autocorrectionType = .no
-    $0.textContentType = .username
+    $0.textContentType = .emailAddress
   }
 
   let mailCheckIcon = UIImageView().then {
@@ -260,6 +265,12 @@ final class MailInfoViewController: UIViewController {
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
+    registerKeyboardNotifications()
+  }
+
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    unregisterKeyboardNotifications()
   }
 
   override func viewDidLoad() {
@@ -269,6 +280,13 @@ final class MailInfoViewController: UIViewController {
     headerConfigureUI()
     configureTargets()
     bindNicknameReactor()
+
+    [mailTextField, pwTextField, rePwTextField, nicknameTextField].forEach { $0.delegate = self }
+    inputOrder = [mailTextField, pwTextField, rePwTextField, nicknameTextField]
+
+    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    tap.cancelsTouchesInView = false
+    view.addGestureRecognizer(tap)
   }
 
   private func headerConfigureUI() {
@@ -472,6 +490,93 @@ final class MailInfoViewController: UIViewController {
     let name = nicknameTextField.text ?? ""
     nicknameReactor.action.onNext(.validateNickname(name))
   }
+
+  private func registerKeyboardNotifications() {
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleKeyboardNotification(_:)),
+      name: UIResponder.keyboardWillChangeFrameNotification,
+      object: nil
+    )
+  }
+
+  private func unregisterKeyboardNotifications() {
+    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+  }
+
+  @objc private func handleKeyboardNotification(_ notification: Notification) {
+    guard let userInfo = notification.userInfo,
+      let endFrameValue = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
+      let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber,
+      let curveNumber = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
+    else { return }
+
+    let endFrame = endFrameValue.cgRectValue
+    let endFrameInView = view.convert(endFrame, from: view.window)
+    let intersection = view.bounds.intersection(endFrameInView)
+    let bottomInset = max(0, intersection.height - view.safeAreaInsets.bottom)
+
+    let options = UIView.AnimationOptions(rawValue: UInt(curveNumber.intValue << 16))
+
+    UIView.animate(
+      withDuration: duration.doubleValue,
+      delay: 0,
+      options: options,
+      animations: { [weak self] in
+        guard let self = self else { return }
+        self.scrollView.contentInset.bottom = bottomInset
+        var indicatorInsets = self.scrollView.verticalScrollIndicatorInsets
+        indicatorInsets.bottom = bottomInset
+        self.scrollView.verticalScrollIndicatorInsets = indicatorInsets
+        if bottomInset > 0, let firstResponder = self.view.findFirstResponder() {
+          let responderFrame = firstResponder.convert(firstResponder.bounds, to: self.scrollView)
+          self.scrollView.scrollRectToVisible(responderFrame.insetBy(dx: 0, dy: -16), animated: false)
+        }
+      },
+      completion: nil
+    )
+  }
+
+  @objc private func dismissKeyboard() {
+    if let first = view.findFirstResponder() {
+      first.resignFirstResponder()
+    } else {
+      view.endEditing(true)
+    }
+  }
+}
+
+extension MailInfoViewController: UITextFieldDelegate {
+  public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    switch textField.returnKeyType {
+    case .next:
+      if let next = nextFocusable(after: textField) {
+        next.becomeFirstResponder()
+      } else {
+        textField.resignFirstResponder()
+      }
+      return true
+    case .done, .go, .send, .search, .join, .route:
+      textField.resignFirstResponder()
+      return true
+    default:
+      if let next = nextFocusable(after: textField) {
+        next.becomeFirstResponder()
+      } else {
+        textField.resignFirstResponder()
+      }
+      return true
+    }
+  }
+
+  private func nextFocusable(after textField: UITextField) -> UITextField? {
+    guard let idx = inputOrder.firstIndex(of: textField) else { return nil }
+    for index in (idx + 1)..<inputOrder.count {
+      let candidate = inputOrder[index]
+      if candidate.isEnabled && candidate.isUserInteractionEnabled && candidate.alpha > 0.01 { return candidate }
+    }
+    return nil
+  }
 }
 
 class InsetTextField: UITextField {
@@ -488,3 +593,14 @@ class InsetTextField: UITextField {
     return bounds.inset(by: textInsets)
   }
 }
+
+extension UIView {
+  fileprivate func findFirstResponder() -> UIView? {
+    if isFirstResponder { return self }
+    for subview in subviews {
+      if let responder = subview.findFirstResponder() { return responder }
+    }
+    return nil
+  }
+}
+
