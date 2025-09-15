@@ -112,9 +112,15 @@ class PreviewReactor: Reactor, Stepper {
       print("유저 ID: \(author)")
       print("게시글 ID: \(postId)")
 
-      let representativeImageData = currentState.representativeImage?.compress(for: .thumbnail)
+      //썸네일은 별도 규격 (600px) 리사이즈
+      let representativeImageData: Data? = {
+        guard let image = currentState.representativeImage else { return nil }
+        let resized = image.resized(in: CGSize(width: 600, height: 600)) ?? image
+        return resized.jpegData(compressionQuality: 0.8)
+      }()
+
       let contentImages = PreviewReactor.extractImages(from: currentState.content)
-      let attachmentDataList = contentImages.compactMap { $0.compress(for: .content) }
+      let attachmentDataList = contentImages.compactMap { $0.jpegData(compressionQuality: 0.8) }
 
       print("대표 이미지: \(representativeImageData != nil)")
       print("본문 이미지 개수: \(attachmentDataList.count)")
@@ -186,7 +192,7 @@ class PreviewReactor: Reactor, Stepper {
             return .just(.setError(error))
           }
       ])
-      
+
     case .updateDescription(let text):
       return .just(.setDescription(text))
     }
