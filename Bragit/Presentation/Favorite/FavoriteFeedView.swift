@@ -37,6 +37,7 @@ final class FavoriteFeedView: UIView {
       $0.showsVerticalScrollIndicator = false
       $0.backgroundColor = .white
       $0.refreshControl = refreshControl
+      $0.refreshControl?.tintColor = .primary400
     }
 
   lazy var dataSource = makeFavoriteCollectionViewDataSource(self.collectionView)
