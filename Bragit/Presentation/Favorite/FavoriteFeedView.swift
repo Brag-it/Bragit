@@ -14,11 +14,12 @@ import Dependencies
 enum FavoriteItem: Hashable {
   case message(FavoriteReactor.PostType)
   case post(Post)
+  case empty
 }
 
 final class FavoriteFeedView: UIView {
 
-  let tagDidTap = PublishRelay<Tag>()
+  let tagDidTap = PublishRelay<Tag?>()
   let postTagDidTap = PublishRelay<Tag>()
   let followDidTap = PublishRelay<Post>()
   let userDidTap = PublishRelay<Post>()
@@ -91,7 +92,7 @@ final class FavoriteFeedView: UIView {
           layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
         header.pinToVisibleBounds = true
         section.boundarySupplementaryItems = [header]
-
+        section.contentInsetsReference = .layoutMargins
         return section
       }
     }
@@ -103,6 +104,11 @@ final class FavoriteFeedView: UIView {
       let messageCellRegistration = UICollectionView
         .CellRegistration<FavoriteMessageCell, FavoriteReactor.PostType> { cell, _, item in
         cell.configure(type: item)
+      }
+
+      let emptyCellRegistration = UICollectionView
+        .CellRegistration<EmptyCell, Void> { cell, _, _ in
+          cell.configure(message: "게시글이 없어요")
       }
 
       let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { [weak self] cell, _, item in
@@ -130,6 +136,10 @@ final class FavoriteFeedView: UIView {
         supplementaryView.followingUserDidTap
           .bind(to: self.followingUserTap)
           .disposed(by: supplementaryView.disposeBag)
+
+        supplementaryView.tagDidTap
+          .bind(to: self.tagDidTap)
+          .disposed(by: supplementaryView.disposeBag)
       }
 
       let dataSource = UICollectionViewDiffableDataSource<Int, FavoriteItem>(
@@ -140,16 +150,14 @@ final class FavoriteFeedView: UIView {
               using: messageCellRegistration, for: indexPath, item: postType)
           case .post(let post):
             return collectionView.dequeueConfiguredReusableCell(using: postCellRegistration, for: indexPath, item: post)
+          case .empty:
+            return collectionView.dequeueConfiguredReusableCell(using: emptyCellRegistration, for: indexPath, item: ())
           }
         }
 
-      dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
-        guard let self = self else { return nil }
+      dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
         if kind == UICollectionView.elementKindSectionHeader {
           let header = collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
-          header.tagDidTap
-            .bind(to: self.tagDidTap)
-            .disposed(by: header.disposeBag)
           return header
         }
         return nil
@@ -181,6 +189,10 @@ final class FavoriteFeedView: UIView {
       let sectionIndex = isMessageState ? 1 : 0
       snapshot.appendSections([sectionIndex])
       snapshot.appendItems(posts.map { .post($0) }, toSection: sectionIndex)
+    } else {
+      let sectionIndex = isMessageState ? 1 : 0
+      snapshot.appendSections([sectionIndex])
+      snapshot.appendItems([.empty], toSection: sectionIndex)
     }
 
     dataSource.apply(snapshot, animatingDifferences: true)

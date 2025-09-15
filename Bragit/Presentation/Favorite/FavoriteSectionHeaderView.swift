@@ -17,7 +17,7 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
 
   static let identifier = "FavoriteSectionHeaderView"
 
-  let tagDidTap = PublishRelay<Tag>()
+  let tagDidTap = PublishRelay<Tag?>()
   let followingUserDidTap = PublishRelay<User>()
   var disposeBag = DisposeBag()
   var postType = FavoriteReactor.PostType.emptyUser
@@ -185,14 +185,21 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
 
       tagButton.rx.tap
         .bind { [tagStackView, tagDidTap] in
-
-          tagStackView.arrangedSubviews.forEach { view in
-            if let button = view as? UIButton {
-              button.isSelected = false
+          // 선택된 버튼을 또 누른경우
+          if tagButton.isSelected {
+            tagButton.isSelected = false
+            tagDidTap.accept(nil)
+          } else {
+            // 전부 false로 바꿈
+            tagStackView.arrangedSubviews.forEach { view in
+              if let button = view as? UIButton {
+                button.isSelected = false
+              }
             }
+
+            tagButton.isSelected = true
+            tagDidTap.accept(tag)
           }
-          tagButton.isSelected = true
-           tagDidTap.accept(tag)
         }
         .disposed(by: disposeBag)
 

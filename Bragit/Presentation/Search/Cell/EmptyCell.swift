@@ -41,4 +41,8 @@ final class EmptyCell: UICollectionViewCell {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  func configure(message: String) {
+    emptyLabel.text = message
+  }
 }
