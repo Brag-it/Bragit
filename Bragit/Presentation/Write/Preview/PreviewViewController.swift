@@ -365,7 +365,10 @@ final class PreviewViewController: UIViewController, View {
     thumbItems += state.thumbnails.map { .thumbnail(ThumbnailItem(kind: .image($0))) }
     snapshot.appendItems(thumbItems, toSection: .thumbnails)
     // 요약
-    snapshot.appendItems([.description(DescriptionItem(text: state.description))], toSection: .description)
+    let descText = state.description.isEmpty
+      ? PreviewReactor.extractDecription(from: state.content)
+      : state.description
+    snapshot.appendItems([.description(DescriptionItem(text: descText))], toSection: .description)
     // 태그
     let tagItems: [Item] = state.tags.map { .tag(TagItem(tag: $0)) }
     snapshot.appendItems(tagItems, toSection: .tags)
@@ -399,9 +402,17 @@ final class PreviewViewController: UIViewController, View {
     }
 
     // 요약 셀 설정
-    let descRegistration = UICollectionView.CellRegistration<DescriptionCell, Item> { cell, _, item in
-      guard case let .description(descriptionItem) = item else { return }
+    let descRegistration = UICollectionView.CellRegistration<DescriptionCell, Item> { [weak self] cell, _, item in
+      guard let self, let reactor = self.reactor,
+            case let .description(descriptionItem) = item else { return }
       cell.configure(text: descriptionItem.text)
+
+      cell.descriptionLabel.rx.text.orEmpty
+        .skip(1)
+        .distinctUntilChanged()
+        .map { PreviewReactor.Action.updateDescription($0) }
+        .bind(to: reactor.action)
+        .disposed(by: cell.disposeBag)
     }
 
     // 태그 셀 설정
