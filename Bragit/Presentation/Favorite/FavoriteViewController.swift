@@ -154,7 +154,7 @@ class FavoriteViewController: UIViewController, View {
 
     // 팔로우 버튼 탭
     favoriteView.feedView.followDidTap
-      .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
+      .throttle(.milliseconds(500), latest: false, scheduler: MainScheduler.instance)
       .map { post in .followButtonTapped(post) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)

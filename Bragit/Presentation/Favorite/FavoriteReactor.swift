@@ -252,7 +252,10 @@ class FavoriteReactor: Reactor, Stepper {
       self.steps.accept(AppStep.tagInform(tag))
       return .empty()
     case .refresh:
-      return rxSetPost(postType: currentState.postType)
+      return .concat([
+        rxSetPost(postType: currentState.postType),
+        .just(.doReload)
+      ])
     case .searchTapped:
       steps.accept(AppStep.searchFeed)
       return .empty()
