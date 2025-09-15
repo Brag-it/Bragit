@@ -21,6 +21,7 @@ class FavoriteTagsReactor: Reactor, Stepper {
   enum Action {
     case backButtonTap
     case followButtonTap(Tag)
+    case tagDidTap(Tag)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -54,7 +55,9 @@ class FavoriteTagsReactor: Reactor, Stepper {
       } else {
         tags = tags! + [tag]
       }
-
+      return .empty()
+    case .tagDidTap(let tag):
+      steps.accept(AppStep.tagInform(tag))
       return .empty()
     }
   }
