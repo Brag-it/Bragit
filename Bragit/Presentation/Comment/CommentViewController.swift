@@ -144,13 +144,13 @@ final class CommentViewController: UIViewController, View {
     }
 
     self.textContainerLeadingWithLock =
-      textContainer.snp.prepareConstraints {
-        $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
-      }.first
+    textContainer.snp.prepareConstraints {
+      $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
+    }.first
     self.textContainerLeadingWithoutLock =
-      textContainer.snp.prepareConstraints {
-        $0.leading.equalTo(bar.snp.leading).offset(12)
-      }.first
+    textContainer.snp.prepareConstraints {
+      $0.leading.equalTo(bar.snp.leading).offset(12)
+    }.first
     self.textContainerLeadingWithoutLock?.activate()
 
     sendImageView.snp.makeConstraints {
@@ -416,7 +416,7 @@ final class CommentViewController: UIViewController, View {
       .bind(with: self) { owner, index in
         guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
         if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
-          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+           targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
           owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
           owner.deleteAlert.show(in: owner.view)
         } else {
@@ -430,7 +430,7 @@ final class CommentViewController: UIViewController, View {
       .bind(with: self) { owner, index in
         guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
         if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
-          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+           targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
           owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
           owner.reportAlert.show(in: owner.view)
         } else {
@@ -738,4 +738,3 @@ extension CommentViewController: UIGestureRecognizerDelegate {
     return true
   }
 }
-

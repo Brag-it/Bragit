@@ -398,6 +398,7 @@ class DetailPostViewController: UIViewController, View {
           )
         } else {
           profileImage.image = .profilePerson
+          followButton.isHidden = true
         }
       }
       .disposed(by: disposeBag)

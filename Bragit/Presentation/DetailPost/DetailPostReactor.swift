@@ -76,7 +76,7 @@ class DetailPostReactor: Reactor, Stepper {
       isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
       likeCount: post.like,
       isfollowed: followUser?.contains { $0 == post.author?.id } ?? false,
-      withdrewUser: post.author?.nickname == nil
+      withdrewUser: post.author == nil
     )
     self.post = post
 

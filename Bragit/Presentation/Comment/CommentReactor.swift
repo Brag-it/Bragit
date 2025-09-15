@@ -193,7 +193,7 @@ final class CommentReactor: Reactor, Stepper {
 
     // 소유자 검증 (대소문자/공백 무시)
     if let ownerIdRaw = target.commenterId,
-      let currentUserIdRaw = storedUserId {
+       let currentUserIdRaw = storedUserId {
       let ownerId = ownerIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       let currentUserId = currentUserIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       if ownerId != currentUserId {
