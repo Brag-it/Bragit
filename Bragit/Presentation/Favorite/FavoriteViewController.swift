@@ -92,7 +92,7 @@ class FavoriteViewController: UIViewController, View {
         let posts = state.posts.map { post in
           var filteredPost = post
           if filteredPost.author == nil {
-            filteredPost.author = Author(id: "", nickname: "탈퇴한 유저입니다.", profile: nil)
+            filteredPost.author = Author(id: "", nickname: "탈퇴한 유저", profile: nil)
           }
           return filteredPost
         }.filter {
