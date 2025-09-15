@@ -13,6 +13,7 @@ import RxCocoa
 import RxSwift
 import SnapKit
 import Then
+import Loaf
 
 final class CommentViewController: UIViewController, View {
   typealias Reactor = CommentReactor
@@ -262,8 +263,8 @@ final class CommentViewController: UIViewController, View {
     bindComments(reactor)
     bindMenus()
     bindLoadingAndRefreshing(reactor)
-    bindErrors(reactor)
     bindSendSuccessHandling(reactor)
+    bindToast(reactor)
   }
 
   // MARK: - Binding helpers (split to reduce cyclomatic complexity)
@@ -325,6 +326,12 @@ final class CommentViewController: UIViewController, View {
   }
 
   private func bindDeleteAlerts(_ reactor: CommentReactor) {
+    reportAlert.rightTap
+      .compactMap { [weak self] in self?.menuTargetIndexPath }
+      .map { Reactor.Action.reportComment($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     deleteAlert.rightTap
       .compactMap { [weak self] in self?.deleteIndexPath }
       .do { [weak self] _ in self?.deleteIndexPath = nil }
@@ -375,7 +382,8 @@ final class CommentViewController: UIViewController, View {
 
             let currentUserId = reactor.currentState.currentUserId
             let commenterId = row.commenterId
-            let isSelf = (currentUserId != nil && commenterId != nil && currentUserId == commenterId)
+            let isSelf = (currentUserId != nil && commenterId != nil &&
+            currentUserId?.lowercased() == commenterId?.lowercased())
 
             if isSelf {
               self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
@@ -427,14 +435,36 @@ final class CommentViewController: UIViewController, View {
       .disposed(by: disposeBag)
   }
 
-  private func bindErrors(_ reactor: CommentReactor) {
-    reactor.state
-      .compactMap(\.errorMessage)
+  private func bindToast(_ reactor: CommentReactor) {
+    // 결과에 따른 토스트 표시
+    reactor.pulse(\.$toast)
+      .compactMap { $0 }
       .observe(on: MainScheduler.instance)
-      .bind(with: self) { owner, message in
-        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
-        alert.addAction(.init(title: "확인", style: .default))
-        owner.present(alert, animated: true)
+      .subscribe { [weak self] event in
+        guard let self else { return }
+        switch event.purpose {
+        case .deleted:
+          Loaf("삭제 되었어요!", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center,
+            width: .screenPercentage(0.8))), sender: self).show()
+        case .reported:
+          Loaf("신고가 접수 되었어요!", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center)), sender: self).show()
+        case .error(let message):
+          Loaf("실패: \(message)", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center)), sender: self).show()
+        case .blocked:
+          break
+        }
       }
       .disposed(by: disposeBag)
   }

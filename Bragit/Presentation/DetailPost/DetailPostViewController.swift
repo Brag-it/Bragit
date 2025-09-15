@@ -13,6 +13,7 @@ import RxCocoa
 import SnapKit
 import Then
 import Kingfisher
+import Loaf
 
 class DetailPostViewController: UIViewController, View {
   var disposeBag = DisposeBag()
@@ -20,7 +21,7 @@ class DetailPostViewController: UIViewController, View {
   private let deleteAlert = AlertView.makeAlert(style: .deletePost)
   private let differentMenu = MenuView(items: ["신고하기"])
   private let selfMenu = MenuView(items: ["삭제하기"])
-//  private let selfMenu = MenuView(items: ["수정하기", "삭제하기"])
+  //  private let selfMenu = MenuView(items: ["수정하기", "삭제하기"])
 
   private let activityIndicator = UIActivityIndicatorView(style: .large).then {
     $0.hidesWhenStopped = true
@@ -283,17 +284,17 @@ class DetailPostViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-      // TODO: - 게시글 수정 구현 필요
-//    selfMenu.itemTap
-//      .bind { [weak self] index in
-//        guard let self else { return }
-//        if index == 0 {
-//          self.reactor?.action.onNext(.didTapEdit)
-//        } else if index == 1 {
-//          deleteAlert.show(in: view)
-//        }
-//      }
-//      .disposed(by: disposeBag)
+    // TODO: - 게시글 수정 구현 필요
+    //    selfMenu.itemTap
+    //      .bind { [weak self] index in
+    //        guard let self else { return }
+    //        if index == 0 {
+    //          self.reactor?.action.onNext(.didTapEdit)
+    //        } else if index == 1 {
+    //          deleteAlert.show(in: view)
+    //        }
+    //      }
+    //      .disposed(by: disposeBag)
 
     selfMenu.itemTap
       .bind { [weak self] index in
@@ -452,6 +453,37 @@ class DetailPostViewController: UIViewController, View {
       .bind(to: contentView.rx.attributedText)  // 치환 결과 적용
       .disposed(by: disposeBag)
 
+    // 결과에 따른 토스트 표시
+    reactor.pulse(\.$toast)
+      .compactMap { $0 }
+      .observe(on: MainScheduler.instance)
+      .subscribe { [weak self] event in
+        guard let self else { return }
+        switch event.purpose {
+        case .deleted:
+          Loaf("삭제 되었어요!", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center,
+            width: .screenPercentage(0.8))), sender: self).show()
+        case .reported:
+          Loaf("신고가 접수 되었어요!", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center)), sender: self).show()
+        case .error(let message):
+          Loaf("실패: \(message)", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center)), sender: self).show()
+        case .blocked:
+          break
+        }
+      }
+      .disposed(by: disposeBag)
   }
   // swiftlint:enable cyclomatic_complexity
 
@@ -464,7 +496,7 @@ class DetailPostViewController: UIViewController, View {
     }
     guard !linkRanges.isEmpty else { return attributed }
 
-    for (range, url) in linkRanges.reversed() { // 뒤에서부터 치환 (range 안정)
+    for (range, url) in linkRanges.reversed() { // 뒤에서부터 치환
       do {
         let result = try await KingfisherManager.shared.retrieveImage(with: url)
         let image = result.image
