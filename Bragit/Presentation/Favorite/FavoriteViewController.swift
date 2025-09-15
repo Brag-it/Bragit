@@ -141,6 +141,11 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    favoriteView.feedView.followingUserTap
+      .map { user in .userTapped(user) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     // 게시글의 태그 탭
     favoriteView.feedView.postTagDidTap
       .map { tag in .goToTagDetail(tag) }

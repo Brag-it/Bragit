@@ -70,7 +70,7 @@ class DetailPostReactor: Reactor, Stepper {
     self.initialState = State(
       title: post.title,
       content: DetailPostReactor.unarchivedContent(content: post.content),
-      nickName: post.author?.nickname ?? "탈퇴한 유저 입니다",
+      nickName: post.author?.nickname ?? "탈퇴한 유저",
       profileImage: post.author?.profile ?? nil,
       viewer: post.author?.id.lowercased() == nowUser?.lowercased(),
       isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
