@@ -27,6 +27,7 @@ class TagDetailReactor: Reactor, Stepper {
     case followDidTap(Post)
     case tagFollowDidTap
     case didTapPost(Post)
+    case userProfileTapped(Post)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -112,6 +113,17 @@ class TagDetailReactor: Reactor, Stepper {
     case .didTapPost(let post):
       self.steps.accept(AppStep.feedDetail(post: post))
       return .empty()
+    case .userProfileTapped(let post):
+      guard let authorId = post.author?.id, !authorId.isEmpty else {
+        return .empty()
+      }
+      return userManager
+        .rxfetchUsersBy(ids: [authorId])
+        .compactMap { $0.first }
+        .do { [weak self] user in
+          self?.steps.accept(AppStep.userProfile(user: user))
+        }
+        .flatMap { _ in Observable<Mutation>.empty() }
     }
   }
 
