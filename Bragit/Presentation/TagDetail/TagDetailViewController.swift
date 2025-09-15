@@ -60,6 +60,11 @@ class TagDetailViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    tagDetailView.userDidTap
+      .map { .userProfileTapped($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     reactor.state.map { $0.postsToReconfigure }
       .distinctUntilChanged()
       .compactMap { $0 }

@@ -52,6 +52,7 @@ class TagDetailView: UIView {
 
   let followDidTap = PublishRelay<Post>()
   let tagFollowDidTap = PublishRelay<Void>()
+  let userDidTap = PublishRelay<Post>()
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -131,6 +132,9 @@ class TagDetailView: UIView {
         cell.configure(data: item)
         cell.followDidTap
           .bind(to: self.followDidTap)
+          .disposed(by: cell.reusableDisposeBag)
+        cell.userDidTap
+          .bind(to: self.userDidTap)
           .disposed(by: cell.reusableDisposeBag)
       }
 
