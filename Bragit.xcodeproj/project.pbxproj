@@ -343,7 +343,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.Bragit.Bragit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Bragit.develop;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = bragit.Bragit;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
