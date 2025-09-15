@@ -55,8 +55,9 @@ final class CommentViewController: UIViewController, View {
   }
 
   private let refreshControl = UIRefreshControl()
-  private let activityIndicator = UIActivityIndicatorView(style: .medium).then {
+  private let activityIndicator = UIActivityIndicatorView(style: .large).then {
     $0.hidesWhenStopped = true
+    $0.color = .primary400
   }
 
   private let commentTextView = UITextView()
@@ -71,14 +72,13 @@ final class CommentViewController: UIViewController, View {
 
   private let bottomBarTapButton = UIButton(type: .custom)
   private var menuTargetIndexPath: IndexPath?
-  private var deleteIndexPath: IndexPath?
+  private var deleteCommentId: UUID?
 
   private let bottomSafeAreaBackground = UIView().then {
     $0.backgroundColor = .grayScale50
     $0.isUserInteractionEnabled = false
   }
 
-  // 동적 높이 업데이트용 제약 레퍼런스
   private var textContainerHeightConstraint: Constraint?
   private var bottomBarHeightConstraint: Constraint?
 
@@ -117,6 +117,7 @@ final class CommentViewController: UIViewController, View {
     commentTextView.delegate = self
     commentTextView.textContainer.lineBreakMode = .byWordWrapping
     commentTextView.textContainer.widthTracksTextView = true
+    commentTextView.isSelectable = true
 
     sendButton.backgroundColor = .clear
     bottomBarTapButton.backgroundColor = .clear
@@ -142,12 +143,14 @@ final class CommentViewController: UIViewController, View {
       self.textContainerHeightConstraint = $0.height.equalTo(42).constraint
     }
 
-    self.textContainerLeadingWithLock = textContainer.snp.prepareConstraints {
-      $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
-    }.first
-    self.textContainerLeadingWithoutLock = textContainer.snp.prepareConstraints {
-      $0.leading.equalTo(bar.snp.leading).offset(12)
-    }.first
+    self.textContainerLeadingWithLock =
+      textContainer.snp.prepareConstraints {
+        $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
+      }.first
+    self.textContainerLeadingWithoutLock =
+      textContainer.snp.prepareConstraints {
+        $0.leading.equalTo(bar.snp.leading).offset(12)
+      }.first
     self.textContainerLeadingWithoutLock?.activate()
 
     sendImageView.snp.makeConstraints {
@@ -248,7 +251,7 @@ final class CommentViewController: UIViewController, View {
     }
 
     activityIndicator.snp.makeConstraints {
-      $0.center.equalToSuperview()
+      $0.center.equalTo(tableView)
     }
   }
 
@@ -333,14 +336,14 @@ final class CommentViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     deleteAlert.rightTap
-      .compactMap { [weak self] in self?.deleteIndexPath }
-      .do { [weak self] _ in self?.deleteIndexPath = nil }
+      .compactMap { [weak self] in self?.deleteCommentId }
+      .do { [weak self] _ in self?.deleteCommentId = nil }
       .map { Reactor.Action.deleteComment($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     deleteAlert.leftTap
-      .bind { [weak self] in self?.deleteIndexPath = nil }
+      .bind { [weak self] in self?.deleteCommentId = nil }
       .disposed(by: disposeBag)
   }
 
@@ -364,6 +367,17 @@ final class CommentViewController: UIViewController, View {
           content: row.content
         )
 
+        let commenterId = row.commenterId ?? ""
+        cell.profileTap
+          .map { Reactor.Action.didTapUserProfile(commenterId) }
+          .bind(to: reactor.action)
+          .disposed(by: cell.disposeBag)
+
+        cell.nameTap
+          .map { Reactor.Action.didTapUserProfile(commenterId) }
+          .bind(to: reactor.action)
+          .disposed(by: cell.disposeBag)
+
         // 케밥 버튼 탭 시 메뉴 표시
         cell.kebabTap
           .bind { [weak self, weak cell] in
@@ -380,10 +394,9 @@ final class CommentViewController: UIViewController, View {
             guard let indexPath = self.tableView.indexPath(for: cell) else { return }
             self.menuTargetIndexPath = indexPath
 
-            let currentUserId = reactor.currentState.currentUserId
-            let commenterId = row.commenterId
-            let isSelf = (currentUserId != nil && commenterId != nil &&
-            currentUserId?.lowercased() == commenterId?.lowercased())
+            let currentUserId = reactor.currentState.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let authorId = row.commenterId?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let isSelf = currentUserId?.lowercased() == authorId?.lowercased()
 
             if isSelf {
               self.commentSelfMenu.show(in: self.view, sourcePoint: sourcePoint)
@@ -400,9 +413,14 @@ final class CommentViewController: UIViewController, View {
     commentSelfMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
-        guard index == 0, let target = owner.menuTargetIndexPath else { return }
-        owner.deleteIndexPath = target
-        owner.deleteAlert.show(in: owner.view)
+        guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
+        if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
+          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+          owner.deleteCommentId = dataSource[targetIndexPath.row].id
+          owner.deleteAlert.show(in: owner.view)
+        } else {
+          owner.deleteCommentId = nil
+        }
       }
       .disposed(by: disposeBag)
 
@@ -493,7 +511,7 @@ final class CommentViewController: UIViewController, View {
   private func adjustInputHeight(animated: Bool) {
     view.layoutIfNeeded()
 
-    let minHeight: CGFloat = 42 // 1줄 기본
+    let minHeight: CGFloat = 42  // 1줄 기본
     let verticalPadding: CGFloat = 12
     let insets = commentTextView.textContainerInset
     let lineHeight = commentTextView.font?.lineHeight ?? 17
@@ -523,7 +541,6 @@ final class CommentViewController: UIViewController, View {
     } else {
       updates()
     }
-
     commentTextView.scrollRangeToVisible(commentTextView.selectedRange)
   }
 
@@ -552,6 +569,8 @@ final class CommentCell: UITableViewCell {
 
   var disposeBag = DisposeBag()
   var kebabTap: ControlEvent<Void> { kebabButton.rx.tap }
+  var profileTap: ControlEvent<Void> { profileImageView.rx.tap }
+  var nameTap: ControlEvent<Void> { nameLabel.rx.tap }
   var kebabButtonFrameInCell: CGRect { kebabButton.frame }
 
   private let profileImageView = UIImageView().then {
@@ -560,6 +579,7 @@ final class CommentCell: UITableViewCell {
     $0.layer.cornerRadius = 18
     $0.backgroundColor = .secondarySystemBackground
     $0.snp.makeConstraints { $0.size.equalTo(CGSize(width: 36, height: 36)) }
+    $0.isUserInteractionEnabled = true
   }
 
   private let nameLabel = UILabel().then {
@@ -567,6 +587,7 @@ final class CommentCell: UITableViewCell {
     $0.textColor = .label
     $0.numberOfLines = 1
     $0.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    $0.isUserInteractionEnabled = true
   }
 
   private let dateLabel = UILabel().then {
@@ -691,6 +712,14 @@ extension CommentViewController: UITextViewDelegate {
   func textViewDidChange(_ textView: UITextView) {
     adjustInputHeight(animated: true)
   }
+
+  func textViewDidBeginEditing(_ textView: UITextView) {
+    bottomBarTapButton.isUserInteractionEnabled = false
+  }
+
+  func textViewDidEndEditing(_ textView: UITextView) {
+    bottomBarTapButton.isUserInteractionEnabled = true
+  }
 }
 
 extension CommentViewController: UIGestureRecognizerDelegate {
@@ -702,3 +731,4 @@ extension CommentViewController: UIGestureRecognizerDelegate {
     return true
   }
 }
+
