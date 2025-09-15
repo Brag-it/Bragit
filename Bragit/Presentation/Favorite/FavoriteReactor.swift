@@ -32,7 +32,8 @@ class FavoriteReactor: Reactor, Stepper {
 
   enum Action {
     case loadNextPosts
-    case tagTapped(Tag)
+    case tagTapped(Tag?)
+    case userTapped(User)
     case menuTapped(Int)
     case followButtonTapped(Post)
     case goToTagDetail(Tag)
@@ -80,13 +81,24 @@ class FavoriteReactor: Reactor, Stepper {
         return .empty()
       }
       switch self.currentState.postType {
-      case .tag(let tags), .emptyTag(let tags):
+      case .tag(let tags):
         return .concat([
           .just(.setLoading(true)),
           postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: postCount, to: postCount + 10)
             .map { .appendPosts($0) },
           .just(.setLoading(false))
         ])
+      case .emptyTag:
+        return self.tagManager.rxFetchPopularTags().flatMap { [weak self] popularTags -> Observable<Mutation> in
+          guard let self = self else { return .empty() }
+
+          return .concat([
+            .just(.setLoading(true)),
+            postManager.rxSearchFeed(tagIDs: popularTags.map { $0.id }, from: postCount, to: postCount + 10)
+              .map { .appendPosts($0) },
+            .just(.setLoading(false))
+          ])
+        }
       case .user(let users):
         return .concat([
           .just(.setLoading(true)),
@@ -103,10 +115,24 @@ class FavoriteReactor: Reactor, Stepper {
         ])
       }
     case .tagTapped(let tag):
+      @LocalStorage(location: .favoriteTags) var favoriteTags: [Tag]?
+      let stream = Observable.deferred { [weak self] () -> Observable<Mutation> in
+        guard let self = self else { return .empty() }
+        if favoriteTags == nil || favoriteTags!.isEmpty {
+          return self.tagManager.rxFetchPopularTags().flatMap { [weak self] tags -> Observable<Mutation> in
+            guard let self = self else { return .empty() }
+            return self.rxSetPost(postType: .emptyTag(tags))
+          }
+        } else {
+          let postType: PostType = (tag == nil) ? .tag(favoriteTags!) : .tag([tag!])
+          return self.rxSetPost(postType: postType)
+        }
+      }
+
       return .concat([
         .just(.setLoading(true)),
         .just(.setSelectedTag(tag)),
-        rxSetPost(postType: .tag([tag])),
+        stream,
         .just(.setLoading(false))
       ])
     case .menuTapped(let index):
@@ -226,7 +252,10 @@ class FavoriteReactor: Reactor, Stepper {
       self.steps.accept(AppStep.tagInform(tag))
       return .empty()
     case .refresh:
-      return rxSetPost(postType: currentState.postType)
+      return .concat([
+        rxSetPost(postType: currentState.postType),
+        .just(.doReload)
+      ])
     case .searchTapped:
       steps.accept(AppStep.searchFeed)
       return .empty()
@@ -245,6 +274,9 @@ class FavoriteReactor: Reactor, Stepper {
           self?.steps.accept(AppStep.userProfile(user: user))
         }
         .flatMap { _ in Observable<Mutation>.empty() }
+    case .userTapped(let user):
+      steps.accept(AppStep.userProfile(user: user))
+      return .empty()
     }
   }
   // swiftlint:enable cyclomatic_complexity
@@ -316,26 +348,16 @@ class FavoriteReactor: Reactor, Stepper {
 
   private func rxSetPost(postType: PostType) -> Observable<Mutation> {
     switch postType {
-    case .tag(let tags):
+    case .tag(let tags), .emptyTag(let tags):
       let postsStream = {
         if self.currentState.selectedTag != nil {
-          self.postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
+          self.postManager.rxSearchFeed(tagIDs: [self.currentState.selectedTag!.id], from: 0, to: 10)
             .map { Mutation.setPosts($0) }
         } else {
           self.postManager.rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
             .map { Mutation.setPosts($0) }
         }
       }()
-
-      return .concat([
-        .just(.setLoading(true)),
-        postsStream,
-        .just(.setLoading(false))
-      ])
-    case .emptyTag(let tags):
-      let postsStream = self.postManager
-        .rxSearchFeed(tagIDs: tags.map { $0.id }, from: 0, to: 10)
-        .map { Mutation.setPosts($0) }
 
       return .concat([
         .just(.setLoading(true)),

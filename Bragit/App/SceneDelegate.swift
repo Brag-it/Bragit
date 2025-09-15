@@ -38,7 +38,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     coordinator.coordinate(flow: appFlow, with: appStepper)
 
     setBlockUsers()
-    setFollowUser()
+    setFollowUsers()
   }
 
   func sceneDidDisconnect(_ scene: UIScene) {
@@ -70,7 +70,7 @@ extension SceneDelegate {
     }
   }
 
-  func setFollowUser() {
+  func setFollowUsers() {
     let userManager = UserManager()
     Task {
       do {

@@ -59,6 +59,10 @@ class UserProfileViewCotnroller: UIViewController, View {
         favoriteTagCount: 0,
         isFollowing: $0.isFollowing
       )
+      @LocalStorage(location: LocalStorageCase.nowUser) var nowUserId: String?
+      if reactor.user.id == nowUserId?.lowercased() {
+        userProfileView.kebabButton.isHidden = true
+      }
       userProfileView.dataApply(profile: profile, posts: $0.posts)
     }.disposed(by: disposeBag)
 

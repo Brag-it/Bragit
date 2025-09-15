@@ -160,7 +160,7 @@ class PostManager: PostManagerProtocol {
         do {
           let posts: [Post] = try await self.client
             .from("Post")
-            .select("*, Tag(*), comment_count:Comment(count), post_tags!inner(*), User_Info(id, nickname, profile)")
+            .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
             .in("author_id", values: followIds)
             .order("date", ascending: false)
             .range(from: from, to: to)

@@ -155,17 +155,18 @@ final class AlertView: UIView {
 extension AlertView {
   // 원하는 스타일
   enum AlertStyle {
-    case tempSaveDraft  //임시저장
-    case isEmptyPost  // 게시글 제목또는 내용이 비어있을때
-    case deletePost  // 게시글 삭제
-    case reportPost  // 게시글 신고
-    case deleteComment  // 댓글 삭제
-    case reportComment  // 댓글 신고
-    case blockUser(nickname: String)  // 유저 차단
-    case reportUser(nickname: String)  // 유저 신고
-    case reportApp  // 앱에 대한 신고
-    case logOut  // 로그아웃
-    case deleteAcount  // 회원탈퇴
+    case tempSaveDraft                  //임시저장
+    case loadPost                       // 임시저장한 게시글 불러올 때
+    case isEmptyPost                    // 게시글 제목또는 내용이 비어있을때
+    case deletePost                     // 게시글 삭제
+    case reportPost                     // 게시글 신고
+    case deleteComment                  // 댓글 삭제
+    case reportComment                  // 댓글 신고
+    case blockUser(nickname: String)    // 유저 차단
+    case reportUser(nickname: String)   // 유저 신고
+    case reportApp                      // 앱에 대한 신고
+    case logOut                         // 로그아웃
+    case deleteAcount                   // 회원탈퇴
   }
 
   // swiftlint:disable cyclomatic_complexity
@@ -177,6 +178,15 @@ extension AlertView {
         message: "지금 나가면 저장하지 않은 글은 삭제돼요.",
         leftButtonTitle: "나가기",
         rightButtonTitle: "임시저장",
+        leftButtonColor: .grayScale400,
+        rightButtonColor: .grayScaleBack
+      )
+    case .loadPost:
+      return AlertView(
+        title: "임시 저장된 글이 있어요",
+        message: "이어서 작성하시겠어요?",
+        leftButtonTitle: "취소",
+        rightButtonTitle: "불러오기",
         leftButtonColor: .grayScale400,
         rightButtonColor: .grayScaleBack
       )

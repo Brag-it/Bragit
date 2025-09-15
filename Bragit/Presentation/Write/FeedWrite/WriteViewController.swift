@@ -12,11 +12,13 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import Then
+import Loaf
 
 class WriteViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let backAlert = AlertView.makeAlert(style: .tempSaveDraft)
   private let isEmptyAlert = AlertView.makeAlert(style: .isEmptyPost)
+  private let loadPostAlert = AlertView.makeAlert(style: .loadPost)
 
   private let headerView = UIView()
 
@@ -65,6 +67,7 @@ class WriteViewController: UIViewController, View {
     view.backgroundColor = .white
     self.navigationController?.isNavigationBarHidden = true
     setUIConstraints()
+    reactor?.action.onNext(.isLoadPost)
   }
 
   // UI 설정
@@ -115,18 +118,45 @@ class WriteViewController: UIViewController, View {
 
   func bind(reactor: WriteReactor) {
     backAlert.leftTap
-      .map { Reactor.Action.tapDismiss } // 왼쪽 버튼 눌리면 tapDismiss 액션으로 변환
+      .map { Reactor.Action.tapDismiss }      // 왼쪽 버튼 눌리면 tapDismiss 액션으로 변환
       .bind(to: reactor.action)               // Reactor에 전달
       .disposed(by: disposeBag)
 
     backAlert.rightTap
-      .bind { print("오른쪽 버튼 누름") }
+      .map { Reactor.Action.tapTemporary } // 임시저장
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    loadPostAlert.leftTap
+      .bind { print("불러오기 취소") }
+      .disposed(by: disposeBag)
+
+    loadPostAlert.rightTap
+      .map { Reactor.Action.tapLoadPost } // 불러오기
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map { $0.isLoadPost }
+      .distinctUntilChanged()
+      .filter { $0 }
+      .bind { [weak self] _ in
+        guard let self else { return }
+        loadPostAlert.show(in: self.view)
+      }
       .disposed(by: disposeBag)
 
     backButton.rx.tap
       .bind { [weak self] in
         guard let self else { return }
-        backAlert.show(in: self.view)
+        let isTitleEmpty = titleTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        let isContentEmpty = editorView.textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        if isTitleEmpty && isContentEmpty {
+          reactor.action.onNext(.tapDismiss)
+        } else {
+          backAlert.show(in: self.view)
+        }
       }
       .disposed(by: disposeBag)
 
@@ -186,6 +216,22 @@ class WriteViewController: UIViewController, View {
       .distinctUntilChanged()
       .map { Reactor.Action.updateContent($0) }
       .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map { $0.title }
+      .distinctUntilChanged()
+      .bind(to: titleTextField.rx.text)
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map { $0.content }
+      .distinctUntilChanged()
+      .bind { [weak self] content in
+        guard let self else { return }
+        self.editorView.textView.attributedText = content
+        self.editorView.textView.layoutManager.ensureLayout(for: self.editorView.textView.textContainer)
+      }
       .disposed(by: disposeBag)
 
     reactor.state

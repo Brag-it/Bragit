@@ -11,6 +11,7 @@ import RxSwift
 import RxFlow
 import RxRelay
 import Dependencies
+import Loaf
 
 class DetailPostReactor: Reactor, Stepper {
   var initialState: State
@@ -34,6 +35,7 @@ class DetailPostReactor: Reactor, Stepper {
     case didTapReport
     case didTapDelete
     case didTapUserProfile
+    case showToast(ToastPurpose)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -43,6 +45,7 @@ class DetailPostReactor: Reactor, Stepper {
     case setLoading(Bool)
     case setDeleted
     case setError(Error)
+    case setToast(ToastEvent?)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -57,6 +60,7 @@ class DetailPostReactor: Reactor, Stepper {
     var likeCount: Int              // 좋아요 수
     var isfollowed: Bool            // 팔로우 여부
     var withdrewUser: Bool          // 탈퇴유저 체크
+    @Pulse var toast: ToastEvent?  // 삭제/신고/에러 토스트 이벤트
   }
 
   init(post: Post) {
@@ -66,13 +70,13 @@ class DetailPostReactor: Reactor, Stepper {
     self.initialState = State(
       title: post.title,
       content: DetailPostReactor.unarchivedContent(content: post.content),
-      nickName: post.author?.nickname ?? "탈퇴한 유저 입니다",
+      nickName: post.author?.nickname ?? "탈퇴한 유저",
       profileImage: post.author?.profile ?? nil,
       viewer: post.author?.id.lowercased() == nowUser?.lowercased(),
       isLiked: likePosts?.contains { $0 == post.id.uuidString } ?? false,
       likeCount: post.like,
       isfollowed: followUser?.contains { $0 == post.author?.id } ?? false,
-      withdrewUser: post.author?.nickname == nil
+      withdrewUser: post.author == nil
     )
     self.post = post
 
@@ -88,7 +92,7 @@ class DetailPostReactor: Reactor, Stepper {
       return .empty()
 
     case .didTapLike:
-      // 게시글 단위로 좋아요 토글 (로컬 UserDefaults @LocalStorage)
+      // 게시글 단위로 좋아요 토글
       let postId = post.id.uuidString
       let willLike = !currentState.isLiked
 
@@ -184,19 +188,30 @@ class DetailPostReactor: Reactor, Stepper {
 
     case .didTapReport:
       return postManager.rxIncrementReports(postId: post.id)
-        .flatMap { _ in Observable<Mutation>.empty() }
-        .catch { _ in Observable<Mutation>.empty() }
+        .map { _ in Mutation.setToast(ToastEvent(purpose: .reported)) }
+        .catch { error in
+          .just(.setToast(ToastEvent(purpose: .error(error.localizedDescription))))
+        }
 
     case .didTapDelete:
       return Observable.concat([
         .just(.setLoading(true)),
         postManager.rxDeletePost(postId: post.id.uuidString)
-          .map { _ in Mutation.setDeleted }
+          .flatMap { _ in
+            Observable.from([
+              Mutation.setToast(ToastEvent(purpose: .deleted)),
+              Mutation.setDeleted
+            ])
+          }
           .catch { error in
-            return .just(.setError(error))
+            return .just(.setToast(ToastEvent(purpose: .error(error.localizedDescription))))
           },
         .just(.setLoading(false))
       ])
+
+    case .showToast(let purpose):
+      return .just(.setToast(ToastEvent(purpose: purpose)))
+
     case .didTapUserProfile:
       guard let authorId = post.author?.id, !authorId.isEmpty else {
         return .empty()
@@ -238,6 +253,9 @@ class DetailPostReactor: Reactor, Stepper {
 
     case .setError(let error):
       return print(error) == () ? state : state
+
+    case let .setToast(event):
+      newState.toast = event
     }
 
     return newState

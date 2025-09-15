@@ -164,7 +164,7 @@ private extension SignTermsViewController {
     allAcceptLabel.font = allLabelFont
     nextButton.titleLabel?.font = allLabelFont
 
-    configureDetailButton(serviceDetailButton, title: "서비스 이용 약관 (필수)")
+    configureDetailButton(serviceDetailButton, title: "서비스 이용 약관 (및 소프트웨어 라이선스) (필수)")
     configureDetailButton(privacyDetailButton, title: "개인정보 수집 및 처리 방침 (필수)")
     configureDetailButton(marketingDetailButton, title: "마케팅 정보 수집 및 수신 (선택)")
 

@@ -11,12 +11,14 @@ import RxSwift
 import RxRelay
 import SnapKit
 import Then
+import Kingfisher
 
 final class FavoriteSectionHeaderView: UICollectionReusableView {
 
   static let identifier = "FavoriteSectionHeaderView"
 
-  let tagDidTap = PublishRelay<Tag>()
+  let tagDidTap = PublishRelay<Tag?>()
+  let followingUserDidTap = PublishRelay<User>()
   var disposeBag = DisposeBag()
   var postType = FavoriteReactor.PostType.emptyUser
 
@@ -125,6 +127,9 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
       titleLabel.text = "추천 태그"
       scrollView.isHidden = false
       tagStackView.isHidden = false
+      scrollView.snp.updateConstraints {
+        $0.height.equalTo(42).priority(999)
+      }
       makeTags(tags: tags, selectedTag: selectedTag)
     case .tag(let tags):
       scrollView.isHidden = false
@@ -182,16 +187,22 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
       }
 
       tagButton.rx.tap
-        .bind { [weak self] in
-          guard let self = self else { return }
-
-          self.tagStackView.arrangedSubviews.forEach { view in
-            if let button = view as? UIButton {
-              button.isSelected = false
+        .bind { [tagStackView, tagDidTap] in
+          // 선택된 버튼을 또 누른경우
+          if tagButton.isSelected {
+            tagButton.isSelected = false
+            tagDidTap.accept(nil)
+          } else {
+            // 전부 false로 바꿈
+            tagStackView.arrangedSubviews.forEach { view in
+              if let button = view as? UIButton {
+                button.isSelected = false
+              }
             }
+
+            tagButton.isSelected = true
+            tagDidTap.accept(tag)
           }
-          tagButton.isSelected = true
-          self.tagDidTap.accept(tag)
         }
         .disposed(by: disposeBag)
 
@@ -218,15 +229,26 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
         $0.numberOfLines = 1
       }
 
-      let profileImageView = UIImageView().then {
-        $0.kf.setImage(with: URL(string: user.profile ?? ""), placeholder: UIImage.profilePerson)
-        $0.frame.size = CGSize(width: 60, height: 60)
+      let profileButton = UIButton().then {
+        $0.kf.setImage(with: URL(string: user.profile ?? ""), for: .normal, placeholder: UIImage.profilePerson)
         $0.layer.cornerRadius = 30
         $0.layer.masksToBounds = true
-        $0.contentMode = .scaleAspectFill
+        $0.imageView?.contentMode = .scaleAspectFill
+        $0.contentHorizontalAlignment = .fill
+        $0.contentVerticalAlignment = .fill
       }
 
-      profileStackView.addArrangedSubview(profileImageView)
+      profileButton.snp.makeConstraints {
+        $0.width.height.equalTo(60)
+      }
+
+      profileButton.rx.tap
+        .bind { [followingUserDidTap] in
+          followingUserDidTap.accept(user)
+        }
+        .disposed(by: disposeBag)
+
+      profileStackView.addArrangedSubview(profileButton)
       profileStackView.addArrangedSubview(nameLabel)
       profileStackView.snp.makeConstraints {
         $0.width.equalTo(60)

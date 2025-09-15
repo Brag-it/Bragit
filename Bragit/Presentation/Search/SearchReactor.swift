@@ -277,7 +277,6 @@ class SearchReactor: Reactor, Stepper {
     }
   }
   // swiftlint:enable cyclomatic_complexity
-
   // Mutation이 발생했을 때 상태(State)를 실제로 바꿈
   // 상태 변화 신호 → 실제 상태 반영
   func reduce(state: State, mutation: Mutation) -> State {

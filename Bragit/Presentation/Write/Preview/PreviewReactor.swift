@@ -17,6 +17,7 @@ class PreviewReactor: Reactor, Stepper {
   @Dependency(\.postManager) var postManager
   @Dependency(\.tagManager) var tagManager
   @Dependency(\.userManager) var userManager
+  @Dependency(\.imageManager) var imageManager
 
   let draft: PostDraft
   let steps = PublishRelay<Step>()
@@ -32,6 +33,7 @@ class PreviewReactor: Reactor, Stepper {
     case appendThumbnail(UIImage)
     case tapThumbnail(UIImage)
     case tapDone
+    case updateDescription(String)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -44,6 +46,7 @@ class PreviewReactor: Reactor, Stepper {
     case setError(Error)
     case setLoading(Bool)
     case setUploaded(Post)
+    case setDescription(String)
   }
 
   // View의 상태 정의 (현재 View의 상태값)
@@ -109,9 +112,15 @@ class PreviewReactor: Reactor, Stepper {
       print("유저 ID: \(author)")
       print("게시글 ID: \(postId)")
 
-      let representativeImageData = currentState.representativeImage?.compress(for: .thumbnail)
+      //썸네일은 별도 규격 (600px) 리사이즈
+      let representativeImageData: Data? = {
+        guard let image = currentState.representativeImage else { return nil }
+        let resized = image.resized(in: CGSize(width: 600, height: 600)) ?? image
+        return resized.jpegData(compressionQuality: 0.8)
+      }()
+
       let contentImages = PreviewReactor.extractImages(from: currentState.content)
-      let attachmentDataList = contentImages.compactMap { $0.compress(for: .content) }
+      let attachmentDataList = contentImages.compactMap { $0.jpegData(compressionQuality: 0.8) }
 
       print("대표 이미지: \(representativeImageData != nil)")
       print("본문 이미지 개수: \(attachmentDataList.count)")
@@ -119,26 +128,18 @@ class PreviewReactor: Reactor, Stepper {
       // 업로드
       let thumbnailUploadStream: Observable<URL?> = {
         guard let data = representativeImageData else { return .just(nil) }
-        let fileName = "thumbnail-\(Int(Date().timeIntervalSince1970)).jpg"
-        return self.postManager.rxUploadImage(
-          data: data,
-          fileName: fileName,
-          folder: StoragePath.thumbnail(authorId: author)
-        )
-        .map { $0 as URL? }
+        return self.imageManager.rxUploadImage(data: data)
+          .map { $0 as URL? }
       }()
 
       let attachmentsUploadStream: Observable<[URL]> = {
         guard !attachmentDataList.isEmpty else { return .just([]) }
-        return self.postManager.rxUploadImages(
-          datas: attachmentDataList,
-          folder: StoragePath.contents(authorId: author, postId: postId)
-        )
+        return self.imageManager.rxUploadImages(datas: attachmentDataList)
       }()
 
       return Observable.concat([
         .just(.setLoading(true)),
-        // 이미지 업로드
+        // 게시글 업로드
         Observable.zip(thumbnailUploadStream, attachmentsUploadStream)
           .flatMap { thumbnailURL, attachmentURLs -> Observable<Mutation> in
             print("썸네일 URL: \(thumbnailURL?.absoluteString ?? "없음")")
@@ -191,6 +192,9 @@ class PreviewReactor: Reactor, Stepper {
             return .just(.setError(error))
           }
       ])
+
+    case .updateDescription(let text):
+      return .just(.setDescription(text))
     }
   }
   // swiftlint:enable cyclomatic_complexity
@@ -226,6 +230,8 @@ class PreviewReactor: Reactor, Stepper {
     case .setError(let error):
       newState.isLoading = false
       print("PreviewReactor Error:", error.localizedDescription)
+    case .setDescription(let text):
+      newState.description = text
     }
 
     return newState

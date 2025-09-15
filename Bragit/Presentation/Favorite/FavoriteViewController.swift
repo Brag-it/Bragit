@@ -92,7 +92,7 @@ class FavoriteViewController: UIViewController, View {
         let posts = state.posts.map { post in
           var filteredPost = post
           if filteredPost.author == nil {
-            filteredPost.author = Author(id: "", nickname: "탈퇴한 유저입니다.", profile: nil)
+            filteredPost.author = Author(id: "", nickname: "탈퇴한 유저", profile: nil)
           }
           return filteredPost
         }.filter {
@@ -141,6 +141,11 @@ class FavoriteViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    favoriteView.feedView.followingUserTap
+      .map { user in .userTapped(user) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     // 게시글의 태그 탭
     favoriteView.feedView.postTagDidTap
       .map { tag in .goToTagDetail(tag) }
@@ -149,7 +154,7 @@ class FavoriteViewController: UIViewController, View {
 
     // 팔로우 버튼 탭
     favoriteView.feedView.followDidTap
-      .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
+      .throttle(.milliseconds(500), latest: false, scheduler: MainScheduler.instance)
       .map { post in .followButtonTapped(post) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
