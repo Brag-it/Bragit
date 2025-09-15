@@ -116,6 +116,7 @@ final class CommentViewController: UIViewController, View {
     commentTextView.delegate = self
     commentTextView.textContainer.lineBreakMode = .byWordWrapping
     commentTextView.textContainer.widthTracksTextView = true
+    commentTextView.isSelectable = true
 
     sendButton.backgroundColor = .clear
     bottomBarTapButton.backgroundColor = .clear
@@ -681,6 +682,14 @@ extension CommentViewController: UITextViewDelegate {
 
   func textViewDidChange(_ textView: UITextView) {
     adjustInputHeight(animated: true)
+  }
+
+  func textViewDidBeginEditing(_ textView: UITextView) {
+    bottomBarTapButton.isUserInteractionEnabled = false
+  }
+
+  func textViewDidEndEditing(_ textView: UITextView) {
+    bottomBarTapButton.isUserInteractionEnabled = true
   }
 }
 

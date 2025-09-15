@@ -22,6 +22,7 @@ class FollowingReactor: Reactor, Stepper {
   enum Action {
     case backButtonTap
     case followButtonTap(User)
+    case userDidTap(User)
   }
 
   // 상태변경 이벤트 정의 (상태를 어떻게 바꿀 것인가)
@@ -58,6 +59,9 @@ class FollowingReactor: Reactor, Stepper {
           print(error)
         }
       }
+      return .empty()
+    case .userDidTap(let user):
+      steps.accept(AppStep.userProfile(user: user))
       return .empty()
     }
   }

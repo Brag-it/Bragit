@@ -41,5 +41,15 @@ class FollowerViewController: ProfileListViewController<User>, View {
       .compactMap { $0 }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    profileListView.collectionView.rx.itemSelected
+      .map { self.users[$0.row] }
+      .map { .userDidTap($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    self.rx.viewWillAppear
+      .bind { _ in self.reload() }
+      .disposed(by: disposeBag)
   }
 }
