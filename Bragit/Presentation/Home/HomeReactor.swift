@@ -17,7 +17,6 @@ class HomeReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.postManager) var postManager
   @Dependency(\.userManager) var userManager
-  @LocalStorage(location: .followUser) var followUser: [String]?
   let steps = PublishRelay<Step>()
   private let disposeBag = DisposeBag()
 
@@ -86,6 +85,7 @@ class HomeReactor: Reactor, Stepper {
         .just(.setLoading(false))
       ])
     case .followButtonTapped(let post):
+      @LocalStorage(location: .followUser) var followUser: [String]?
       return Observable.create { [weak self] observer in
         guard let self = self else {
           observer.onCompleted()
@@ -95,11 +95,11 @@ class HomeReactor: Reactor, Stepper {
         Task {
           do {
             let authorId = post.author?.id ?? ""
-            if self.followUser?.contains(authorId) == true {
-              self.followUser = self.followUser?.filter { $0 != authorId }
+            if followUser?.contains(authorId) == true {
+              followUser = followUser?.filter { $0 != authorId }
               try await self.userManager.unfollowUser(id: authorId)
             } else {
-              self.followUser = (self.followUser ?? []) + [authorId]
+              followUser = (followUser ?? []) + [authorId]
               try await self.userManager.followUser(id: authorId)
             }
             observer.onNext(.setPostsToReconfigure(self.currentState.posts.filter {
