@@ -127,6 +127,9 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
       titleLabel.text = "추천 태그"
       scrollView.isHidden = false
       tagStackView.isHidden = false
+      scrollView.snp.updateConstraints {
+        $0.height.equalTo(42).priority(999)
+      }
       makeTags(tags: tags, selectedTag: selectedTag)
     case .tag(let tags):
       scrollView.isHidden = false
