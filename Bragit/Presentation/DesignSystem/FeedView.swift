@@ -40,7 +40,11 @@ class FeedView: UIView {
       $0.top.leading.bottom.trailing.equalToSuperview()
     }
 
-    refreshControl.rx.controlEvent(.valueChanged)
+    collectionView.rx.didEndDragging
+      .filter { [refreshControl] _ in
+        refreshControl.isRefreshing == true
+      }
+      .map { _ in }
       .bind(to: refreshRelay)
       .disposed(by: disposeBag)
   }
