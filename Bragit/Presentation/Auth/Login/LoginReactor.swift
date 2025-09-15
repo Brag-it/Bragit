@@ -76,7 +76,7 @@ final class LoginReactor: Reactor, Stepper {
             return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
           },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil)),
+        .just(.setNonce(raw: nil, hashed: nil))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
@@ -128,8 +128,7 @@ final class LoginReactor: Reactor, Stepper {
           // 1) Apple이 준 이메일이 있고, Supabase Auth의 기본 email이 비어 있다면
           //    user_metadata에 이메일 저장
           if session.user.email == nil || session.user.email?.isEmpty == true,
-            let mail, !mail.isEmpty
-          {
+            let mail, !mail.isEmpty {
             do {
               try await self.supabase.auth.update(
                 user: UserAttributes(
