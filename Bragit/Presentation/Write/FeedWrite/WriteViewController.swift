@@ -12,6 +12,7 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import Then
+import Loaf
 
 class WriteViewController: UIViewController, View {
   var disposeBag = DisposeBag()
@@ -127,7 +128,7 @@ class WriteViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     loadPostAlert.leftTap
-      .bind { print("취소 버튼 누름") }
+      .bind { print("불러오기 취소") }
       .disposed(by: disposeBag)
 
     loadPostAlert.rightTap

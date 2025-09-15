@@ -8,10 +8,14 @@ import UIKit
 
 import SnapKit
 import Then
+import RxSwift
+import RxCocoa
+
 final class DescriptionCell: UICollectionViewCell {
   static let identifier: String = "DescriptionCell"
+  var disposeBag = DisposeBag()
 
-  private let descriptionLabel = DescriptionTextView().then {
+  let descriptionLabel = DescriptionTextView().then {
     $0.placeholder = "내용을 잘 나타내는 설명을 입력해 주세요"
     $0.font = .pretendard(size: 15)
     $0.showsVerticalScrollIndicator = false
@@ -28,6 +32,11 @@ final class DescriptionCell: UICollectionViewCell {
     descriptionLabel.snp.makeConstraints {
       $0.directionalEdges.equalToSuperview()
     }
+  }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    disposeBag = DisposeBag()
   }
 
   required init?(coder: NSCoder) {

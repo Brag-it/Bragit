@@ -92,6 +92,20 @@ final class SearchTagViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
+    // 연관검색어
+    let typingSearch = textField.rx.text.orEmpty
+      .debounce(.milliseconds(250), scheduler: MainScheduler.instance)
+      .filter { [weak textField] _ in
+        guard let text = textField else { return false }
+        return text.markedTextRange == nil
+      }
+      .distinctUntilChanged()
+      .map { _ in SearchTagReactor.Action.didTapSearchButton }
+
+    typingSearch
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     let searchTrigger = Observable.merge(
       searchBar.searchButton.rx.tap.asObservable(),
       searchBar.textField.rx.controlEvent(.editingDidEndOnExit).asObservable()
