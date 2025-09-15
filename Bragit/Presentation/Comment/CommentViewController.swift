@@ -72,7 +72,7 @@ final class CommentViewController: UIViewController, View {
 
   private let bottomBarTapButton = UIButton(type: .custom)
   private var menuTargetIndexPath: IndexPath?
-  private var deleteCommentId: UUID?
+  private var menuTargetCommentId: UUID?
 
   private let bottomSafeAreaBackground = UIView().then {
     $0.backgroundColor = .grayScale50
@@ -330,20 +330,21 @@ final class CommentViewController: UIViewController, View {
 
   private func bindDeleteAlerts(_ reactor: CommentReactor) {
     reportAlert.rightTap
-      .compactMap { [weak self] in self?.menuTargetIndexPath }
+      .compactMap { [weak self] in self?.menuTargetCommentId }
+      .do { [weak self] _ in self?.menuTargetCommentId = nil }
       .map { Reactor.Action.reportComment($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     deleteAlert.rightTap
-      .compactMap { [weak self] in self?.deleteCommentId }
-      .do { [weak self] _ in self?.deleteCommentId = nil }
+      .compactMap { [weak self] in self?.menuTargetCommentId }
+      .do { [weak self] _ in self?.menuTargetCommentId = nil }
       .map { Reactor.Action.deleteComment($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     deleteAlert.leftTap
-      .bind { [weak self] in self?.deleteCommentId = nil }
+      .bind { [weak self] in self?.menuTargetCommentId = nil }
       .disposed(by: disposeBag)
   }
 
@@ -416,10 +417,10 @@ final class CommentViewController: UIViewController, View {
         guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
         if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
           targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
-          owner.deleteCommentId = dataSource[targetIndexPath.row].id
+          owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
           owner.deleteAlert.show(in: owner.view)
         } else {
-          owner.deleteCommentId = nil
+          owner.menuTargetCommentId = nil
         }
       }
       .disposed(by: disposeBag)
@@ -427,8 +428,14 @@ final class CommentViewController: UIViewController, View {
     commentOtherMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
-        guard index == 0, owner.menuTargetIndexPath != nil else { return }
-        owner.reportAlert.show(in: owner.view)
+        guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
+        if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
+          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+          owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
+          owner.reportAlert.show(in: owner.view)
+        } else {
+          owner.menuTargetCommentId = nil
+        }
       }
       .disposed(by: disposeBag)
   }

@@ -188,7 +188,7 @@ final class CommentReactor: Reactor, Stepper {
     guard currentState.isLoading == false else { return .empty() }
 
     guard let target = currentState.comments.first(where: { $0.id == commentId }) else {
-      return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 대상 댓글을 찾을 수 없습니다"))
+      return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 대상 댓글을 찾을 수 없습니다"))))
     }
 
     // 소유자 검증 (대소문자/공백 무시)
@@ -197,10 +197,10 @@ final class CommentReactor: Reactor, Stepper {
       let ownerId = ownerIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       let currentUserId = currentUserIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       if ownerId != currentUserId {
-        return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 삭제 권한 없음"))
+        return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 삭제 권한 없음"))))
       }
     } else {
-      return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 사용자 정보 없음"))
+      return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 사용자 정보 없음"))))
     }
 
     let start = Observable.just(Mutation.setLoading(true))
@@ -228,12 +228,8 @@ final class CommentReactor: Reactor, Stepper {
   private func mutateReportComment(commentId: UUID) -> Observable<Mutation> {
     guard currentState.isLoading == false else { return .empty() }
 
-    guard let target = comment(atSortedIndexPath: indexPath) else {
-      return .just(.setToast(ToastEvent(purpose: .error("[Report Comment] 인덱스 에러"))))
-    }
-
     let start = Observable.just(Mutation.setLoading(true))
-    let report = rxReportComment(commentId: target.id)
+    let report = rxReportComment(commentId: commentId)
       .flatMap { _ -> Observable<Mutation> in
         return .just(Mutation.setToast(ToastEvent(purpose: .reported)))
       }
