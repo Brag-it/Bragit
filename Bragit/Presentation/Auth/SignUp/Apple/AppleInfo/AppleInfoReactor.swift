@@ -5,8 +5,10 @@ import Foundation
 import Dependencies
 import ReactorKit
 import RxSwift
+import RxFlow
+import RxRelay
 
-final class AppleInfoReactor: Reactor {
+final class AppleInfoReactor: Reactor, Stepper {
   enum Action {
     case validateNickname(String)
   }
@@ -24,6 +26,7 @@ final class AppleInfoReactor: Reactor {
 
   let initialState: State
   @Dependency(\.userManager) private var userManager
+  let steps = PublishRelay<Step>()
 
   init() {
     self.initialState = State()

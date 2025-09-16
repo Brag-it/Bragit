@@ -5,13 +5,18 @@
 //  Created by luca on 9/15/25.
 //
 
-import UIKit
-import RxSwift
-import Then
-import RxCocoa
 import Dependencies
+import ReactorKit
+import RxCocoa
+import RxSwift
+import Supabase
+import Then
+import UIKit
 
-final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
+final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View {
+  typealias Reactor = MailOnlyReactor
+  var disposeBag = DisposeBag()
+
   private let headerView = UIView()
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.back, for: .normal)
@@ -23,9 +28,6 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     $0.textColor = .grayScale900
     $0.textAlignment = .center
   }
-
-  private let disposeBag = DisposeBag()
-  @Dependency(\.supabase) private var supabase
 
   let descriptionTitleLabel = UILabel().then {
     $0.text = "로그인에 사용할 이메일을 입력해 주세요"
@@ -96,9 +98,9 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     super.viewDidLoad()
     view.backgroundColor = .white
     headerConfigureUI()
-    setupKeyboardDismiss()
     mailTextField.delegate = self
     bindActions()
+    if reactor == nil { reactor = MailOnlyReactor() }
   }
 
   private func headerConfigureUI() {
@@ -139,10 +141,10 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     view.addSubview(mailTextField)
     view.addSubview(mailCheckStack)
     view.addSubview(nextButton)
-    
+
     nextButton.alpha = 0.5
 
-    [mailCheckIcon, mailCheckLabel].forEach { mailCheckStack.addArrangedSubview($0)}
+    [mailCheckIcon, mailCheckLabel].forEach { mailCheckStack.addArrangedSubview($0) }
 
     descriptionTitleLabel.snp.makeConstraints {
       $0.top.equalTo(headerView.snp.bottom).offset(32)
@@ -177,66 +179,46 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
     }
   }
 
-  private func setupKeyboardDismiss() {
-    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-    tap.cancelsTouchesInView = false
-    view.addGestureRecognizer(tap)
-  }
-
   private func bindActions() {
-    // 입력 중 유효성에 따라 버튼 활성/비활성 + 투명도 적용
-    mailTextField.rx.text.orEmpty
+    // Enable next button only when email is valid (live as user types)
+    let emailText = mailTextField.rx.text.orEmpty
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .share(replay: 1)
+
+    let isValid =
+      emailText
       .map { [weak self] in self?.isValidEmail($0) == true }
       .distinctUntilChanged()
-      .bind(with: self) { owner, isValid in
-        owner.nextButton.isEnabled = isValid
-        owner.nextButton.alpha = isValid ? 1.0 : 0.5
+      .share(replay: 1)
+
+    isValid
+      .bind(to: nextButton.rx.isEnabled)
+      .disposed(by: disposeBag)
+
+    isValid
+      .map { $0 ? 1.0 : 0.5 }
+      .bind(with: self) { owner, alpha in
+        owner.nextButton.alpha = alpha
       }
       .disposed(by: disposeBag)
 
+    // Validate email format when editing ends and update mailCheckLabel & icon
     mailTextField.rx.controlEvent(.editingDidEnd)
-      .bind(with: self) { owner, _ in
-        owner.dismissKeyboard()
-        let raw = owner.mailTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !raw.isEmpty else {
-          print("[mail] 이메일이 비어 있습니다.")
-          return
-        }
-        guard owner.isValidEmail(raw) else {
-          print("[mail] 유효하지 않은 이메일 형식입니다: \(raw)")
-          return
-        }
-
-        owner.mailCheckLabel.text = "이메일 확인 중..."
-        owner.mailCheckLabel.textColor = .systemWarning
-        owner.mailCheckIcon.image = .loading
-
-        Task { [weak owner] in
-          guard let owner = owner else { return }
-          do {
-            try await owner.supabase.auth.signInWithOTP(email: raw, shouldCreateUser: false)
-            print("[mail] 이미 가입된 이메일입니다: \(raw)")
-            await MainActor.run {
-              owner.mailCheckLabel.text = "이미 가입된 이메일입니다"
-              owner.mailCheckLabel.textColor = .systemDanger
-              owner.mailCheckIcon.image = .reject
-            }
-          } catch {
-            print("[mail] 가입 가능 이메일로 보입니다: \(raw). error=\(error.localizedDescription)")
-            await MainActor.run {
-              owner.mailCheckLabel.text = "가입할 수 있는 이메일입니다"
-              owner.mailCheckLabel.textColor = .systemSafe
-              owner.mailCheckIcon.image = .accept
-            }
-          }
+      .withLatestFrom(emailText)
+      .bind(with: self) { owner, email in
+        if owner.isValidEmail(email) {
+          owner.mailCheckLabel.text = "유효한 메일 형식입니다"
+          owner.mailCheckLabel.textColor = .systemSafe
+          owner.mailCheckIcon.image = .accept
+          owner.mailCheckIcon.tintColor = .systemSafe
+        } else {
+          owner.mailCheckLabel.text = "유효하지 않은 메일 형식입니다"
+          owner.mailCheckLabel.textColor = .systemDanger
+          owner.mailCheckIcon.image = .reject
+          owner.mailCheckIcon.tintColor = .systemDanger
         }
       }
       .disposed(by: disposeBag)
-  }
-
-  @objc private func dismissKeyboard() {
-    view.endEditing(true)
   }
 
   private func isValidEmail(_ email: String) -> Bool {
@@ -252,3 +234,36 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate {
   }
 }
 
+extension MailOnlyViewController {
+  func bind(reactor: MailOnlyReactor) {
+    nextButton.rx.tap
+      .withLatestFrom(
+        mailTextField.rx.text.orEmpty.map {
+          $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        }
+      )
+      .bind(with: self) { owner, email in
+        guard owner.isValidEmail(email) else { return }
+        reactor.action.onNext(.tapNext(email: email))
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state.map(\.isLoading)
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+      .bind(with: self) { owner, loading in
+        owner.view.isUserInteractionEnabled = !loading
+        owner.nextButton.alpha = loading ? 0.5 : 1.0
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state.compactMap(\.errorMessage)
+      .observe(on: MainScheduler.instance)
+      .bind(with: self) { owner, message in
+        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
+        alert.addAction(.init(title: "확인", style: .default))
+        owner.present(alert, animated: true)
+      }
+      .disposed(by: disposeBag)
+  }
+}

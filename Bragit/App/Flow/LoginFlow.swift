@@ -76,29 +76,35 @@ final class LoginFlow: Flow, Stepper {
       self?.steps.accept(AppStep.signTermsConset)
     }
     nav.pushViewController(userInfoVC, animated: true)
-    return .one(
-      flowContributor:
-        .contribute(withNextPresentable: userInfoVC, withNextStepper: self)
-    )
+    return .none
   }
 
   private func showMailInput() -> FlowContributors {
     // 인증 받기 위한 메일 입력 뷰
     let reactor = MailOnlyReactor()
     let mailOnlyVC = MailOnlyViewController()
+    mailOnlyVC.reactor = reactor
     nav.pushViewController(mailOnlyVC, animated: true)
     return .one(
-      flowContributor:
-        .contribute(
-          withNextPresentable: mailOnlyVC,
-          withNextStepper: reactor
-        )
+      flowContributor: .contribute(
+        withNextPresentable: mailOnlyVC,
+        withNextStepper: reactor
+      )
     )
   }
 
   private func showMailConfirm() -> FlowContributors {
     // 메일로 인증 갔으니 확인해라 + 재전송 버튼
-    return .none
+    let reactor = MailConfirmReactor()
+    let confirmVC = MailConfirmViewController()
+    nav.pushViewController(confirmVC, animated: true)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: confirmVC,
+          withNextStepper: reactor
+        )
+    )
   }
 
   private func showSignupMail() -> FlowContributors {
