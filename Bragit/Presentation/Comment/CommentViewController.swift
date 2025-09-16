@@ -8,12 +8,12 @@
 import UIKit
 
 import Kingfisher
+import Loaf
 import ReactorKit
 import RxCocoa
 import RxSwift
 import SnapKit
 import Then
-import Loaf
 
 final class CommentViewController: UIViewController, View {
   typealias Reactor = CommentReactor
@@ -144,13 +144,13 @@ final class CommentViewController: UIViewController, View {
     }
 
     self.textContainerLeadingWithLock =
-    textContainer.snp.prepareConstraints {
-      $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
-    }.first
+      textContainer.snp.prepareConstraints {
+        $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
+      }.first
     self.textContainerLeadingWithoutLock =
-    textContainer.snp.prepareConstraints {
-      $0.leading.equalTo(bar.snp.leading).offset(12)
-    }.first
+      textContainer.snp.prepareConstraints {
+        $0.leading.equalTo(bar.snp.leading).offset(12)
+      }.first
     self.textContainerLeadingWithoutLock?.activate()
 
     sendImageView.snp.makeConstraints {
@@ -416,7 +416,7 @@ final class CommentViewController: UIViewController, View {
       .bind(with: self) { owner, index in
         guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
         if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
-           targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
           owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
           owner.deleteAlert.show(in: owner.view)
         } else {
@@ -430,7 +430,8 @@ final class CommentViewController: UIViewController, View {
       .bind(with: self) { owner, index in
         guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
         if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
-           targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count
+        {
           owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
           owner.reportAlert.show(in: owner.view)
         } else {
@@ -469,24 +470,45 @@ final class CommentViewController: UIViewController, View {
         guard let self else { return }
         switch event.purpose {
         case .deleted:
-          Loaf("삭제 되었어요!", state: .custom(.init(
-            backgroundColor: .black,
-            font: .pretendard(size: 14),
-            icon: nil,
-            textAlignment: .center,
-            width: .screenPercentage(0.8))), sender: self).show()
+          Loaf(
+            "삭제 되었어요!",
+            state: .custom(
+              .init(
+                backgroundColor: .black,
+                font: .pretendard(size: 14),
+                icon: nil,
+                textAlignment: .center,
+                width: .screenPercentage(0.8)
+              )
+            ),
+            sender: self
+          ).show()
         case .reported:
-          Loaf("신고가 접수 되었어요!", state: .custom(.init(
-            backgroundColor: .black,
-            font: .pretendard(size: 14),
-            icon: nil,
-            textAlignment: .center)), sender: self).show()
+          Loaf(
+            "신고가 접수 되었어요!",
+            state: .custom(
+              .init(
+                backgroundColor: .black,
+                font: .pretendard(size: 14),
+                icon: nil,
+                textAlignment: .center
+              )
+            ),
+            sender: self
+          ).show()
         case .error(let message):
-          Loaf("실패: \(message)", state: .custom(.init(
-            backgroundColor: .black,
-            font: .pretendard(size: 14),
-            icon: nil,
-            textAlignment: .center)), sender: self).show()
+          Loaf(
+            "실패: \(message)",
+            state: .custom(
+              .init(
+                backgroundColor: .black,
+                font: .pretendard(size: 14),
+                icon: nil,
+                textAlignment: .center
+              )
+            ),
+            sender: self
+          ).show()
         case .blocked:
           break
         }

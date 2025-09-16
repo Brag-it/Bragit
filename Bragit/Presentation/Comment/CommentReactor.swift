@@ -8,12 +8,12 @@
 import Foundation
 
 import Dependencies
+import Loaf
 import ReactorKit
 import RxFlow
 import RxRelay
 import RxSwift
 import Supabase
-import Loaf
 
 final class CommentReactor: Reactor, Stepper {
   let initialState: State
@@ -102,7 +102,8 @@ final class CommentReactor: Reactor, Stepper {
       return mutateReportComment(commentId: commentId)
     case .didTapUserProfile(let userId):
       guard userId.isEmpty == false else { return .empty() }
-      return userManager
+      return
+        userManager
         .rxfetchUsersBy(ids: [userId])
         .compactMap { $0.first }
         .do { [weak self] user in
@@ -193,7 +194,7 @@ final class CommentReactor: Reactor, Stepper {
 
     // 소유자 검증 (대소문자/공백 무시)
     if let ownerIdRaw = target.commenterId,
-       let currentUserIdRaw = storedUserId {
+      let currentUserIdRaw = storedUserId {
       let ownerId = ownerIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       let currentUserId = currentUserIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       if ownerId != currentUserId {

@@ -5,14 +5,14 @@
 //  Created by luca on 9/14/25.
 //
 
-import UIKit
 import RxSwift
 import SnapKit
 import Then
+import UIKit
 
 // TODO: 재전송 버튼, 메일에서 버튼 누르면 바로 Bragit의 MailInfoView로 갈 수 있도록
 
-final class MailConfirmViewController: UIViewController {
+final class MailConfirmViewController: UIViewController, UITextFieldDelegate {
   private let disposeBag = DisposeBag()
 
   private let headerView = UIView()
@@ -39,8 +39,7 @@ final class MailConfirmViewController: UIViewController {
     $0.textColor = .grayScale700
   }
 
-  let codeTextField = UITextField().then {
-    $0.textAlignment = .center
+  let codeTextField = CenteredCodeTextField().then {
     $0.layer.borderColor = UIColor.grayScale100.cgColor
     $0.layer.borderWidth = 1
     $0.layer.cornerRadius = 14
@@ -55,6 +54,8 @@ final class MailConfirmViewController: UIViewController {
     $0.autocorrectionType = .no
     $0.isSecureTextEntry = false
     $0.textContentType = .oneTimeCode
+    $0.fixedCharacterCount = 6
+    $0.horizontalPadding = 8
   }
 
   let codeCheckIcon = UIImageView().then {
@@ -94,6 +95,9 @@ final class MailConfirmViewController: UIViewController {
     super.viewDidLoad()
     view.backgroundColor = .white
     headerConfigureUI()
+
+    codeTextField.delegate = self
+    codeTextField.addTarget(self, action: #selector(codeEditingChanged), for: .editingChanged)
   }
 
   private func headerConfigureUI() {
@@ -149,6 +153,7 @@ final class MailConfirmViewController: UIViewController {
     codeTextField.snp.makeConstraints {
       $0.top.equalTo(descriptionLabel.snp.bottom).offset(40)
       $0.leading.trailing.equalToSuperview().inset(20)
+      $0.height.equalTo(64)
     }
 
     codeCheckStack.snp.makeConstraints {
@@ -166,5 +171,36 @@ final class MailConfirmViewController: UIViewController {
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
     }
+  }
+
+  @objc private func codeEditingChanged() {
+    // Allow only digits and limit to 6 characters
+    let digits = codeTextField.text?.filter { $0.isNumber } ?? ""
+    if digits != codeTextField.text {
+      codeTextField.text = String(digits.prefix(6))
+    } else if digits.count > 6 {
+      codeTextField.text = String(digits.prefix(6))
+    }
+
+    let isComplete = (codeTextField.text?.count ?? 0) == 6
+    nextButton.isEnabled = isComplete
+  }
+
+  // Also enforce the limit at the delegate level for paste operations
+  func textField(
+    _ textField: UITextField,
+    shouldChangeCharactersIn range: NSRange,
+    replacementString string: String
+  ) -> Bool {
+    // Build the prospective text
+    let current = textField.text ?? ""
+    guard let range = Range(range, in: current) else { return true }
+    let updated = current.replacingCharacters(in: range, with: string)
+    // Keep only digits and cap at 6
+    let filtered = updated.filter { $0.isNumber }
+    if filtered.count > 6 { return false }
+    // If user typed non-digits, prevent the change
+    if updated != filtered { return false }
+    return true
   }
 }

@@ -208,11 +208,10 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .share(replay: 1)
 
-    let isValid =
-      emailText
-      .map { [weak self] in self?.isValidEmail($0) == true }
-      .distinctUntilChanged()
-      .share(replay: 1)
+    // let isValid = emailText
+    //   .map { [weak self] in self?.isValidEmail($0) == true }
+    //   .distinctUntilChanged()
+    //   .share(replay: 1)
 
     emailText
       .distinctUntilChanged()
@@ -359,4 +358,3 @@ extension MailOnlyViewController {
       .disposed(by: disposeBag)
   }
 }
-
