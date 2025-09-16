@@ -5,15 +5,15 @@
 //  Created by luca on 9/14/25.
 //
 
+import Dependencies
+import RxCocoa
+import RxFlow
+import RxRelay
 import RxSwift
 import SnapKit
+import Supabase
 import Then
 import UIKit
-import RxCocoa
-import RxRelay
-import RxFlow
-import Dependencies
-import Supabase
 
 // TODO: 재전송 버튼, 메일에서 버튼 누르면 바로 Bragit의 MailInfoView로 갈 수 있도록
 
@@ -89,7 +89,7 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
   }
 
   let nextButton = UIButton(type: .system).then {
-    $0.setTitle("인증 메일 보내기", for: .normal)
+    $0.setTitle("확인", for: .normal)
     $0.setTitleColor(.grayScale900, for: .normal)
     $0.titleLabel?.font = .pretendard(size: 16, weight: .medium)
     $0.layer.cornerRadius = 12
@@ -149,6 +149,20 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
             }
           }
         }
+      }
+      .disposed(by: disposeBag)
+
+    helpButton.rx.tap
+      .bind(with: self) { owner, _ in
+        ConfirmPopupView.present(
+          on: owner.view,
+          title: "인증 메일을 찾을 수 없나요?",
+          message: "인증 메일을 찾을 수 없다면 사용 중인 메일 서비스의 스팸함을 확인해 주세요. 확인 후 메일이 오지 않았다면 재전송을 눌러 주세요",
+          leftTitle: "재전송",
+          rightTitle: "닫기",
+          leftAction: {},
+          rightAction: {}
+        )
       }
       .disposed(by: disposeBag)
   }
@@ -236,7 +250,7 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
 
     helpButton.snp.makeConstraints {
       $0.top.equalTo(codeCheckStack.snp.bottom).offset(18)
-      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.leading.equalToSuperview().inset(20)
     }
 
     nextButton.snp.makeConstraints {

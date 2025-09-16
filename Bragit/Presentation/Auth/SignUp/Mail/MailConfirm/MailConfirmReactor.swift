@@ -61,7 +61,6 @@ final class MailConfirmReactor: Reactor, Stepper {
       return .empty()
 
     case .tapBack:
-      // 뒤로가기 네비게이션: Flow로 pop 전달
       steps.accept(AppStep.pop)
       return .empty()
     }
