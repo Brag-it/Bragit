@@ -98,6 +98,7 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
     super.viewDidLoad()
     view.backgroundColor = .white
     headerConfigureUI()
+    setupKeyboardDismiss()
     mailTextField.delegate = self
     bindActions()
     if reactor == nil { reactor = MailOnlyReactor() }
@@ -179,6 +180,18 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
     }
   }
 
+  private func setupKeyboardDismiss() {
+    let tap = UITapGestureRecognizer()
+    tap.cancelsTouchesInView = false
+    view.addGestureRecognizer(tap)
+
+    tap.rx.event
+      .bind(with: self) { owner, _ in
+        owner.view.endEditing(true)
+      }
+      .disposed(by: disposeBag)
+  }
+
   private func bindActions() {
     // Enable next button only when email is valid (live as user types)
     let emailText = mailTextField.rx.text.orEmpty
@@ -243,6 +256,7 @@ extension MailOnlyViewController {
         }
       )
       .bind(with: self) { owner, email in
+        owner.view.endEditing(true)
         guard owner.isValidEmail(email) else { return }
         reactor.action.onNext(.tapNext(email: email))
       }
@@ -267,3 +281,4 @@ extension MailOnlyViewController {
       .disposed(by: disposeBag)
   }
 }
+
