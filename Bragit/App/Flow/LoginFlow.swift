@@ -24,10 +24,10 @@ final class LoginFlow: Flow, Stepper {
       return showSignupApple(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
     case .signupMailInput:
       return showMailInput()
-    case .signupMail:
-      return showSignupMail()
     case .signupMailConfirm:
       return showMailConfirm()
+      case .signupMail:
+        return showSignupMail()
     case .signTermsConset:
       return showTermsConsent()
     case .signupPhoto:

@@ -9,11 +9,18 @@ import RxSwift
 import SnapKit
 import Then
 import UIKit
+import RxCocoa
+import RxRelay
+import RxFlow
+import Dependencies
+import Supabase
 
 // TODO: 재전송 버튼, 메일에서 버튼 누르면 바로 Bragit의 MailInfoView로 갈 수 있도록
 
-final class MailConfirmViewController: UIViewController, UITextFieldDelegate {
+final class MailConfirmViewController: UIViewController, UITextFieldDelegate, Stepper {
   private let disposeBag = DisposeBag()
+  let steps = PublishRelay<Step>()
+  @Dependency(\.supabase) private var supabase
 
   private let headerView = UIView()
   private let backButton = UIButton(type: .system).then {
@@ -39,10 +46,11 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate {
     $0.textColor = .grayScale700
   }
 
-  let codeTextField = CenteredCodeTextField().then {
+  let codeTextField = UITextField().then {
     $0.layer.borderColor = UIColor.grayScale100.cgColor
     $0.layer.borderWidth = 1
     $0.layer.cornerRadius = 14
+    $0.textAlignment = .center
     $0.isEnabled = true
     $0.placeholder = "000000"
     $0.clearButtonMode = .never
@@ -54,8 +62,6 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate {
     $0.autocorrectionType = .no
     $0.isSecureTextEntry = false
     $0.textContentType = .oneTimeCode
-    $0.fixedCharacterCount = 6
-    $0.horizontalPadding = 8
   }
 
   let codeCheckIcon = UIImageView().then {
@@ -98,6 +104,73 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate {
 
     codeTextField.delegate = self
     codeTextField.addTarget(self, action: #selector(codeEditingChanged), for: .editingChanged)
+    bindActions()
+  }
+
+  private func bindActions() {
+    // Enable/disable button alpha to reflect state
+    nextButton.rx.observe(Bool.self, "enabled")
+      .compactMap { $0 }
+      .bind(with: self) { owner, isEnabled in
+        owner.nextButton.alpha = isEnabled ? 1.0 : 0.5
+      }
+      .disposed(by: disposeBag)
+
+    nextButton.rx.tap
+      .bind(with: self) { owner, _ in
+        let code = owner.codeTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard code.count == 6 else { return }
+        guard let email = KeychainMailStore.load(), !email.isEmpty else {
+          owner.updateCodeValidation(success: false, message: "이메일 정보를 불러올 수 없어요")
+          return
+        }
+
+        // Show loading state while verifying
+        owner.setLoadingState()
+        owner.view.isUserInteractionEnabled = false
+        owner.nextButton.alpha = 0.5
+
+        Task {
+          defer {
+            DispatchQueue.main.async {
+              owner.view.isUserInteractionEnabled = true
+              owner.nextButton.alpha = owner.nextButton.isEnabled ? 1.0 : 0.5
+            }
+          }
+          do {
+            try await owner.supabase.auth.verifyOTP(email: email, token: code, type: .email)
+            await MainActor.run {
+              print("[MailConfirm] 인증 완료")
+              owner.steps.accept(AppStep.signupMail)
+            }
+          } catch {
+            await MainActor.run {
+              owner.setFailureState()
+            }
+          }
+        }
+      }
+      .disposed(by: disposeBag)
+  }
+
+  private func updateCodeValidation(success: Bool, message: String) {
+    codeCheckLabel.text = message
+    codeCheckLabel.textColor = success ? .systemSafe : .systemDanger
+    codeTextField.layer.borderColor = (success ? UIColor.systemSafe : UIColor.systemDanger).cgColor
+  }
+
+  private func setLoadingState() {
+    codeCheckIcon.image = .loading
+    codeCheckIcon.tintColor = .systemWarning
+    codeCheckLabel.text = "코드 확인 중..."
+    codeCheckLabel.textColor = .systemWarning
+  }
+
+  private func setFailureState() {
+    codeCheckIcon.image = .reject
+    codeCheckIcon.tintColor = .systemDanger
+    codeCheckLabel.text = "코드가 불일치합니다"
+    codeCheckLabel.textColor = .systemDanger
   }
 
   private func headerConfigureUI() {
@@ -184,22 +257,19 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate {
 
     let isComplete = (codeTextField.text?.count ?? 0) == 6
     nextButton.isEnabled = isComplete
+    nextButton.alpha = isComplete ? 1.0 : 0.5
   }
 
-  // Also enforce the limit at the delegate level for paste operations
   func textField(
     _ textField: UITextField,
     shouldChangeCharactersIn range: NSRange,
     replacementString string: String
   ) -> Bool {
-    // Build the prospective text
     let current = textField.text ?? ""
     guard let range = Range(range, in: current) else { return true }
     let updated = current.replacingCharacters(in: range, with: string)
-    // Keep only digits and cap at 6
     let filtered = updated.filter { $0.isNumber }
     if filtered.count > 6 { return false }
-    // If user typed non-digits, prevent the change
     if updated != filtered { return false }
     return true
   }
