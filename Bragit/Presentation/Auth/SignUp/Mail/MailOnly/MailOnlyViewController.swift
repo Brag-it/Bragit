@@ -216,14 +216,11 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
       .distinctUntilChanged()
       .share(replay: 1)
 
-    isValid
-      .bind(to: nextButton.rx.isEnabled)
-      .disposed(by: disposeBag)
-
-    isValid
-      .map { $0 ? 1.0 : 0.5 }
-      .bind(with: self) { owner, alpha in
-        owner.nextButton.alpha = alpha
+    emailText
+      .distinctUntilChanged()
+      .bind(with: self) { owner, _ in
+        owner.nextButton.isEnabled = false
+        owner.nextButton.alpha = 0.5
       }
       .disposed(by: disposeBag)
 
@@ -251,7 +248,8 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
                 options: options
               )
               print("[check-auth-user] exists=\(resp.exists), status=\(resp.status)")
-              if resp.status == "confirmed" {
+              switch resp.status {
+              case "confirmed":
                 await MainActor.run {
                   owner.mailCheckLabel.text = "이미 가입된 이메일입니다"
                   owner.mailCheckLabel.textColor = .systemDanger
@@ -260,6 +258,35 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
                   owner.nextButton.isEnabled = false
                   owner.nextButton.alpha = 0.5
                 }
+              case "not_found":
+                await MainActor.run {
+                  owner.mailCheckLabel.text = "사용 가능한 이메일입니다"
+                  owner.mailCheckLabel.textColor = .systemSafe
+                  owner.mailCheckIcon.image = .accept
+                  owner.mailCheckIcon.tintColor = .systemSafe
+                  owner.nextButton.isEnabled = true
+                  owner.nextButton.alpha = 1.0
+                }
+              case "waiting":
+                await MainActor.run {
+                  owner.mailCheckLabel.text = "사용 가능한 이메일입니다"
+                  owner.mailCheckLabel.textColor = .systemSafe
+                  owner.mailCheckIcon.image = .accept
+                  owner.mailCheckIcon.tintColor = .systemSafe
+                  owner.nextButton.isEnabled = true
+                  owner.nextButton.alpha = 1.0
+                }
+              case "banned":
+                await MainActor.run {
+                  owner.mailCheckLabel.text = "사용이 제한된 이메일입니다"
+                  owner.mailCheckLabel.textColor = .systemDanger
+                  owner.mailCheckIcon.image = .reject
+                  owner.mailCheckIcon.tintColor = .systemDanger
+                  owner.nextButton.isEnabled = false
+                  owner.nextButton.alpha = 0.5
+                }
+              default:
+                break
               }
             } catch {
               if let fnError = error as? FunctionsError {
@@ -280,6 +307,8 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
           owner.mailCheckLabel.textColor = .systemDanger
           owner.mailCheckIcon.image = .reject
           owner.mailCheckIcon.tintColor = .systemDanger
+          owner.nextButton.isEnabled = false
+          owner.nextButton.alpha = 0.5
         }
       }
       .disposed(by: disposeBag)
