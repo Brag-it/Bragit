@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Functions
 import ReactorKit
 import RxCocoa
 import RxSwift
@@ -16,6 +17,7 @@ import UIKit
 final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View {
   typealias Reactor = MailOnlyReactor
   var disposeBag = DisposeBag()
+  @Dependency(\.supabase) private var supabase
 
   private let headerView = UIView()
   private let backButton = UIButton(type: .system).then {
@@ -89,9 +91,19 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
     $0.backgroundColor = .primary400
   }
 
+  // Edge Function name used to check if an auth user exists by email
+  private let checkAuthUserFunctionName = "check-auth-user"
+
+  private struct CheckAuthUserResponse: Decodable {
+    let exists: Bool
+    let status: String
+  }
+
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
+    nextButton.isEnabled = false
+    nextButton.alpha = 0.5
   }
 
   override func viewDidLoad() {
@@ -193,7 +205,6 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
   }
 
   private func bindActions() {
-    // Enable next button only when email is valid (live as user types)
     let emailText = mailTextField.rx.text.orEmpty
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .share(replay: 1)
@@ -215,15 +226,54 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
       }
       .disposed(by: disposeBag)
 
-    // Validate email format when editing ends and update mailCheckLabel & icon
     mailTextField.rx.controlEvent(.editingDidEnd)
       .withLatestFrom(emailText)
       .bind(with: self) { owner, email in
         if owner.isValidEmail(email) {
-          owner.mailCheckLabel.text = "유효한 메일 형식입니다"
-          owner.mailCheckLabel.textColor = .systemSafe
-          owner.mailCheckIcon.image = .accept
-          owner.mailCheckIcon.tintColor = .systemSafe
+          owner.mailCheckLabel.text = "이메일 확인 중..."
+          owner.mailCheckLabel.textColor = .systemWarning
+          owner.mailCheckIcon.image = .loading
+          owner.mailCheckIcon.tintColor = .systemWarning
+
+          struct CheckEmailPayload: Encodable { let email: String }
+          let payload = CheckEmailPayload(email: email.lowercased())
+          Task {
+            do {
+              let data = try JSONEncoder().encode(payload)
+              let options = FunctionInvokeOptions(
+                method: .post,
+                headers: ["Content-Type": "application/json"],
+                body: data
+              )
+              let resp: CheckAuthUserResponse = try await owner.supabase.functions.invoke(
+                owner.checkAuthUserFunctionName,
+                options: options
+              )
+              print("[check-auth-user] exists=\(resp.exists), status=\(resp.status)")
+              if resp.status == "confirmed" {
+                await MainActor.run {
+                  owner.mailCheckLabel.text = "이미 가입된 이메일입니다"
+                  owner.mailCheckLabel.textColor = .systemDanger
+                  owner.mailCheckIcon.image = .reject
+                  owner.mailCheckIcon.tintColor = .systemDanger
+                  owner.nextButton.isEnabled = false
+                  owner.nextButton.alpha = 0.5
+                }
+              }
+            } catch {
+              if let fnError = error as? FunctionsError {
+                switch fnError {
+                case .httpError(let code, let data):
+                  let bodyText = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+                  print("[check-auth-user] httpError code=\(code), body=\(bodyText)")
+                default:
+                  print("[check-auth-user] functions error: \(fnError)")
+                }
+              } else {
+                print("[check-auth-user] error: \(error)")
+              }
+            }
+          }
         } else {
           owner.mailCheckLabel.text = "유효하지 않은 메일 형식입니다"
           owner.mailCheckLabel.textColor = .systemDanger
