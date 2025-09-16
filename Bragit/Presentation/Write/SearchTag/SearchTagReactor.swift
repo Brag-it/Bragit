@@ -55,7 +55,17 @@ class SearchTagReactor: Reactor, Stepper {
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .updateSearchText(let text):
-      return .just(.setSearchText(text))
+      let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+      if trimmed.isEmpty {
+        return .concat(
+          .just(.setSearchText("") ),
+          .just(.setPage(0)),
+          .just(.setHasMore(true)),
+          .just(.setSearchResult([]))
+        )
+      } else {
+        return .just(.setSearchText(trimmed))
+      }
 
     case .didTapSearchButton:
       let query = currentState.searchText.trimmingCharacters(in: .whitespacesAndNewlines)

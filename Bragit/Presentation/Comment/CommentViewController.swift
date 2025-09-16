@@ -13,6 +13,7 @@ import RxCocoa
 import RxSwift
 import SnapKit
 import Then
+import Loaf
 
 final class CommentViewController: UIViewController, View {
   typealias Reactor = CommentReactor
@@ -71,7 +72,7 @@ final class CommentViewController: UIViewController, View {
 
   private let bottomBarTapButton = UIButton(type: .custom)
   private var menuTargetIndexPath: IndexPath?
-  private var deleteCommentId: UUID?
+  private var menuTargetCommentId: UUID?
 
   private let bottomSafeAreaBackground = UIView().then {
     $0.backgroundColor = .grayScale50
@@ -143,13 +144,13 @@ final class CommentViewController: UIViewController, View {
     }
 
     self.textContainerLeadingWithLock =
-      textContainer.snp.prepareConstraints {
-        $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
-      }.first
+    textContainer.snp.prepareConstraints {
+      $0.leading.equalTo(self.lockImageView.snp.trailing).offset(10)
+    }.first
     self.textContainerLeadingWithoutLock =
-      textContainer.snp.prepareConstraints {
-        $0.leading.equalTo(bar.snp.leading).offset(12)
-      }.first
+    textContainer.snp.prepareConstraints {
+      $0.leading.equalTo(bar.snp.leading).offset(12)
+    }.first
     self.textContainerLeadingWithoutLock?.activate()
 
     sendImageView.snp.makeConstraints {
@@ -265,8 +266,8 @@ final class CommentViewController: UIViewController, View {
     bindComments(reactor)
     bindMenus()
     bindLoadingAndRefreshing(reactor)
-    bindErrors(reactor)
     bindSendSuccessHandling(reactor)
+    bindToast(reactor)
   }
 
   // MARK: - Binding helpers (split to reduce cyclomatic complexity)
@@ -328,15 +329,22 @@ final class CommentViewController: UIViewController, View {
   }
 
   private func bindDeleteAlerts(_ reactor: CommentReactor) {
+    reportAlert.rightTap
+      .compactMap { [weak self] in self?.menuTargetCommentId }
+      .do { [weak self] _ in self?.menuTargetCommentId = nil }
+      .map { Reactor.Action.reportComment($0) }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     deleteAlert.rightTap
-      .compactMap { [weak self] in self?.deleteCommentId }
-      .do { [weak self] _ in self?.deleteCommentId = nil }
+      .compactMap { [weak self] in self?.menuTargetCommentId }
+      .do { [weak self] _ in self?.menuTargetCommentId = nil }
       .map { Reactor.Action.deleteComment($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
     deleteAlert.leftTap
-      .bind { [weak self] in self?.deleteCommentId = nil }
+      .bind { [weak self] in self?.menuTargetCommentId = nil }
       .disposed(by: disposeBag)
   }
 
@@ -408,11 +416,11 @@ final class CommentViewController: UIViewController, View {
       .bind(with: self) { owner, index in
         guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
         if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
-          targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
-          owner.deleteCommentId = dataSource[targetIndexPath.row].id
+           targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+          owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
           owner.deleteAlert.show(in: owner.view)
         } else {
-          owner.deleteCommentId = nil
+          owner.menuTargetCommentId = nil
         }
       }
       .disposed(by: disposeBag)
@@ -420,8 +428,14 @@ final class CommentViewController: UIViewController, View {
     commentOtherMenu.itemTap
       .compactMap { $0 }
       .bind(with: self) { owner, index in
-        guard index == 0, owner.menuTargetIndexPath != nil else { return }
-        owner.reportAlert.show(in: owner.view)
+        guard index == 0, let targetIndexPath = owner.menuTargetIndexPath else { return }
+        if let dataSource = owner.reactor?.currentState.comments.sorted(by: { $0.date > $1.date }),
+           targetIndexPath.row >= 0, targetIndexPath.row < dataSource.count {
+          owner.menuTargetCommentId = dataSource[targetIndexPath.row].id
+          owner.reportAlert.show(in: owner.view)
+        } else {
+          owner.menuTargetCommentId = nil
+        }
       }
       .disposed(by: disposeBag)
   }
@@ -446,14 +460,36 @@ final class CommentViewController: UIViewController, View {
       .disposed(by: disposeBag)
   }
 
-  private func bindErrors(_ reactor: CommentReactor) {
-    reactor.state
-      .compactMap(\.errorMessage)
+  private func bindToast(_ reactor: CommentReactor) {
+    // 결과에 따른 토스트 표시
+    reactor.pulse(\.$toast)
+      .compactMap { $0 }
       .observe(on: MainScheduler.instance)
-      .bind(with: self) { owner, message in
-        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
-        alert.addAction(.init(title: "확인", style: .default))
-        owner.present(alert, animated: true)
+      .subscribe { [weak self] event in
+        guard let self else { return }
+        switch event.purpose {
+        case .deleted:
+          Loaf("삭제 되었어요!", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center,
+            width: .screenPercentage(0.8))), sender: self).show()
+        case .reported:
+          Loaf("신고가 접수 되었어요!", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center)), sender: self).show()
+        case .error(let message):
+          Loaf("실패: \(message)", state: .custom(.init(
+            backgroundColor: .black,
+            font: .pretendard(size: 14),
+            icon: nil,
+            textAlignment: .center)), sender: self).show()
+        case .blocked:
+          break
+        }
       }
       .disposed(by: disposeBag)
   }
@@ -702,4 +738,3 @@ extension CommentViewController: UIGestureRecognizerDelegate {
     return true
   }
 }
-

@@ -10,9 +10,9 @@
 // 3. UserChecker.exists(uid) -> true면 메인, false면 회원가입 각각 state 방출
 // 아 리액트 어렵다
 
+import CryptoKit
 import Foundation
 
-import CryptoKit
 import Dependencies
 import Functions
 import ReactorKit
@@ -76,7 +76,7 @@ final class MainLoginReactor: Reactor, Stepper {
             return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
           },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil))
+        .just(.setNonce(raw: nil, hashed: nil)),
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
@@ -128,7 +128,8 @@ final class MainLoginReactor: Reactor, Stepper {
           // 1) Apple이 준 이메일이 있고, Supabase Auth의 기본 email이 비어 있다면
           //    user_metadata에 이메일 저장
           if session.user.email == nil || session.user.email?.isEmpty == true,
-            let mail, !mail.isEmpty {
+            let mail, !mail.isEmpty
+          {
             do {
               try await self.supabase.auth.update(
                 user: UserAttributes(
@@ -175,8 +176,8 @@ final class MainLoginReactor: Reactor, Stepper {
             }
             // 기존 사용자: nowUser 저장 후 홈으로
             UserDefaults.standard.set(userId.uuidString, forKey: LocalStorageCase.nowUser.rawValue)
-            await MainActor.run { self.steps.accept(AppStep.home)
-
+            await MainActor.run {
+              self.steps.accept(AppStep.home)
               setBlockUsers()
               setFollowUsers()
             }

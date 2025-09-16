@@ -46,6 +46,7 @@ class LicenseReactor: Reactor, Stepper {
     case .viewDidLoad:
       let items: [LicenseItem] = [
         .init(name: "Kingfisher", licenseType: "MIT", bundleFileName: "LICENSE_Kingfisher"),
+        .init(name: "Loaf", licenseType: "MIT", bundleFileName: "LICENSE_Loaf"),
         .init(name: "LookinServer", licenseType: "MIT", bundleFileName: "LICENSE_LookinServer"),
         .init(name: "Lottie", licenseType: "Apache-2.0", bundleFileName: "LICENSE_Lottie"),
         .init(name: "Pretendard", licenseType: "OFL-1.1", bundleFileName: "LICENSE_Pretendard"),

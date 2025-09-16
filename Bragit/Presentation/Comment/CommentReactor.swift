@@ -13,6 +13,7 @@ import RxFlow
 import RxRelay
 import RxSwift
 import Supabase
+import Loaf
 
 final class CommentReactor: Reactor, Stepper {
   let initialState: State
@@ -37,18 +38,18 @@ final class CommentReactor: Reactor, Stepper {
   enum Mutation {
     case setLoading(Bool)
     case setComments([CommentRow])
-    case setError(String?)
     case setCommentSent(Bool)
     case setCurrentUserId(String?)
+    case setToast(ToastEvent?)
   }
 
   struct State {
     var isLoading: Bool = false
     var comments: [CommentRow] = []
-    var errorMessage: String?
     let viewer: Bool
     var commentSent: Bool = false
     var currentUserId: String?
+    @Pulse var toast: ToastEvent?
   }
 
   // MARK: Model for decoding Comment rows
@@ -116,15 +117,14 @@ final class CommentReactor: Reactor, Stepper {
     switch mutation {
     case .setLoading(let loading):
       newState.isLoading = loading
-      if loading { newState.errorMessage = nil }
     case .setComments(let rows):
       newState.comments = rows
-    case .setError(let message):
-      newState.errorMessage = message
     case .setCommentSent(let sent):
       newState.commentSent = sent
     case .setCurrentUserId(let id):
       newState.currentUserId = id
+    case .setToast(let event):
+      newState.toast = event
     }
     return newState
   }
@@ -148,7 +148,7 @@ final class CommentReactor: Reactor, Stepper {
       .map { Mutation.setComments($0) as Mutation }
       .catch { error in
         let msg = (error as NSError).localizedDescription
-        return .just(.setError(msg))
+        return .just(.setToast(ToastEvent(purpose: .error(msg))))
       }
     let end = Observable.just(Mutation.setLoading(false))
     return .concat([start, setUser, request, end])
@@ -173,7 +173,7 @@ final class CommentReactor: Reactor, Stepper {
           .map { Mutation.setComments($0) }
           .catch { error in
             let msg = (error as NSError).localizedDescription
-            return .just(.setError(msg))
+            return .just(.setToast(ToastEvent(purpose: .error(msg))))
           }
       }
     let setSent = Observable.just(Mutation.setCommentSent(true))
@@ -188,35 +188,39 @@ final class CommentReactor: Reactor, Stepper {
     guard currentState.isLoading == false else { return .empty() }
 
     guard let target = currentState.comments.first(where: { $0.id == commentId }) else {
-      return .just(.setError("[Delete Comment] 대상 댓글을 찾을 수 없습니다"))
+      return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 대상 댓글을 찾을 수 없습니다"))))
     }
 
     // 소유자 검증 (대소문자/공백 무시)
     if let ownerIdRaw = target.commenterId,
-      let currentUserIdRaw = storedUserId {
+       let currentUserIdRaw = storedUserId {
       let ownerId = ownerIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       let currentUserId = currentUserIdRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       if ownerId != currentUserId {
-        return .just(.setError("[Delete Comment] 삭제 권한 없음"))
+        return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 삭제 권한 없음"))))
       }
     } else {
-      return .just(.setError("[Delete Comment] 사용자 정보 없음"))
+      return .just(.setToast(ToastEvent(purpose: .error("[Delete Comment] 사용자 정보 없음"))))
     }
 
     let start = Observable.just(Mutation.setLoading(true))
-    let delete = rxDeleteComment(commentId: target.id)
-    let refresh = rxFetchComments(postId: postId)
-      .map { Mutation.setComments($0) as Mutation }
-      .catch { error in
-        let message = (error as NSError).localizedDescription
-        return .just(.setError(message))
+    let deleteAction = rxDeleteComment(commentId: target.id)
+      .flatMap { [weak self] _ -> Observable<Mutation> in
+        guard let self = self else { return .empty() }
+        return self.rxFetchComments(postId: self.postId)
+          .flatMap { comments in
+            Observable.from([
+              Mutation.setComments(comments),
+              Mutation.setToast(ToastEvent(purpose: .deleted))
+            ])
+          }
       }
+      .catch { .just(Mutation.setToast(ToastEvent(purpose: .error($0.localizedDescription)))) }
     let end = Observable.just(Mutation.setLoading(false))
 
     return .concat([
       start,
-      delete.map { _ in Mutation.setError(nil) },
-      refresh,
+      deleteAction,
       end
     ])
   }
@@ -226,11 +230,10 @@ final class CommentReactor: Reactor, Stepper {
 
     let start = Observable.just(Mutation.setLoading(true))
     let report = rxReportComment(commentId: commentId)
-      .map { _ in Mutation.setError(nil) as Mutation }
-      .catch { error in
-        let message = (error as NSError).localizedDescription
-        return .just(Mutation.setError(message))
+      .flatMap { _ -> Observable<Mutation> in
+        return .just(Mutation.setToast(ToastEvent(purpose: .reported)))
       }
+      .catch { .just(Mutation.setToast(ToastEvent(purpose: .error($0.localizedDescription)))) }
     let end = Observable.just(Mutation.setLoading(false))
 
     return .concat([start, report, end])

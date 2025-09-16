@@ -65,15 +65,18 @@ final class EditorView: UIView {
   }
 
   func insertImage(image: UIImage) {
-    // 이미지 첨부(Attachment) 객체를 생성
-    let attachment = NSTextAttachment()
-    attachment.image = image
+    // 본문 이미지는 1280
+    let maxDimension: CGFloat = 1280
+    let resizedImage = image.resized(in: CGSize(width: maxDimension, height: maxDimension)) ?? image
 
-    // 이미지의 크기를 에디터의 폭에 맞게 조절
+    let attachment = NSTextAttachment()
+    attachment.image = resizedImage
+
+    // 에디터 폭에 맞게 크기 조절
     let screenWidth = self.bounds.width
-    let padding: CGFloat = 16 // 에디터의 좌우 여백을 고려
+    let padding: CGFloat = 16
     let imageWidth = screenWidth - padding
-    let aspectRatio = image.size.height / image.size.width
+    let aspectRatio = resizedImage.size.height / resizedImage.size.width
     let imageHeight = imageWidth * aspectRatio
     attachment.bounds = CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight)
 

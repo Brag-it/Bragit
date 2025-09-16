@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E703E0C12E741F9800AE6217 /* Loaf in Frameworks */ = {isa = PBXBuildFile; productRef = E703E0C02E741F9800AE6217 /* Loaf */; };
 		E70E4F652E55D95D00CE935E /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F642E55D95D00CE935E /* Then */; };
 		E70E4F682E55D96B00CE935E /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F672E55D96B00CE935E /* SnapKit */; };
 		E70E4F6B2E55D99E00CE935E /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F6A2E55D99E00CE935E /* Auth */; };
@@ -45,16 +46,28 @@
 			membershipExceptions = (
 				Resources/Config.xcconfig,
 				Resources/Info.plist,
+				Resources/License/LICENSE_Loaf.txt,
 			);
 			target = E70E4E872E55D60D00CE935E /* Bragit */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		E703E0C42E741FCE00AE6217 /* Exceptions for "Bragit" folder in "Compile Sources" phase from "Bragit" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = E70E4E842E55D60D00CE935E /* Sources */;
+			membershipExceptions = (
+				Resources/License/LICENSE_Loaf.txt,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E70E4E8A2E55D60D00CE935E /* Bragit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E70E4EB02E55D60E00CE935E /* Exceptions for "Bragit" folder in "Bragit" target */,
+				E703E0C42E741FCE00AE6217 /* Exceptions for "Bragit" folder in "Compile Sources" phase from "Bragit" target */,
 			);
 			path = Bragit;
 			sourceTree = "<group>";
@@ -77,6 +90,7 @@
 				E70E4F6F2E55D99E00CE935E /* Supabase in Frameworks */,
 				E70E4F742E55D9CC00CE935E /* RxRelay in Frameworks */,
 				E70E4F6D2E55D99E00CE935E /* Storage in Frameworks */,
+				E703E0C12E741F9800AE6217 /* Loaf in Frameworks */,
 				E746A9292E6A751C00F285E7 /* Lottie in Frameworks */,
 				E70E4F792E55D9E400CE935E /* ReactorKit in Frameworks */,
 				E70E4F652E55D95D00CE935E /* Then in Frameworks */,
@@ -153,6 +167,7 @@
 				E70E4F872E55DAEE00CE935E /* LookinServer */,
 				E75DA8F92E616AD700C324D3 /* RichTextKit */,
 				E746A9282E6A751C00F285E7 /* Lottie */,
+				E703E0C02E741F9800AE6217 /* Loaf */,
 			);
 			productName = Bragit;
 			productReference = E70E4E882E55D60D00CE935E /* Bragit.app */;
@@ -221,6 +236,7 @@
 				E70E4F862E55DAEE00CE935E /* XCRemoteSwiftPackageReference "LookinServer" */,
 				E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */,
 				E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */,
+				E703E0BF2E741F9800AE6217 /* XCRemoteSwiftPackageReference "Loaf" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E70E4E892E55D60D00CE935E /* Products */;
@@ -327,7 +343,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.Bragit.Bragit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Bragit.develop;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = bragit.Bragit;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -574,6 +590,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		E703E0BF2E741F9800AE6217 /* XCRemoteSwiftPackageReference "Loaf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/schmidyy/Loaf.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.0;
+			};
+		};
 		E70E4F632E55D95D00CE935E /* XCRemoteSwiftPackageReference "Then" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/devxoul/Then.git";
@@ -665,6 +689,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E703E0C02E741F9800AE6217 /* Loaf */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E703E0BF2E741F9800AE6217 /* XCRemoteSwiftPackageReference "Loaf" */;
+			productName = Loaf;
+		};
 		E70E4F642E55D95D00CE935E /* Then */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E70E4F632E55D95D00CE935E /* XCRemoteSwiftPackageReference "Then" */;

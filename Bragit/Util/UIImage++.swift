@@ -7,28 +7,13 @@
 import UIKit
 
 extension UIImage {
-  // Post 저장용으로 리사이즈 & 압축 → Data 반환
-  func compress(for type: PostImageType) -> Data? {
-    let (maxDimension, quality) = type.config
-
-    let originalSize = size
-    let longestSide = max(originalSize.width, originalSize.height)
-
-    // 이미 충분히 작으면 리사이즈 생략
-    let scale = longestSide > maxDimension ? (maxDimension / longestSide) : 1.0
-    let targetSize = CGSize(width: originalSize.width * scale, height: originalSize.height * scale)
-
-    // CoreGraphics 기반 리사이즈
-    UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0) // 배경색 투명설정
-    defer { UIGraphicsEndImageContext() }
-    draw(in: CGRect(origin: .zero, size: targetSize))
-    let resized = UIGraphicsGetImageFromCurrentImageContext()
-
-    // JPEG 압축
-    return resized?.jpegData(compressionQuality: quality)
+  // 특정 크기로 이미지 리사이즈 (비율 유지)
+  func resized(in boundsSize: CGSize) -> UIImage? {
+     let ratio = min(boundsSize.width / size.width, boundsSize.height / size.height)
+     return resized(to: CGSize(width: size.width * ratio, height: size.height * ratio))
   }
 
-  // 특정 크기로 이미지 리사이즈
+  // 특정 크기로 이미지 리사이즈 (강제)
   func resized(to size: CGSize) -> UIImage {
     return UIGraphicsImageRenderer(size: size).image { _ in
       draw(in: CGRect(origin: .zero, size: size))

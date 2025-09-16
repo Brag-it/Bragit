@@ -127,6 +127,9 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
       titleLabel.text = "추천 태그"
       scrollView.isHidden = false
       tagStackView.isHidden = false
+      scrollView.snp.updateConstraints {
+        $0.height.equalTo(42).priority(999)
+      }
       makeTags(tags: tags, selectedTag: selectedTag)
     case .tag(let tags):
       scrollView.isHidden = false
@@ -228,10 +231,15 @@ final class FavoriteSectionHeaderView: UICollectionReusableView {
 
       let profileButton = UIButton().then {
         $0.kf.setImage(with: URL(string: user.profile ?? ""), for: .normal, placeholder: UIImage.profilePerson)
-        $0.frame.size = CGSize(width: 60, height: 60)
         $0.layer.cornerRadius = 30
         $0.layer.masksToBounds = true
-        $0.contentMode = .scaleAspectFill
+        $0.imageView?.contentMode = .scaleAspectFill
+        $0.contentHorizontalAlignment = .fill
+        $0.contentVerticalAlignment = .fill
+      }
+
+      profileButton.snp.makeConstraints {
+        $0.width.height.equalTo(60)
       }
 
       profileButton.rx.tap
