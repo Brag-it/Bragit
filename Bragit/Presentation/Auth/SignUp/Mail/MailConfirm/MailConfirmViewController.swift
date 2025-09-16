@@ -7,10 +7,12 @@
 
 import UIKit
 import RxSwift
+import SnapKit
+import Then
 
 // TODO: 재전송 버튼, 메일에서 버튼 누르면 바로 Bragit의 MailInfoView로 갈 수 있도록
 
-final class MailConfirmViewController: UINavigationController {
+final class MailConfirmViewController: UIViewController {
   private let headerView = UIView()
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.back, for: .normal)
@@ -27,6 +29,7 @@ final class MailConfirmViewController: UINavigationController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    view.backgroundColor = .white
     headerConfigureUI()
   }
 
