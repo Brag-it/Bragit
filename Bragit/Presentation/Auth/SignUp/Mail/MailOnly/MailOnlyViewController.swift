@@ -5,6 +5,8 @@
 //  Created by luca on 9/15/25.
 //
 
+import UIKit
+
 import Dependencies
 import Functions
 import ReactorKit
@@ -12,7 +14,6 @@ import RxCocoa
 import RxSwift
 import Supabase
 import Then
-import UIKit
 
 final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View {
   typealias Reactor = MailOnlyReactor
