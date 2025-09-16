@@ -84,7 +84,7 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
   }
 
   let nextButton = UIButton(type: .system).then {
-    $0.setTitle("인증 메일 보내기", for: .normal)
+    $0.setTitle("인증 코드 보내기", for: .normal)
     $0.setTitleColor(.grayScale900, for: .normal)
     $0.titleLabel?.font = .pretendard(size: 16, weight: .medium)
     $0.layer.cornerRadius = 12
@@ -155,8 +155,6 @@ final class MailOnlyViewController: UIViewController, UITextFieldDelegate, View 
     view.addSubview(mailTextField)
     view.addSubview(mailCheckStack)
     view.addSubview(nextButton)
-
-    nextButton.alpha = 0.5
 
     [mailCheckIcon, mailCheckLabel].forEach { mailCheckStack.addArrangedSubview($0) }
 
