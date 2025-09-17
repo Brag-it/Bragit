@@ -91,8 +91,7 @@ final class ConfirmPopupView: UIView {
 
     containerView.snp.makeConstraints {
       $0.center.equalToSuperview()
-      $0.height.equalTo(280)
-      $0.width.equalTo(205)
+      $0.width.equalTo(280)
       // $0.leading.greaterThanOrEqualToSuperview().offset(24)
       // $0.trailing.lessThanOrEqualToSuperview().inset(24)
     }
