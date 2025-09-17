@@ -17,6 +17,12 @@ final class SignupMailInfoViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let rootView = SignupMailInfoView()
 
+  // Validation state
+  private var mailValid = false
+  private var passwordValid = false
+  private var confirmMatched = false
+  private var nicknameValid = false
+
   override func loadView() {
     self.view = rootView
   }
@@ -38,6 +44,19 @@ final class SignupMailInfoViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
+    bindValidation()
+  }
+
+  private func updateNextButton() {
+    let enabled = mailValid && passwordValid && confirmMatched && nicknameValid
+    rootView.setNextEnabled(enabled)
+  }
+
+  private func bindValidation() {
+    rootView.mailTextField.addTarget(self, action: #selector(onMailEditingEnd), for: .editingDidEnd)
+    rootView.pwTextField.addTarget(self, action: #selector(onPasswordEditingEnd), for: .editingDidEnd)
+    rootView.rePwTextField.addTarget(self, action: #selector(onConfirmEditingEnd), for: .editingDidEnd)
+    rootView.nicknameTextField.addTarget(self, action: #selector(onNicknameEditingEnd), for: .editingDidEnd)
   }
 
   func bind(reactor: SignupMailInfoReactor) {
@@ -70,5 +89,45 @@ final class SignupMailInfoViewController: UIViewController, View {
         owner.rootView.nicknameTextField.resignFirstResponder()
       }
       .disposed(by: disposeBag)
+
+    bindValidation()
+  }
+
+  @objc private func onMailEditingEnd() {
+    let text = rootView.mailTextField.text ?? ""
+    mailValid = MailInfoValidator.isValidMail(text)
+    rootView.showMailValidity(isValid: mailValid)
+    updateNextButton()
+  }
+
+  @objc private func onPasswordEditingEnd() {
+    let pwdRaw = rootView.pwTextField.text ?? ""
+    let confirmRaw = rootView.rePwTextField.text ?? ""
+    let pwd = pwdRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+    let confirm = confirmRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    passwordValid = MailInfoValidator.isValidPassword(pwd)
+    if !confirm.isEmpty { confirmMatched = (pwd == confirm) }
+
+    rootView.showPasswordValidity(isValid: passwordValid)
+    if !confirm.isEmpty { rootView.showConfirmMatch(isMatched: confirmMatched) }
+    updateNextButton()
+  }
+
+  @objc private func onConfirmEditingEnd() {
+    let pwd = (rootView.pwTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    let confirm = (rootView.rePwTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    confirmMatched = (pwd == confirm) && !pwd.isEmpty
+
+    rootView.showConfirmMatch(isMatched: confirmMatched)
+    updateNextButton()
+  }
+
+  @objc private func onNicknameEditingEnd() {
+    let name = rootView.nicknameTextField.text ?? ""
+    nicknameValid = MailInfoValidator.isValidNickname(name)
+    rootView.showNicknameValidity(isValid: nicknameValid)
+    updateNextButton()
   }
 }
+

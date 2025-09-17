@@ -200,6 +200,40 @@ final class SignupMailInfoView: UIView {
     $0.backgroundColor = .primary400
   }
 
+  // MARK: - Validation UI API
+  func showMailValidity(isValid: Bool) {
+    mailCheckIcon.isHidden = false
+    mailCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
+    mailCheckLabel.text = isValid ? "사용 가능한 이메일입니다" : "사용 불가한 이메일입니다"
+    mailCheckLabel.textColor = isValid ? .systemSafe : .systemDanger
+  }
+
+  func showPasswordValidity(isValid: Bool) {
+    pwCheckIcon.isHidden = false
+    pwCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
+    pwCheckLabel.text = isValid ? "사용 가능한 비밀번호입니다" : "사용 불가한 비밀번호입니다"
+    pwCheckLabel.textColor = isValid ? .systemSafe : .systemDanger
+  }
+
+  func showConfirmMatch(isMatched: Bool) {
+    rePwCheckIcon.isHidden = false
+    rePwCheckIcon.image = (isMatched ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
+    rePwCheckLabel.text = isMatched ? "비밀번호가 일치합니다" : "비밀번호가 일치하지 않습니다"
+    rePwCheckLabel.textColor = isMatched ? .systemSafe : .systemDanger
+  }
+
+  func showNicknameValidity(isValid: Bool) {
+    nicknameCheckIcon.isHidden = false
+    nicknameCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
+    nicknameCheckLabel.text = isValid ? "사용 가능한 닉네임입니다" : "사용 불가한 닉네임입니다"
+    nicknameCheckLabel.textColor = isValid ? .systemSafe : .systemDanger
+  }
+
+  func setNextEnabled(_ enabled: Bool) {
+    nextButton.isEnabled = enabled
+    nextButton.alpha = enabled ? 1.0 : 0.5
+  }
+
   private var isKeyboardObserving = false
 
   // MARK: - Init
@@ -422,3 +456,4 @@ class InsetTextField: UITextField {
     return bounds.inset(by: textInsets)
   }
 }
+
