@@ -287,6 +287,19 @@ final class MailInfoViewController: UIViewController {
     let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
     tap.cancelsTouchesInView = false
     view.addGestureRecognizer(tap)
+
+    // Prefill email after MailConfirm and lock the field
+    if let confirmedEmail = KeychainMailStore.load(), !confirmedEmail.isEmpty {
+      mailTextField.text = confirmedEmail
+      mailTextField.isEnabled = false
+      mailTextField.isUserInteractionEnabled = false
+      mailTextField.alpha = 0.5
+
+      mailCheckLabel.text = "인증 완료되었습니다"
+      mailCheckLabel.textColor = .systemSafe
+      mailCheckIcon.isHidden = false
+      mailCheckIcon.image = UIImage.accept.withRenderingMode(.alwaysOriginal)
+    }
   }
 
   private func headerConfigureUI() {

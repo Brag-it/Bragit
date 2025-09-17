@@ -22,18 +22,28 @@ final class LoginFlow: Flow, Stepper {
       return showLogin()
     case .signupApple(let initialMail, let refreshToken, let isAppleLogin):
       return showSignupApple(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
-    case .signupMailInput:
-      return showMailInput()
+    case .signupMailInfo:
+      return showSignupMailInfo()
+    case .signupMailTerms:
+      return showSignupMailTerms()
     case .signupMailConfirm:
-      return showMailConfirm()
-      case .signupMail:
-        return showSignupMail()
-    case .signTermsConset:
-      return showTermsConsent()
-    case .signupPhoto:
-      return showSignupPhoto()
-    case .signSelectTag(let profileURL):
-      return showSignSelectTag(profileURL: profileURL)
+      return showSignupMailConfirm()
+    case .signupImageUpload:
+      return showSignupImageUpload()
+    case .signupTagSelect:
+      return showSignupTagSelect()
+    // case .signupMailInput:
+    //   return showMailInput()
+    // case .signupMailConfirm:
+    //   return showMailConfirm()
+    // case .signupMail:
+    //     return showSignupMail()
+    // case .signTermsConset:
+    //   return showTermsConsent()
+    // case .signupPhoto:
+    //   return showSignupPhoto()
+    // case .signSelectTag(let profileURL):
+    //   return showSignSelectTag(profileURL: profileURL)
     case .signInMail:
       return showMailLogin()
     case .home:
@@ -73,89 +83,118 @@ final class LoginFlow: Flow, Stepper {
     userInfoVC.onNext = { [weak self] (info: UserRegistrationInfo) in
       print("[Flow]: \(initialMail as Any)")
       self?.pendingUserInfo = info
-      self?.steps.accept(AppStep.signTermsConset)
+      // self?.steps.accept(AppStep.signTermsConset)
     }
     nav.pushViewController(userInfoVC, animated: true)
     return .none
   }
 
-  private func showMailInput() -> FlowContributors {
-    // 인증 받기 위한 메일 입력 뷰
-    let reactor = MailOnlyReactor()
-    let mailOnlyVC = MailOnlyViewController()
-    mailOnlyVC.reactor = reactor
-    nav.pushViewController(mailOnlyVC, animated: true)
-    return .one(
-      flowContributor: .contribute(
-        withNextPresentable: mailOnlyVC,
-        withNextStepper: reactor
-      )
-    )
+  private func showSignupMailInfo() -> FlowContributors {
+    // let reactor =
+    // let whatVC = WhatViewController(reactor: reactor)
+    return .none
   }
 
-  private func showMailConfirm() -> FlowContributors {
-    // 메일로 인증 갔으니 확인해라 + 재전송 버튼
-    let reactor = MailConfirmReactor()
-    let confirmVC = MailConfirmViewController()
-    nav.pushViewController(confirmVC, animated: true)
-    return .one(
-      flowContributor:
-        .contribute(
-          withNextPresentable: confirmVC,
-          withNextStepper: reactor
-        )
-    )
+  private func showSignupMailTerms() -> FlowContributors {
+    // let reactor =
+    // let whatVC = WhatViewController(reactor: reactor)
+    return .none
   }
 
-  private func showSignupMail() -> FlowContributors {
-    // 메일 주소 입력, 비밃너호, 닉네임 입력 등 뷰
-    let reactor = MailInfoReactor()
-    let mailInfoVC = MailInfoViewController()
-    nav.pushViewController(mailInfoVC, animated: true)
-    return .one(
-      flowContributor:
-        .contribute(
-          withNextPresentable: mailInfoVC,
-          withNextStepper: reactor
-        )
-    )
+  private func showSignupMailConfirm() -> FlowContributors {
+    // let reactor =
+    // let whatVC = WhatViewController(reactor: reactor)
+    return .none
   }
 
-  private func showTermsConsent() -> FlowContributors {
-    guard let info = pendingUserInfo else { return .none }
-    let reactor = SignTermsReactor()
-    let termsVC = SignTermsViewController(userInfo: info, reactor: reactor)
-    termsVC.onAgree = { [weak self] agreed in
-      self?.pendingUserInfo = agreed
-      reactor.steps.accept(AppStep.signupPhoto)
-    }
-    nav.pushViewController(termsVC, animated: true)
-    return .one(
-      flowContributor: .contribute(withNextPresentable: termsVC, withNextStepper: reactor)
-    )
+  private func showSignupImageUpload() -> FlowContributors {
+    // let reactor =
+    // let whatVC = WhatViewController(reactor: reactor)
+    return .none
   }
 
-  private func showSignupPhoto() -> FlowContributors {
-    guard let info = pendingUserInfo else { return .none }
-    let reactor = ImageUploadReactor(userInfo: info)
-    let photoVC = ImageUploadViewController(userInfo: info, reactor: reactor)
-    nav.pushViewController(photoVC, animated: true)
-    return .one(flowContributor: .contribute(withNextPresentable: photoVC, withNextStepper: reactor))
+  private func showSignupTagSelect() -> FlowContributors {
+    // let reactor =
+    // let whatVC = WhatViewController(reactor: reactor)
+    return .none
   }
 
-  private func showSignSelectTag(profileURL: String?) -> FlowContributors {
-    guard let info = pendingUserInfo else { return .none }
-    let reactor = TagCheckReactor(userInfo: info, profileURL: profileURL)
-    let tagVC = TagCheckViewController(userInfo: info, reactor: reactor)
-    nav.pushViewController(tagVC, animated: true)
-    return .one(
-      flowContributor:
-        .contribute(
-          withNextPresentable: tagVC,
-          withNextStepper: reactor
-        )
-    )
-  }
+  // private func showMailInput() -> FlowContributors {
+  //   // 인증 받기 위한 메일 입력 뷰
+  //   let reactor = MailOnlyReactor()
+  //   let mailOnlyVC = MailOnlyViewController()
+  //   mailOnlyVC.reactor = reactor
+  //   nav.pushViewController(mailOnlyVC, animated: true)
+  //   return .one(
+  //     flowContributor: .contribute(
+  //       withNextPresentable: mailOnlyVC,
+  //       withNextStepper: reactor
+  //     )
+  //   )
+  // }
+
+  // private func showMailConfirm() -> FlowContributors {
+  //   // 메일로 인증 갔으니 확인해라 + 재전송 버튼
+  //   let confirmVC = MailConfirmViewController()
+  //   nav.pushViewController(confirmVC, animated: true)
+  //   return .one(
+  //     flowContributor:
+  //       .contribute(
+  //         withNextPresentable: confirmVC,
+  //         withNextStepper: confirmVC
+  //       )
+  //   )
+  // }
+
+  // private func showSignupMail() -> FlowContributors {
+  //   // 메일 주소 입력, 비밃너호, 닉네임 입력 등 뷰
+  //   let reactor = MailInfoReactor()
+  //   let mailInfoVC = MailInfoViewController()
+  //   nav.pushViewController(mailInfoVC, animated: true)
+  //   return .one(
+  //     flowContributor:
+  //       .contribute(
+  //         withNextPresentable: mailInfoVC,
+  //         withNextStepper: reactor
+  //       )
+  //   )
+  // }
+
+  // private func showTermsConsent() -> FlowContributors {
+  //   guard let info = pendingUserInfo else { return .none }
+  //   let reactor = SignTermsReactor()
+  //   let termsVC = SignTermsViewController(userInfo: info, reactor: reactor)
+  //   termsVC.onAgree = { [weak self] agreed in
+  //     self?.pendingUserInfo = agreed
+  //     reactor.steps.accept(AppStep.signupPhoto)
+  //   }
+  //   nav.pushViewController(termsVC, animated: true)
+  //   return .one(
+  //     flowContributor: .contribute(withNextPresentable: termsVC, withNextStepper: reactor)
+  //   )
+  // }
+
+  // private func showSignupPhoto() -> FlowContributors {
+  //   guard let info = pendingUserInfo else { return .none }
+  //   let reactor = ImageUploadReactor(userInfo: info)
+  //   let photoVC = ImageUploadViewController(userInfo: info, reactor: reactor)
+  //   nav.pushViewController(photoVC, animated: true)
+  //   return .one(flowContributor: .contribute(withNextPresentable: photoVC, withNextStepper: reactor))
+  // }
+
+  // private func showSignSelectTag(profileURL: String?) -> FlowContributors {
+  //   guard let info = pendingUserInfo else { return .none }
+  //   let reactor = TagCheckReactor(userInfo: info, profileURL: profileURL)
+  //   let tagVC = TagCheckViewController(userInfo: info, reactor: reactor)
+  //   nav.pushViewController(tagVC, animated: true)
+  //   return .one(
+  //     flowContributor:
+  //       .contribute(
+  //         withNextPresentable: tagVC,
+  //         withNextStepper: reactor
+  //       )
+  //   )
+  // }
 
   private func showMailLogin() -> FlowContributors {
     let reactor = MailLoginReactor()

@@ -71,7 +71,7 @@ final class ImageUploadReactor: Reactor, Stepper {
               guard let self else { return }
               switch mutation {
               case .setProfileURL(let url):
-                self.steps.accept(AppStep.signSelectTag(profileURL: url))
+                // self.steps.accept(AppStep.signSelectTag(profileURL: url))
               default:
                 break
               }
@@ -80,12 +80,12 @@ final class ImageUploadReactor: Reactor, Stepper {
         ])
       } else {
         print("[REACITOR] 사진 데이터가 없음")
-        self.steps.accept(AppStep.signSelectTag(profileURL: nil))
+        // self.steps.accept(AppStep.signSelectTag(profileURL: nil))
         return .empty()
       }
 
     case .tapLater:
-      self.steps.accept(AppStep.signSelectTag(profileURL: nil))
+      // self.steps.accept(AppStep.signSelectTag(profileURL: nil))
       return .empty()
 
     case .pickedImageData(let data):

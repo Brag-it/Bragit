@@ -66,7 +66,7 @@ final class LoginViewController: UIViewController, View {
     $0.layer.cornerRadius = 12
     $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
     $0.isEnabled = true
-    $0.isHidden = true
+    $0.isHidden = false
   }
 
   let signUpButton = UIButton(type: .system).then {

@@ -76,7 +76,7 @@ final class MainLoginReactor: Reactor, Stepper {
             return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
           },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil)),
+        .just(.setNonce(raw: nil, hashed: nil))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
@@ -87,7 +87,7 @@ final class MainLoginReactor: Reactor, Stepper {
       return .empty()
     case .tapSignUp:
       // 일반(메일) 회원가입 시작
-        steps.accept(AppStep.signupMailInput)
+        steps.accept(AppStep.signupMailInfo)
       return .empty()
     case .tapNext:
       steps.accept(AppStep.home)
@@ -125,11 +125,8 @@ final class MainLoginReactor: Reactor, Stepper {
 
           print("[apple]: \(session.user.email as Any), \(mail as Any)")
 
-          // 1) Apple이 준 이메일이 있고, Supabase Auth의 기본 email이 비어 있다면
-          //    user_metadata에 이메일 저장
           if session.user.email == nil || session.user.email?.isEmpty == true,
-            let mail, !mail.isEmpty
-          {
+            let mail, !mail.isEmpty {
             do {
               try await self.supabase.auth.update(
                 user: UserAttributes(
@@ -142,7 +139,6 @@ final class MainLoginReactor: Reactor, Stepper {
             }
           }
 
-          // 2) 가입 여부 확인
           let users: [User] = try await self.supabase
             .from("User_Info")
             .select()
@@ -174,7 +170,7 @@ final class MainLoginReactor: Reactor, Stepper {
                 }
               }
             }
-            // 기존 사용자: nowUser 저장 후 홈으로
+
             UserDefaults.standard.set(userId.uuidString, forKey: LocalStorageCase.nowUser.rawValue)
             await MainActor.run {
               self.steps.accept(AppStep.home)
@@ -182,7 +178,6 @@ final class MainLoginReactor: Reactor, Stepper {
               setFollowUsers()
             }
           } else {
-            // 미가입: 회원가입 플로우로 (TagCheckReactor에서 nowUser 저장)
             await MainActor.run {
               self.steps.accept(
                 AppStep.signupApple(

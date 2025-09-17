@@ -85,22 +85,20 @@ final class TagCheckReactor: Reactor, Stepper {
           observer.onNext(.setLoading(true))
 
           let userId: String = try await {
+            // After OTP verify, the user is already created and signed in (passwordless).
+            // Use the current session's user id for mail flow as well.
+            let session = try await self.supabase.auth.session
             if !self.userInfo.isAppleLogin {
-              guard let password = self.userInfo.password else {
-                observer.onNext(.setError("비밀번호 필요"))
-                observer.onNext(.setLoading(false))
-                observer.onCompleted()
-                throw NSError(domain: "Signup", code: -1, userInfo: [NSLocalizedDescriptionKey: "Password missing"])
+              // If a password was collected, set it on the current user.
+              if let password = self.userInfo.password, !password.isEmpty {
+                do {
+                  try await self.supabase.auth.update(user: UserAttributes(password: password))
+                } catch {
+                  print("[TagCheck] Failed to set password on existing user: \(error)")
+                }
               }
-              let signUpResult = try await self.supabase.auth.signUp(
-                email: self.userInfo.mail,
-                password: password
-              )
-              return signUpResult.user.id.uuidString
-            } else {
-              let session = try await self.supabase.auth.session
-              return session.user.id.uuidString
             }
+            return session.user.id.uuidString
           }()
 
           UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
@@ -163,3 +161,4 @@ final class TagCheckReactor: Reactor, Stepper {
     }
   }
 }
+
