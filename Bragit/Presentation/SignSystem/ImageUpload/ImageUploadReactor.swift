@@ -71,6 +71,7 @@ final class ImageUploadReactor: Reactor, Stepper {
               guard let self else { return }
               switch mutation {
               case .setProfileURL(let url):
+                self.steps.accept(AppStep.home)
                 // self.steps.accept(AppStep.signSelectTag(profileURL: url))
               default:
                 break

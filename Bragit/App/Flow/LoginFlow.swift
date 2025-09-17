@@ -90,9 +90,16 @@ final class LoginFlow: Flow, Stepper {
   }
 
   private func showSignupMailInfo() -> FlowContributors {
-    // let reactor =
-    // let whatVC = WhatViewController(reactor: reactor)
-    return .none
+    let reactor = SignupMailInfoReactor()
+    let signupMailInfoVC = SignupMailInfoViewController(reactor: reactor)
+    nav.setViewControllers([signupMailInfoVC], animated: true)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupMailInfoVC,
+          withNextStepper: reactor
+        )
+    )
   }
 
   private func showSignupMailTerms() -> FlowContributors {

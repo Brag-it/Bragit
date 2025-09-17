@@ -77,7 +77,10 @@ final class SignupMailInfoView: UIView {
     $0.spacing = 4
     $0.alignment = .leading
   }
-  private let mailStack = UIStackView()
+  private let mailStack = UIStackView().then {
+    $0.axis = .vertical
+    $0.spacing = 8
+  }
 
   // MARK: - Password
   private let pwLabel = UILabel().then {
@@ -91,7 +94,7 @@ final class SignupMailInfoView: UIView {
     $0.layer.borderWidth = 1
     $0.layer.cornerRadius = 14
     $0.isSecureTextEntry = true
-    $0.textContentType = .password
+    $0.textContentType = .oneTimeCode
     $0.clearButtonMode = .whileEditing
     $0.font = .pretendard(size: 14, weight: .regular)
     $0.textColor = .grayScale900
@@ -111,7 +114,10 @@ final class SignupMailInfoView: UIView {
     $0.spacing = 4
     $0.alignment = .leading
   }
-  private let pwStack = UIStackView()
+  private let pwStack = UIStackView().then {
+    $0.axis = .vertical
+    $0.spacing = 8
+  }
 
   // MARK: - Re-Password
   private let rePwLabel = UILabel().then {
@@ -125,7 +131,7 @@ final class SignupMailInfoView: UIView {
     $0.layer.borderWidth = 1
     $0.layer.cornerRadius = 14
     $0.isSecureTextEntry = true
-    $0.textContentType = .password
+    $0.textContentType = .oneTimeCode
     $0.clearButtonMode = .whileEditing
     $0.font = .pretendard(size: 14, weight: .regular)
     $0.textColor = .grayScale900
@@ -145,7 +151,10 @@ final class SignupMailInfoView: UIView {
     $0.spacing = 4
     $0.alignment = .leading
   }
-  private let rePwStack = UIStackView()
+  private let rePwStack = UIStackView().then {
+    $0.axis = .vertical
+    $0.spacing = 8
+  }
 
   // MARK: - Nickname
   private let nicknameLabel = UILabel().then {
@@ -177,7 +186,10 @@ final class SignupMailInfoView: UIView {
     $0.spacing = 4
     $0.alignment = .leading
   }
-  private let nicknameStack = UIStackView()
+  private let nicknameStack = UIStackView().then {
+    $0.axis = .vertical
+    $0.spacing = 8
+  }
 
   private let nextButton = UIButton(type: .system).then {
     $0.setTitle("다음", for: .normal)
@@ -188,6 +200,8 @@ final class SignupMailInfoView: UIView {
     $0.backgroundColor = .primary400
   }
 
+  private var isKeyboardObserving = false
+
   // MARK: - Init
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -196,6 +210,19 @@ final class SignupMailInfoView: UIView {
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    if window != nil {
+      registerKeyboardNotificationsIfNeeded()
+    } else {
+      unregisterKeyboardNotifications()
+    }
+  }
+
+  deinit {
+    unregisterKeyboardNotifications()
+  }
 
   // MARK: - Header UI
   private func headerUI() {
@@ -269,7 +296,7 @@ final class SignupMailInfoView: UIView {
     }
 
     mailStack.snp.makeConstraints {
-      $0.top.equalTo(contentView.snp.top).offset(24)
+      $0.top.equalTo(contentView.snp.top).offset(32)
       $0.leading.trailing.equalTo(contentView).inset(20)
     }
 
@@ -296,5 +323,102 @@ final class SignupMailInfoView: UIView {
     }
 
     nextButton.alpha = 0.5
+  }
+
+  private func registerKeyboardNotificationsIfNeeded() {
+    guard !isKeyboardObserving else { return }
+    isKeyboardObserving = true
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleKeyboardWillChangeFrame(_:)),
+      name: UIResponder.keyboardWillChangeFrameNotification,
+      object: nil
+    )
+  }
+
+  private func unregisterKeyboardNotifications() {
+    guard isKeyboardObserving else { return }
+    isKeyboardObserving = false
+
+    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    resetScrollInsets()
+  }
+
+  @objc private func handleKeyboardWillChangeFrame(_ notification: Notification) {
+    guard
+      let userInfo = notification.userInfo,
+      let endFrameValue = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
+      let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber,
+      let curveNumber = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
+    else { return }
+
+    let endFrame = endFrameValue.cgRectValue
+    let endFrameInView = convert(endFrame, from: window)
+    let intersection = bounds.intersection(endFrameInView)
+    let bottomInset = max(0, intersection.height - safeAreaInsets.bottom)
+
+    let options = UIView.AnimationOptions(rawValue: UInt(curveNumber.intValue << 16))
+
+    UIView.animate(
+      withDuration: duration.doubleValue,
+      delay: 0,
+      options: options,
+      animations: { [weak self] in
+        guard let self = self else { return }
+        self.scrollView.contentInset.bottom = bottomInset
+        var indicatorInsets = self.scrollView.verticalScrollIndicatorInsets
+        indicatorInsets.bottom = bottomInset
+        self.scrollView.verticalScrollIndicatorInsets = indicatorInsets
+
+        if bottomInset > 0, let responder = self.findFirstResponder() {
+          let responderFrame = responder.convert(responder.bounds, to: self.scrollView)
+          self.scrollView.scrollRectToVisible(responderFrame.insetBy(dx: 0, dy: -16), animated: false)
+        }
+      },
+      completion: nil
+    )
+  }
+
+  private func resetScrollInsets() {
+    scrollView.contentInset.bottom = 0
+    var indicatorInsets = scrollView.verticalScrollIndicatorInsets
+    indicatorInsets.bottom = 0
+    scrollView.verticalScrollIndicatorInsets = indicatorInsets
+  }
+
+  // 현재 뷰 트리에서 First Responder 찾기
+  private func findFirstResponder() -> UIView? {
+    if isFirstResponder { return self }
+    for sub in subviews {
+      if let responder = sub._findFirstResponderRecursively() { return responder }
+    }
+    return nil
+  }
+}
+
+extension UIView {
+  fileprivate func _findFirstResponderRecursively() -> UIView? {
+    if isFirstResponder { return self }
+    for sub in subviews {
+      if let responder = sub._findFirstResponderRecursively() { return responder }
+    }
+    return nil
+  }
+}
+
+class InsetTextField: UITextField {
+  var textInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+
+  override func textRect(forBounds bounds: CGRect) -> CGRect {
+    return bounds.inset(by: textInsets)
+  }
+
+  override func editingRect(forBounds bounds: CGRect) -> CGRect {
+    return bounds.inset(by: textInsets)
+  }
+
+  override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+    return bounds.inset(by: textInsets)
   }
 }

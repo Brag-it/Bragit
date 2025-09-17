@@ -541,21 +541,21 @@ final class MailInfoViewController: UIViewController {
         var indicatorInsets = self.scrollView.verticalScrollIndicatorInsets
         indicatorInsets.bottom = bottomInset
         self.scrollView.verticalScrollIndicatorInsets = indicatorInsets
-        if bottomInset > 0, let firstResponder = self.view.findFirstResponder() {
-          let responderFrame = firstResponder.convert(firstResponder.bounds, to: self.scrollView)
-          self.scrollView.scrollRectToVisible(responderFrame.insetBy(dx: 0, dy: -16), animated: false)
-        }
+        // if bottomInset > 0, let firstResponder = self.view.findFirstResponder() {
+        //   let responderFrame = firstResponder.convert(firstResponder.bounds, to: self.scrollView)
+        //   self.scrollView.scrollRectToVisible(responderFrame.insetBy(dx: 0, dy: -16), animated: false)
+        // }
       },
       completion: nil
     )
   }
 
   @objc private func dismissKeyboard() {
-    if let first = view.findFirstResponder() {
-      first.resignFirstResponder()
-    } else {
-      view.endEditing(true)
-    }
+    // if let first = view.findFirstResponder() {
+    //   first.resignFirstResponder()
+    // } else {
+    //   view.endEditing(true)
+    // }
   }
 }
 
@@ -592,27 +592,27 @@ extension MailInfoViewController: UITextFieldDelegate {
   }
 }
 
-class InsetTextField: UITextField {
-  var textInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-  override func textRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
+// class InsetTextField: UITextField {
+//   var textInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+//   override func textRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+// 
+//   override func editingRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+// 
+//   override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+// }
 
-  override func editingRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-
-  override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-}
-
-extension UIView {
-  fileprivate func findFirstResponder() -> UIView? {
-    if isFirstResponder { return self }
-    for subview in subviews {
-      if let responder = subview.findFirstResponder() { return responder }
-    }
-    return nil
-  }
-}
+// extension UIView {
+//   fileprivate func findFirstResponder() -> UIView? {
+//     if isFirstResponder { return self }
+//     for subview in subviews {
+//       if let responder = subview.findFirstResponder() { return responder }
+//     }
+//     return nil
+//   }
+// }

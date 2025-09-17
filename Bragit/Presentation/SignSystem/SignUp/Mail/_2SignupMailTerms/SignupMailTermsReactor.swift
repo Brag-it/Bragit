@@ -1,8 +1,8 @@
 //
-//  SignupMailInfoReactor.swift
+//  SignupMailTermsReactor.swift
 //  Bragit
 //
-//  Created by luca on 9/17/25.
+//  Created by luca on 9/18/25.
 //
 
 import ReactorKit
@@ -10,39 +10,40 @@ import RxFlow
 import RxRelay
 import RxSwift
 
-final class SignupMailInfoReactor: Reactor, Stepper {
-  // MARK: - Reactor
+final class SignupMailTermsReactor: Reactor, Stepper {
+    // MARK: - Reactor
   enum Action {
-    // Define user actions if needed later (e.g., case nextTapped)
+      // Define user actions if needed later (e.g., case nextTapped)
   }
 
   enum Mutation {
-    // Define state mutations if needed later
+      // Define state mutations if needed later
   }
 
   struct State {
-    // Define view state properties if needed later
+      // Define view state properties if needed later
   }
 
   let initialState: State
 
-  // MARK: - Stepper
+    // MARK: - Stepper
   let steps = PublishRelay<Step>()
 
-  // MARK: - Init
+    // MARK: - Init
   init() {
     self.initialState = State()
   }
 
-  // MARK: - Mutate
+    // MARK: - Mutate
   func mutate(action: Action) -> Observable<Mutation> {
     return .empty()
   }
 
-  // MARK: - Reduce
+    // MARK: - Reduce
   func reduce(state: State, mutation: Mutation) -> State {
     var newState = state
-    // Apply mutations to state here when added
+      // Apply mutations to state here when added
     return newState
   }
 }
+

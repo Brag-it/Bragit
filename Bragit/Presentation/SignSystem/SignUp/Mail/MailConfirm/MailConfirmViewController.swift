@@ -51,7 +51,7 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
     $0.textColor = .grayScale700
   }
 
-  let codeTextField = UITextField().then {
+  private let codeTextField = UITextField().then {
     $0.layer.borderColor = UIColor.grayScale100.cgColor
     $0.layer.borderWidth = 1
     $0.layer.cornerRadius = 14
@@ -131,8 +131,8 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
       .disposed(by: disposeBag)
 
     nextButton.rx.tap
-      .bind(with: self) { owner, _ in
-        let code = owner.codeTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+      .bind(with: self) { (owner: MailConfirmViewController, _) in
+        let code = owner.codeTextField.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) ?? ""
         guard code.count == 6 else { return }
         guard let email = KeychainMailStore.load(), !email.isEmpty else {
           owner.updateCodeValidation(success: false, message: "이메일 정보를 불러올 수 없어요")
@@ -155,7 +155,7 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
             try await owner.supabase.auth.verifyOTP(email: email, token: code, type: .email)
             await MainActor.run {
               print("[MailConfirm] 인증 완료")
-              owner.steps.accept(AppStep.signupMail)
+              // owner.steps.accept(AppStep.signupMail)
             }
           } catch {
             await MainActor.run {
@@ -383,3 +383,4 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
     resendCooldownTimer?.invalidate()
   }
 }
+
