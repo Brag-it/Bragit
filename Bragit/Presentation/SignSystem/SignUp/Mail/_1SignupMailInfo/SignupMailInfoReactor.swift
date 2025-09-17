@@ -49,33 +49,40 @@ final class SignupMailInfoReactor: Reactor, Stepper {
     case .checkEmail(let raw):
       let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
-      // 간단한 로컬 형식 검사
       guard Self.isValidEmail(email) else {
-        return .just(.setMailStatus(style: .reject, text: "올바른 이메일 형식이 아닙니다"))
+        print("[Signup][MailCheck] invalid_format email=\(email)")
+        return .empty()
       }
 
-      let start = Observable.just(Mutation.setMailStatus(style: .loading, text: "확인 중..."))
-
-      let check = Observable<Mutation>.create { observer in
+      // 콘솔 출력만 수행, UI 상태 변경 없음
+      return Observable<Mutation>.create { observer in
         let task = Task {
           do {
             let result = try await EmailAvailabilityChecker.check(email: email)
             if result.exists {
               let providers = result.user?.identities?.compactMap { $0.provider }.joined(separator: ", ") ?? "unknown"
-              observer.onNext(.setMailStatus(style: .reject, text: "이미 가입된 이메일입니다 (\(providers))"))
+              let status = (result.status ?? "").lowercased()
+              switch status {
+              case "waiting":
+                print("[Signup][MailCheck] status=waiting (인증 대기) providers=\(providers) email=\(email)")
+              case "confirmed":
+                print("[Signup][MailCheck] status=confirmed (이미 가입) providers=\(providers) email=\(email)")
+              case "banned":
+                print("[Signup][MailCheck] status=banned (제한) providers=\(providers) email=\(email)")
+              default:
+                print("[Signup][MailCheck] status=unknown providers=\(providers) email=\(email)")
+              }
             } else {
-              observer.onNext(.setMailStatus(style: .accept, text: "사용 가능한 이메일입니다"))
+              print("[Signup][MailCheck] status=not_found (사용 가능) email=\(email)")
             }
             observer.onCompleted()
           } catch {
-            observer.onNext(.setMailStatus(style: .reject, text: "이메일 확인 실패"))
+            print("[Signup][MailCheck] check failed: \(error) email=\(email)")
             observer.onCompleted()
           }
         }
         return Disposables.create { task.cancel() }
       }
-
-      return .concat([start, check])
     }
   }
 
@@ -104,3 +111,4 @@ final class SignupMailInfoReactor: Reactor, Stepper {
     return newState
   }
 }
+

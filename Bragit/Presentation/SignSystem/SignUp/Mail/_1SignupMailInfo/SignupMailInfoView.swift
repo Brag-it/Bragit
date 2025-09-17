@@ -437,18 +437,29 @@ final class SignupMailInfoView: UIView {
   }
 
   @objc private func mailEditingDidEnd() {
-    let text = mailTextField.text ?? ""
+    let raw = mailTextField.text ?? ""
+    let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     Task { [weak self] in
       do {
-        let result = try await EmailAvailabilityChecker.check(email: text)
+        let result = try await EmailAvailabilityChecker.check(email: email)
         if result.exists {
           let providers = result.user?.identities?.compactMap { $0.provider }.joined(separator: ", ") ?? "unknown"
-          print("[Signup] 이메일 존재함. providers: \(providers)")
+          let status = (result.status ?? "").lowercased()
+          switch status {
+          case "waiting":
+            print("[Signup][MailCheck] status=waiting (인증 대기) providers=\(providers) email=\(email)")
+          case "confirmed":
+            print("[Signup][MailCheck] status=confirmed (이미 가입) providers=\(providers) email=\(email)")
+          case "banned":
+            print("[Signup][MailCheck] status=banned (제한) providers=\(providers) email=\(email)")
+          default:
+            print("[Signup][MailCheck] status=unknown providers=\(providers) email=\(email)")
+          }
         } else {
-          print("[Signup] 이메일 사용 가능 (존재하지 않음)")
+          print("[Signup][MailCheck] status=not_found (사용 가능) email=\(email)")
         }
       } catch {
-        print("[Signup] 이메일 확인 실패: \(error)")
+        print("[Signup][MailCheck] check failed: \(error) email=\(email)")
       }
     }
   }
