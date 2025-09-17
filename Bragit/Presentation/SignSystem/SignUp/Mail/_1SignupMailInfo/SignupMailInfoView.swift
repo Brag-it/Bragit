@@ -8,6 +8,7 @@
 import SnapKit
 import Then
 import UIKit
+import Foundation
 
 final class SignupMailInfoView: UIView {
 
@@ -280,6 +281,7 @@ final class SignupMailInfoView: UIView {
       $0.leading.greaterThanOrEqualTo(backButton.snp.trailing).offset(20)
     }
     otherUI()
+    wireActions()
   }
 
   private func otherUI() {
@@ -428,6 +430,27 @@ final class SignupMailInfoView: UIView {
       if let responder = sub._findFirstResponderRecursively() { return responder }
     }
     return nil
+  }
+
+  private func wireActions() {
+    mailTextField.addTarget(self, action: #selector(mailEditingDidEnd), for: .editingDidEnd)
+  }
+
+  @objc private func mailEditingDidEnd() {
+    let text = mailTextField.text ?? ""
+    Task { [weak self] in
+      do {
+        let result = try await EmailAvailabilityChecker.check(email: text)
+        if result.exists {
+          let providers = result.user?.identities?.compactMap { $0.provider }.joined(separator: ", ") ?? "unknown"
+          print("[Signup] 이메일 존재함. providers: \(providers)")
+        } else {
+          print("[Signup] 이메일 사용 가능 (존재하지 않음)")
+        }
+      } catch {
+        print("[Signup] 이메일 확인 실패: \(error)")
+      }
+    }
   }
 }
 
