@@ -126,28 +126,20 @@ final class ConfirmPopupView: UIView {
 
   // MARK: - Public Methods
 
-  func show(in view: UIView) {
-    frame = view.bounds
-    alpha = 0
-    view.addSubview(self)
-
-    UIView.animate(withDuration: 0.25) {
-      self.alpha = 1
-      self.dimmedView.alpha = 1
+  public func setLeftButtonTitle(_ title: String) {
+    if leftButton.title(for: .normal) == title { return }
+    UIView.performWithoutAnimation {
+      self.leftButton.setTitle(title, for: .normal)
+      self.leftButton.layoutIfNeeded()
     }
   }
 
-  func dismiss() {
-    UIView.animate(
-      withDuration: 0.25,
-      animations: {
-        self.alpha = 0
-        self.dimmedView.alpha = 0
-      },
-      completion: { _ in
-        self.removeFromSuperview()
-      }
-    )
+  public func setLeftButtonEnabled(_ enabled: Bool) {
+    UIView.performWithoutAnimation {
+      self.leftButton.isEnabled = enabled
+      self.leftButton.alpha = enabled ? 1.0 : 0.5
+      self.leftButton.layoutIfNeeded()
+    }
   }
 
   // MARK: - Convenience
@@ -171,5 +163,29 @@ final class ConfirmPopupView: UIView {
       popup.dismiss()
     }
     popup.show(in: view)
+  }
+
+  func show(in view: UIView) {
+    frame = view.bounds
+    alpha = 0
+    view.addSubview(self)
+
+    UIView.animate(withDuration: 0.25) {
+      self.alpha = 1
+      self.dimmedView.alpha = 1
+    }
+  }
+
+  func dismiss() {
+    UIView.animate(
+      withDuration: 0.25,
+      animations: {
+        self.alpha = 0
+        self.dimmedView.alpha = 0
+      },
+      completion: { _ in
+        self.removeFromSuperview()
+      }
+    )
   }
 }

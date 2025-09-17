@@ -18,6 +18,11 @@ import UIKit
 // TODO: 재전송 버튼, 메일에서 버튼 누르면 바로 Bragit의 MailInfoView로 갈 수 있도록
 
 final class MailConfirmViewController: UIViewController, UITextFieldDelegate, Stepper {
+  private var resendCooldownTimer: Timer?
+  private var cooldownEndDate: Date?
+  private let cooldownDuration: TimeInterval = 40
+  private weak var currentPopup: ConfirmPopupView?
+
   private let disposeBag = DisposeBag()
   let steps = PublishRelay<Step>()
   @Dependency(\.supabase) private var supabase
@@ -107,6 +112,15 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
     bindActions()
   }
 
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    if cooldownEndDate == nil {
+      startCooldown()
+    } else {
+      ensureCooldownTimerRunningIfNeeded()
+    }
+  }
+
   private func bindActions() {
     // Enable/disable button alpha to reflect state
     nextButton.rx.observe(Bool.self, "enabled")
@@ -154,17 +168,95 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
 
     helpButton.rx.tap
       .bind(with: self) { owner, _ in
-        ConfirmPopupView.present(
-          on: owner.view,
+        let popup = ConfirmPopupView(
           title: "인증 메일을 찾을 수 없나요?",
           message: "인증 메일을 찾을 수 없다면 사용 중인 메일 서비스의 스팸함을 확인해 주세요. 확인 후 메일이 오지 않았다면 재전송을 눌러 주세요",
           leftTitle: "재전송",
-          rightTitle: "닫기",
-          leftAction: {},
-          rightAction: {}
+          rightTitle: "닫기"
         )
+
+        popup.onLeftTap = { [weak owner, weak popup] in
+          guard let owner = owner else { return }
+          guard let email = KeychainMailStore.load(), !email.isEmpty else {
+            DispatchQueue.main.async {
+              owner.updateCodeValidation(success: false, message: "이메일 정보를 불러올 수 없어요")
+            }
+            return
+          }
+          owner.startCooldown()
+          popup?.dismiss()
+
+          Task {
+            do {
+              try await owner.supabase.auth.signInWithOTP(email: email, shouldCreateUser: true)
+              await MainActor.run {
+                owner.codeCheckLabel.text = "인증 메일을 재전송했어요"
+                owner.codeCheckLabel.textColor = .systemSafe
+                owner.codeCheckIcon.image = .accept
+                owner.codeCheckIcon.tintColor = .systemSafe
+              }
+            } catch {
+              print("[MailConfirm] 재전송 실패: \(error.localizedDescription)")
+            }
+          }
+        }
+
+        popup.onRightTap = { [weak owner, weak popup] in
+          owner?.currentPopup = nil
+          popup?.dismiss()
+        }
+
+        owner.currentPopup = popup
+        popup.show(in: owner.view)
+
+        let remain = owner.remainingCooldownSeconds()
+        popup.setLeftButtonTitle(remain > 0 ? "재전송(\(remain)초)" : "재전송")
+        popup.setLeftButtonEnabled(remain == 0)
+        owner.ensureCooldownTimerRunningIfNeeded()
       }
       .disposed(by: disposeBag)
+  }
+
+  private func remainingCooldownSeconds(now: Date = Date()) -> Int {
+    guard let end = cooldownEndDate else { return 0 }
+    let remain = Int(ceil(end.timeIntervalSince(now)))
+    return max(0, remain)
+  }
+
+  private func startCooldown() {
+    cooldownEndDate = Date().addingTimeInterval(cooldownDuration)
+    resendCooldownTimer?.invalidate()
+    resendCooldownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+      guard let self else { return }
+      let remain = self.remainingCooldownSeconds()
+      if let popup = self.currentPopup {
+        popup.setLeftButtonTitle(remain > 0 ? "재전송(\(remain)초)" : "재전송")
+        popup.setLeftButtonEnabled(remain == 0)
+      }
+      if remain == 0 {
+        self.resendCooldownTimer?.invalidate()
+        self.resendCooldownTimer = nil
+      }
+    }
+  }
+
+  private func ensureCooldownTimerRunningIfNeeded() {
+    let remain = remainingCooldownSeconds()
+    if remain > 0, resendCooldownTimer == nil {
+      // Resume ticking UI if popup is visible
+      resendCooldownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        guard let self else { return }
+        let remain = self.remainingCooldownSeconds()
+        if let popup = self.currentPopup {
+          popup.setLeftButtonTitle(remain > 0 ? "재전송(\(remain)초)" : "재전송")
+          popup.setLeftButtonEnabled(remain == 0)
+        }
+        if remain == 0 {
+          self.resendCooldownTimer?.invalidate()
+          self.resendCooldownTimer = nil
+        }
+      }
+    }
   }
 
   private func updateCodeValidation(success: Bool, message: String) {
@@ -261,7 +353,6 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
   }
 
   @objc private func codeEditingChanged() {
-    // Allow only digits and limit to 6 characters
     let digits = codeTextField.text?.filter { $0.isNumber } ?? ""
     if digits != codeTextField.text {
       codeTextField.text = String(digits.prefix(6))
@@ -286,5 +377,9 @@ final class MailConfirmViewController: UIViewController, UITextFieldDelegate, St
     if filtered.count > 6 { return false }
     if updated != filtered { return false }
     return true
+  }
+
+  deinit {
+    resendCooldownTimer?.invalidate()
   }
 }
