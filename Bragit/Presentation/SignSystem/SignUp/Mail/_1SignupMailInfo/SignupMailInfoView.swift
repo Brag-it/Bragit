@@ -203,6 +203,8 @@ final class SignupMailInfoView: UIView {
 
   // MARK: - Validation UI API
   func showMailValidity(isValid: Bool) {
+    // Ignore external regex-based updates while we are checking against Supabase
+    if isCheckingEmail { return }
     mailCheckIcon.isHidden = false
     mailCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
     mailCheckLabel.text = isValid ? "사용 가능한 이메일입니다" : "사용 불가한 이메일입니다"
@@ -234,6 +236,24 @@ final class SignupMailInfoView: UIView {
     nextButton.isEnabled = enabled
     nextButton.alpha = enabled ? 1.0 : 0.5
   }
+
+  // MARK: - Mail Status Helpers
+  private func setMailStatus(text: String, icon: UIImage, color: UIColor) {
+    mailCheckIcon.isHidden = false
+    mailCheckIcon.image = icon.withRenderingMode(.alwaysOriginal)
+    mailCheckLabel.text = text
+    mailCheckLabel.textColor = color
+  }
+
+  private func isValidEmailRegex(_ email: String) -> Bool {
+    let pattern = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"
+    let predicate = NSPredicate(format: "SELF MATCHES[c] %@", pattern)
+    return predicate.evaluate(with: email)
+  }
+
+  private var mailCheckTask: Task<Void, Never>? = nil
+  private var mailCheckGeneration: Int = 0
+  private var isCheckingEmail: Bool = false
 
   private var isKeyboardObserving = false
 
@@ -423,7 +443,6 @@ final class SignupMailInfoView: UIView {
     scrollView.verticalScrollIndicatorInsets = indicatorInsets
   }
 
-  // 현재 뷰 트리에서 First Responder 찾기
   private func findFirstResponder() -> UIView? {
     if isFirstResponder { return self }
     for sub in subviews {
@@ -434,34 +453,62 @@ final class SignupMailInfoView: UIView {
 
   private func wireActions() {
     mailTextField.addTarget(self, action: #selector(mailEditingDidEnd), for: .editingDidEnd)
+    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    tap.cancelsTouchesInView = false
+    contentView.addGestureRecognizer(tap)
   }
 
   @objc private func mailEditingDidEnd() {
     let raw = mailTextField.text ?? ""
     let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    Task { [weak self] in
+
+    mailCheckGeneration &+= 1
+    let currentGen = mailCheckGeneration
+    mailCheckTask?.cancel()
+
+    isCheckingEmail = true
+
+    setMailStatus(text: "이메일 확인 중...", icon: .loading, color: .systemWarning)
+
+    mailCheckTask = Task { [weak self] in
+      guard let self = self else { return }
       do {
         let result = try await EmailAvailabilityChecker.check(email: email)
+
+        guard !Task.isCancelled, currentGen == self.mailCheckGeneration else { return }
+
         if result.exists {
-          let providers = result.user?.identities?.compactMap { $0.provider }.joined(separator: ", ") ?? "unknown"
-          let status = (result.status ?? "").lowercased()
-          switch status {
-          case "waiting":
-            print("[Signup][MailCheck] status=waiting (인증 대기) providers=\(providers) email=\(email)")
-          case "confirmed":
-            print("[Signup][MailCheck] status=confirmed (이미 가입) providers=\(providers) email=\(email)")
-          case "banned":
-            print("[Signup][MailCheck] status=banned (제한) providers=\(providers) email=\(email)")
-          default:
-            print("[Signup][MailCheck] status=unknown providers=\(providers) email=\(email)")
+          await MainActor.run {
+            self.isCheckingEmail = false
+            self.setMailStatus(text: "이미 가입된 이메일입니다", icon: .reject, color: .systemDanger)
           }
         } else {
-          print("[Signup][MailCheck] status=not_found (사용 가능) email=\(email)")
+          let isRegexValid = self.isValidEmailRegex(email)
+
+          guard !Task.isCancelled, currentGen == self.mailCheckGeneration else { return }
+
+          await MainActor.run {
+            self.isCheckingEmail = false
+            if isRegexValid {
+              self.setMailStatus(text: "사용할 수 있는 이메일입니다", icon: .accept, color: .systemSafe)
+            } else {
+              self.setMailStatus(text: "사용할 수 없는 이메일입니다", icon: .reject, color: .systemDanger)
+            }
+          }
         }
       } catch {
+        guard !Task.isCancelled, currentGen == self.mailCheckGeneration else { return }
+        await MainActor.run { [weak self] in
+          self?.isCheckingEmail = false
+          self?.setMailStatus(text: "이메일 확인 실패", icon: .reject, color: .systemDanger)
+        }
         print("[Signup][MailCheck] check failed: \(error) email=\(email)")
       }
     }
+  }
+
+  @objc private func dismissKeyboard() {
+    endEditing(true)
   }
 }
 
@@ -490,4 +537,3 @@ class InsetTextField: UITextField {
     return bounds.inset(by: textInsets)
   }
 }
-

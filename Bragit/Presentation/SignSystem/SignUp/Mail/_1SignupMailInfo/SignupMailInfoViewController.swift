@@ -130,4 +130,3 @@ final class SignupMailInfoViewController: UIViewController, View {
     updateNextButton()
   }
 }
-
