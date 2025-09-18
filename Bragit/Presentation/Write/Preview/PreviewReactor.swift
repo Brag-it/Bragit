@@ -128,13 +128,21 @@ class PreviewReactor: Reactor, Stepper {
       // 업로드
       let thumbnailUploadStream: Observable<URL?> = {
         guard let data = representativeImageData else { return .just(nil) }
-        return self.imageManager.rxUploadImage(data: data)
-          .map { $0 as URL? }
+        let fileName = "thumbnail-\(Int(Date().timeIntervalSince1970)).jpg"
+        return self.postManager.rxUploadImage(
+          data: data,
+          fileName: fileName,
+          folder: StoragePath.thumbnail(authorId: author)
+        )
+        .map { $0 as URL? }
       }()
 
       let attachmentsUploadStream: Observable<[URL]> = {
         guard !attachmentDataList.isEmpty else { return .just([]) }
-        return self.imageManager.rxUploadImages(datas: attachmentDataList)
+        return self.postManager.rxUploadImages(
+          datas: attachmentDataList,
+          folder: StoragePath.contents(authorId: author, postId: postId)
+        )
       }()
 
       return Observable.concat([
