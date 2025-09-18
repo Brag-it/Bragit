@@ -23,7 +23,7 @@ protocol SearchManagerProtocol {
   func searchPosts(searchText: String, page: Int, pageSize: Int) async throws -> [Post]
   func rxSearchPosts(searchText: String, page: Int, pageSize: Int) -> Observable<[Post]>
   func searchUsers(searchText: String, page: Int, pageSize: Int) async throws -> [User]
-  func rxSearchUsers(searchText: String, page: Int, pageSize: Int) -> Observable<[User]> 
+  func rxSearchUsers(searchText: String, page: Int, pageSize: Int) -> Observable<[User]>
 }
 
 final class SearchManager: SearchManagerProtocol {
@@ -98,24 +98,19 @@ final class SearchManager: SearchManagerProtocol {
     let start = page * pageSize
     let end = start + pageSize - 1
 
+    // 제목/본문/설명만 검색합니다.
     let posts: [Post] = try await client
       .from("Post")
       .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
-      // 제목, 본문, 설명,게시글에 등록된 태그 이름까지 동시에 검색
-      .or("""
-        title.ilike.%\(searchText)%,
-        content.ilike.%\(searchText)%,
-        description.ilike.%\(searchText)%,
-        Tag.tag.ilike.%\(searchText)%
-      """)
+      .or("title.ilike.%\(searchText)%,content.ilike.%\(searchText)%,description.ilike.%\(searchText)%")
       .range(from: start, to: end)
       .execute()
       .value
 
-    // 게시글 중복 제거
-    var uniquePostMap: [UUID: Post] = [:]
-    posts.forEach { uniquePostMap[$0.id] = $0 }
-    return Array(uniquePostMap.values)
+    // 게시글 중복 제거 (혹시나 대비)
+    var unique: [UUID: Post] = [:]
+    posts.forEach { unique[$0.id] = $0 }
+    return Array(unique.values)
   }
 
   func rxSearchPosts(searchText: String, page: Int, pageSize: Int) -> Observable<[Post]> {

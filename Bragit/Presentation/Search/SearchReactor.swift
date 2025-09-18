@@ -73,7 +73,6 @@ class SearchReactor: Reactor, Stepper {
     var hasMorePosts: Bool = true
     var hasMoreUsers: Bool = true
   }
-  // TODO: - 검색 로직 분리(태그, 게시글, 사용자 검색)
 
   init() {
     self.initialState = State()
@@ -107,7 +106,7 @@ class SearchReactor: Reactor, Stepper {
 
       // 입력 중
       let suggest = tagManager
-        .rxSearchTags(searchText: trimmed, page: 0, pageSize: 20)
+        .rxSearchTags(searchText: trimmed, page: 0, pageSize: currentState.pageSize)
         .map { $0.map { $0.tag } }
         .map(Mutation.setSuggestions)
 
