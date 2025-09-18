@@ -5,10 +5,10 @@
 //  Created by luca on 9/17/25.
 //
 
+import Foundation
 import SnapKit
 import Then
 import UIKit
-import Foundation
 
 final class SignupMailInfoView: UIView {
 
@@ -205,6 +205,15 @@ final class SignupMailInfoView: UIView {
   func showMailValidity(isValid: Bool) {
     // Ignore external regex-based updates while we are checking against Supabase
     if isCheckingEmail { return }
+
+    let raw = mailTextField.text ?? ""
+    let email = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    if email.isEmpty {
+      mailCheckIcon.isHidden = true
+      mailCheckLabel.text = " "
+      return
+    }
+
     mailCheckIcon.isHidden = false
     mailCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
     mailCheckLabel.text = isValid ? "사용 가능한 이메일입니다" : "사용 불가한 이메일입니다"
@@ -212,6 +221,14 @@ final class SignupMailInfoView: UIView {
   }
 
   func showPasswordValidity(isValid: Bool) {
+    let raw = pwTextField.text ?? ""
+    let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    if text.isEmpty {
+      pwCheckIcon.isHidden = true
+      pwCheckLabel.text = " "
+      return
+    }
+
     pwCheckIcon.isHidden = false
     pwCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
     pwCheckLabel.text = isValid ? "사용 가능한 비밀번호입니다" : "사용 불가한 비밀번호입니다"
@@ -219,6 +236,15 @@ final class SignupMailInfoView: UIView {
   }
 
   func showConfirmMatch(isMatched: Bool) {
+    // If the confirm field is empty, don't perform or reflect match validation
+    let raw = rePwTextField.text ?? ""
+    let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    if text.isEmpty {
+      rePwCheckIcon.isHidden = true
+      rePwCheckLabel.text = " "
+      return
+    }
+
     rePwCheckIcon.isHidden = false
     rePwCheckIcon.image = (isMatched ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
     rePwCheckLabel.text = isMatched ? "비밀번호가 일치합니다" : "비밀번호가 일치하지 않습니다"
@@ -226,6 +252,14 @@ final class SignupMailInfoView: UIView {
   }
 
   func showNicknameValidity(isValid: Bool) {
+    let raw = nicknameTextField.text ?? ""
+    let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    if text.isEmpty {
+      nicknameCheckIcon.isHidden = true
+      nicknameCheckLabel.text = " "
+      return
+    }
+
     nicknameCheckIcon.isHidden = false
     nicknameCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
     nicknameCheckLabel.text = isValid ? "사용 가능한 닉네임입니다" : "사용 불가한 닉네임입니다"
@@ -251,7 +285,7 @@ final class SignupMailInfoView: UIView {
     return predicate.evaluate(with: email)
   }
 
-  private var mailCheckTask: Task<Void, Never>? = nil
+  private var mailCheckTask: Task<Void, Never>?
   private var mailCheckGeneration: Int = 0
   private var isCheckingEmail: Bool = false
 
@@ -462,6 +496,15 @@ final class SignupMailInfoView: UIView {
     let raw = mailTextField.text ?? ""
     let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
+    if email.isEmpty {
+      mailCheckTask?.cancel()
+      mailCheckGeneration &+= 1
+      isCheckingEmail = false
+      mailCheckIcon.isHidden = true
+      mailCheckLabel.text = " "
+      return
+    }
+
     mailCheckGeneration &+= 1
     let currentGen = mailCheckGeneration
     mailCheckTask?.cancel()
@@ -475,12 +518,21 @@ final class SignupMailInfoView: UIView {
       do {
         let result = try await EmailAvailabilityChecker.check(email: email)
 
+        let statusLowercased = result.status?.lowercased() ?? ""
+
         guard !Task.isCancelled, currentGen == self.mailCheckGeneration else { return }
 
         if result.exists {
-          await MainActor.run {
-            self.isCheckingEmail = false
-            self.setMailStatus(text: "이미 가입된 이메일입니다", icon: .reject, color: .systemDanger)
+          if statusLowercased == "waiting" {
+            await MainActor.run {
+              self.isCheckingEmail = false
+              self.setMailStatus(text: "사용할 수 있는 이메일입니다", icon: .accept, color: .systemSafe)
+            }
+          } else {
+            await MainActor.run {
+              self.isCheckingEmail = false
+              self.setMailStatus(text: "이미 가입된 이메일입니다", icon: .reject, color: .systemDanger)
+            }
           }
         } else {
           let isRegexValid = self.isValidEmailRegex(email)

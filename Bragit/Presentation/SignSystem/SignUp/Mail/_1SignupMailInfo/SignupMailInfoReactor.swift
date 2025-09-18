@@ -111,4 +111,3 @@ final class SignupMailInfoReactor: Reactor, Stepper {
     return newState
   }
 }
-

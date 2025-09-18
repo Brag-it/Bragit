@@ -17,12 +17,6 @@ final class SignupMailInfoViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let rootView = SignupMailInfoView()
 
-  // Validation state
-  private var mailValid = false
-  private var passwordValid = false
-  private var confirmMatched = false
-  private var nicknameValid = false
-
   override func loadView() {
     self.view = rootView
   }
@@ -44,19 +38,6 @@ final class SignupMailInfoViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
-    bindValidation()
-  }
-
-  private func updateNextButton() {
-    let enabled = mailValid && passwordValid && confirmMatched && nicknameValid
-    rootView.setNextEnabled(enabled)
-  }
-
-  private func bindValidation() {
-    rootView.mailTextField.addTarget(self, action: #selector(onMailEditingEnd), for: .editingDidEnd)
-    rootView.pwTextField.addTarget(self, action: #selector(onPasswordEditingEnd), for: .editingDidEnd)
-    rootView.rePwTextField.addTarget(self, action: #selector(onConfirmEditingEnd), for: .editingDidEnd)
-    rootView.nicknameTextField.addTarget(self, action: #selector(onNicknameEditingEnd), for: .editingDidEnd)
   }
 
   func bind(reactor: SignupMailInfoReactor) {
@@ -90,43 +71,76 @@ final class SignupMailInfoViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    bindValidation()
-  }
+    // Reactive validation bindings (replacing @objc target-action handlers)
+    let mailText = rootView.mailTextField.rx.text.orEmpty.share(replay: 1)
+    let pwText = rootView.pwTextField.rx.text.orEmpty.map {
+      $0.trimmingCharacters(in: .whitespacesAndNewlines)
+    }.share(replay: 1)
+    let confirmText = rootView.rePwTextField.rx.text.orEmpty.map {
+      $0.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    .share(replay: 1)
+    let nicknameText = rootView.nicknameTextField.rx.text.orEmpty.share(replay: 1)
 
-  @objc private func onMailEditingEnd() {
-    let text = rootView.mailTextField.text ?? ""
-    mailValid = MailInfoValidator.isValidMail(text)
-    rootView.showMailValidity(isValid: mailValid)
-    updateNextButton()
-  }
+    let mailEditingEnd = rootView.mailTextField.rx.controlEvent(.editingDidEnd).share()
+    let pwEditingEnd = rootView.pwTextField.rx.controlEvent(.editingDidEnd).share()
+    let confirmEditingEnd = rootView.rePwTextField.rx.controlEvent(.editingDidEnd).share()
+    let nicknameEditingEnd = rootView.nicknameTextField.rx.controlEvent(.editingDidEnd).share()
 
-  @objc private func onPasswordEditingEnd() {
-    let pwdRaw = rootView.pwTextField.text ?? ""
-    let confirmRaw = rootView.rePwTextField.text ?? ""
-    let pwd = pwdRaw.trimmingCharacters(in: .whitespacesAndNewlines)
-    let confirm = confirmRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+    // Mail validation on editing end
+    let mailValid =
+      mailEditingEnd
+      .withLatestFrom(mailText)
+      .map { MailInfoValidator.isValidMail($0) }
+      .do { [weak self] isValid in
+        self?.rootView.showMailValidity(isValid: isValid)
+      }
+      .startWith(false)
+      .share(replay: 1)
 
-    passwordValid = MailInfoValidator.isValidPassword(pwd)
-    if !confirm.isEmpty { confirmMatched = (pwd == confirm) }
+    // Password validity when password editing ends
+    let passwordValid =
+      pwEditingEnd
+      .withLatestFrom(pwText)
+      .map { MailInfoValidator.isValidPassword($0) }
+      .do { [weak self] isValid in
+        self?.rootView.showPasswordValidity(isValid: isValid)
+      }
+      .startWith(false)
+      .share(replay: 1)
 
-    rootView.showPasswordValidity(isValid: passwordValid)
-    if !confirm.isEmpty { rootView.showConfirmMatch(isMatched: confirmMatched) }
-    updateNextButton()
-  }
+    // Confirm match: update when either password or confirm editing ends
+    let confirmMatched = Observable.merge(pwEditingEnd, confirmEditingEnd)
+      .withLatestFrom(Observable.combineLatest(pwText, confirmText))
+      .map { pwd, confirm in (pwd == confirm) && !pwd.isEmpty }
+      .do { [weak self] isMatched in
+        self?.rootView.showConfirmMatch(isMatched: isMatched)
+      }
+      .startWith(false)
+      .share(replay: 1)
 
-  @objc private func onConfirmEditingEnd() {
-    let pwd = (rootView.pwTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-    let confirm = (rootView.rePwTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-    confirmMatched = (pwd == confirm) && !pwd.isEmpty
+    // Nickname validation on editing end
+    let nicknameValid =
+      nicknameEditingEnd
+      .withLatestFrom(nicknameText)
+      .map { MailInfoValidator.isValidNickname($0) }
+      .do { [weak self] isValid in
+        self?.rootView.showNicknameValidity(isValid: isValid)
+      }
+      .startWith(false)
+      .share(replay: 1)
 
-    rootView.showConfirmMatch(isMatched: confirmMatched)
-    updateNextButton()
-  }
-
-  @objc private func onNicknameEditingEnd() {
-    let name = rootView.nicknameTextField.text ?? ""
-    nicknameValid = MailInfoValidator.isValidNickname(name)
-    rootView.showNicknameValidity(isValid: nicknameValid)
-    updateNextButton()
+    // Next button enable state
+    Observable.combineLatest(
+      mailValid,
+      passwordValid,
+      confirmMatched,
+      nicknameValid
+    ) { $0 && $1 && $2 && $3 }
+    .distinctUntilChanged()
+    .bind(with: self) { owner, enabled in
+      owner.rootView.setNextEnabled(enabled)
+    }
+    .disposed(by: disposeBag)
   }
 }
