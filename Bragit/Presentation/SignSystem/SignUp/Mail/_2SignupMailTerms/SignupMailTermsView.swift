@@ -18,7 +18,7 @@ final class SignupMailTermsView: UIView {
   private let headerView = UIView()
   private let backButton = UIButton(type: .system).then {
     $0.setImage(.back, for: .normal)
-    $0.tintColor = .grayScale90
+    $0.tintColor = .grayScale900
   }
   private let headerLabel = UILabel().then {
     $0.text = "회원가입"
@@ -356,9 +356,6 @@ final class SignupMailTermsView: UIView {
     nextButton.alpha = enabled ? 1.0 : 0.5
   }
 
-  // func pushTermsDetail(item: TermsItem) {
-  //   let viewController = SettingTermsDetailViewController(item: item)
-  //   navigationController?.pushViewController(viewController, animated: true)
-  // }
+
 }
 
