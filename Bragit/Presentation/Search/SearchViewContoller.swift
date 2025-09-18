@@ -186,7 +186,8 @@ final class SearchViewController: UIViewController, View {
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
-    reactor.state.map(\.scope).distinctUntilChanged()
+    reactor.state.map(\.scope)
+      .distinctUntilChanged()
       .map { scope -> SearchHeaderView.Tab in
         switch scope {
         case .tag:  return .tag
