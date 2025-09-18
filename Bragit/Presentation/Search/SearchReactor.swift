@@ -129,7 +129,7 @@ class SearchReactor: Reactor, Stepper {
         self.mutate(action: .changeScope(.tag))
       ])
 
-    // 최근검색어/추천어 클릭 해당 검색어로 태그 검색 시작
+    // 최근검색어/추천어 클릭 해당 검색어로 태그 검색
     case let .submitWithQuery(query, shouldSave):
       let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmed.isEmpty else { return .empty() }

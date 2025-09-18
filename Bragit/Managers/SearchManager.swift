@@ -98,7 +98,7 @@ final class SearchManager: SearchManagerProtocol {
     let start = page * pageSize
     let end = start + pageSize - 1
 
-    // 제목/본문/설명만 검색합니다.
+    // 제목/본문/설명 검색
     let posts: [Post] = try await client
       .from("Post")
       .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
@@ -107,7 +107,7 @@ final class SearchManager: SearchManagerProtocol {
       .execute()
       .value
 
-    // 게시글 중복 제거 (혹시나 대비)
+    // 게시글 중복 제거
     var unique: [UUID: Post] = [:]
     posts.forEach { unique[$0.id] = $0 }
     return Array(unique.values)
