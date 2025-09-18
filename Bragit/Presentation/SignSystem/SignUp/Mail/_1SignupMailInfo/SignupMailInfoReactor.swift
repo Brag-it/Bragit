@@ -15,6 +15,7 @@ final class SignupMailInfoReactor: Reactor, Stepper {
   // MARK: - Reactor
   enum Action {
     case checkEmail(String)
+    case tapNext
   }
 
   enum Mutation {
@@ -54,7 +55,6 @@ final class SignupMailInfoReactor: Reactor, Stepper {
         return .empty()
       }
 
-      // 콘솔 출력만 수행, UI 상태 변경 없음
       return Observable<Mutation>.create { observer in
         let task = Task {
           do {
@@ -83,13 +83,14 @@ final class SignupMailInfoReactor: Reactor, Stepper {
         }
         return Disposables.create { task.cancel() }
       }
+    case .tapNext:
+      steps.accept(AppStep.signupMailTerms)
+      return .empty()
     }
   }
 
-  // Local email format validation
   private static func isValidEmail(_ email: String) -> Bool {
     guard !email.isEmpty else { return false }
-    // Basic RFC 5322-like pattern (case-insensitive)
     let pattern = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"
     do {
       let regex = try NSRegularExpression(pattern: pattern, options: [.caseInsensitive])

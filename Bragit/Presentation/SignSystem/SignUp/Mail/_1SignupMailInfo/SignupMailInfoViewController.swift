@@ -47,6 +47,11 @@ final class SignupMailInfoViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    rootView.nextButton.rx.tap
+      .map { SignupMailInfoReactor.Action.tapNext }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     rootView.mailTextField.rx.controlEvent(.editingDidEndOnExit)
       .bind(with: self) { owner, _ in
         owner.rootView.pwTextField.becomeFirstResponder()
@@ -71,7 +76,6 @@ final class SignupMailInfoViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
-    // Reactive validation bindings (replacing @objc target-action handlers)
     let mailText = rootView.mailTextField.rx.text.orEmpty.share(replay: 1)
     let pwText = rootView.pwTextField.rx.text.orEmpty.map {
       $0.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -87,7 +91,6 @@ final class SignupMailInfoViewController: UIViewController, View {
     let confirmEditingEnd = rootView.rePwTextField.rx.controlEvent(.editingDidEnd).share()
     let nicknameEditingEnd = rootView.nicknameTextField.rx.controlEvent(.editingDidEnd).share()
 
-    // Mail validation on editing end
     let mailValid =
       mailEditingEnd
       .withLatestFrom(mailText)
@@ -98,7 +101,6 @@ final class SignupMailInfoViewController: UIViewController, View {
       .startWith(false)
       .share(replay: 1)
 
-    // Password validity when password editing ends
     let passwordValid =
       pwEditingEnd
       .withLatestFrom(pwText)
@@ -109,7 +111,6 @@ final class SignupMailInfoViewController: UIViewController, View {
       .startWith(false)
       .share(replay: 1)
 
-    // Confirm match: update when either password or confirm editing ends
     let confirmMatched = Observable.merge(pwEditingEnd, confirmEditingEnd)
       .withLatestFrom(Observable.combineLatest(pwText, confirmText))
       .map { pwd, confirm in (pwd == confirm) && !pwd.isEmpty }
@@ -119,7 +120,6 @@ final class SignupMailInfoViewController: UIViewController, View {
       .startWith(false)
       .share(replay: 1)
 
-    // Nickname validation on editing end
     let nicknameValid =
       nicknameEditingEnd
       .withLatestFrom(nicknameText)
@@ -130,7 +130,6 @@ final class SignupMailInfoViewController: UIViewController, View {
       .startWith(false)
       .share(replay: 1)
 
-    // Next button enable state
     Observable.combineLatest(
       mailValid,
       passwordValid,

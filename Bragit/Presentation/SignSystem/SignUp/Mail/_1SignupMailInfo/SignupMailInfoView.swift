@@ -192,7 +192,7 @@ final class SignupMailInfoView: UIView {
     $0.spacing = 8
   }
 
-  private let nextButton = UIButton(type: .system).then {
+  let nextButton = UIButton(type: .system).then {
     $0.setTitle("다음", for: .normal)
     $0.setTitleColor(.grayScale900, for: .normal)
     $0.titleLabel?.font = .pretendard(size: 16, weight: .medium)
@@ -203,7 +203,6 @@ final class SignupMailInfoView: UIView {
 
   // MARK: - Validation UI API
   func showMailValidity(isValid: Bool) {
-    // Ignore external regex-based updates while we are checking against Supabase
     if isCheckingEmail { return }
 
     let raw = mailTextField.text ?? ""
