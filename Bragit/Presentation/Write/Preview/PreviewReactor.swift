@@ -146,7 +146,10 @@ class PreviewReactor: Reactor, Stepper {
             print("본문 이미지 URL: \(attachmentURLs.map { $0.absoluteString })")
 
             let setUploadMutation = Mutation.setUploadResult(thumbnail: thumbnailURL, attachments: attachmentURLs)
-            let contentForSave = self.replacingAttachmentsWithURLs(in: self.currentState.content, urls: attachmentURLs)
+            let contentForSave = PreviewReactor.replacingAttachmentsWithURLs(
+              in: self.currentState.content,
+              urls: attachmentURLs
+            )
 
             let archivedContentData: Data
             do {
@@ -266,7 +269,7 @@ class PreviewReactor: Reactor, Stepper {
   }
 
   // 본문 내 이미지들을 URL 텍스트로 치환
-  func replacingAttachmentsWithURLs(
+  static func replacingAttachmentsWithURLs(
     in original: NSAttributedString,
     urls: [URL]
   ) -> NSAttributedString {
