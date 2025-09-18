@@ -5,10 +5,11 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxCocoa
 import RxSwift
-import UIKit
 
 // 이메일 가입 1단계
 // 가입자에게 이메일, 비밀번호, 비밀번호 확인, 닉네임을 입력 받음
@@ -47,8 +48,21 @@ final class SignupMailInfoViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    let mailText = rootView.mailTextField.rx.text.orEmpty.share(replay: 1)
+    let pwText = rootView.pwTextField.rx.text.orEmpty.map {
+      $0.trimmingCharacters(in: .whitespacesAndNewlines)
+    }.share(replay: 1)
+    let confirmText = rootView.rePwTextField.rx.text.orEmpty.map {
+      $0.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    .share(replay: 1)
+    let nicknameText = rootView.nicknameTextField.rx.text.orEmpty.share(replay: 1)
+
     rootView.nextButton.rx.tap
-      .map { SignupMailInfoReactor.Action.tapNext }
+      .withLatestFrom(Observable.combineLatest(mailText, pwText, nicknameText))
+      .map { mail, password, nickname in
+        SignupMailInfoReactor.Action.tapNext(mail: mail, password: password, nickname: nickname)
+      }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -75,16 +89,6 @@ final class SignupMailInfoViewController: UIViewController, View {
         owner.rootView.nicknameTextField.resignFirstResponder()
       }
       .disposed(by: disposeBag)
-
-    let mailText = rootView.mailTextField.rx.text.orEmpty.share(replay: 1)
-    let pwText = rootView.pwTextField.rx.text.orEmpty.map {
-      $0.trimmingCharacters(in: .whitespacesAndNewlines)
-    }.share(replay: 1)
-    let confirmText = rootView.rePwTextField.rx.text.orEmpty.map {
-      $0.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-    .share(replay: 1)
-    let nicknameText = rootView.nicknameTextField.rx.text.orEmpty.share(replay: 1)
 
     let mailEditingEnd = rootView.mailTextField.rx.controlEvent(.editingDidEnd).share()
     let pwEditingEnd = rootView.pwTextField.rx.controlEvent(.editingDidEnd).share()

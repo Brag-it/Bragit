@@ -5,10 +5,11 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxCocoa
 import RxSwift
-import UIKit
 
 // 이메일 가입 2단계
 // 가입자에게 약관 동의를 받음. 완료 후에는 가입 승인 인증코드 발송

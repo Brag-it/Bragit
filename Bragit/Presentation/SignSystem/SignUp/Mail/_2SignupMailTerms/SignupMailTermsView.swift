@@ -5,9 +5,10 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import SnapKit
 import Then
-import UIKit
 
 final class SignupMailTermsView: UIView {
   // MARK: - State
@@ -68,7 +69,6 @@ final class SignupMailTermsView: UIView {
     $0.tintColor = .primary400
   }
 
-  // Label + Forward를 버튼 컨테이너로 구성
   let serviceDetailButton = UIButton(type: .system)
 
   let serviceAcceptStack = UIStackView().then {
@@ -170,7 +170,7 @@ final class SignupMailTermsView: UIView {
       serviceAcceptStack,
       privacyAcceptStack,
       marketingAcceptStack,
-      nextButton
+      nextButton,
     ].forEach { addSubview($0) }
 
     descriptionTitleLabel.snp.makeConstraints {
@@ -282,11 +282,11 @@ final class SignupMailTermsView: UIView {
   @objc private func didTapAllAccept() {
     let includeMarketing = !marketingAcceptStack.isHidden
 
-    // Determine if all required (and optional if visible) are currently ON
-    let allOn = includeMarketing ? (isServiceAccepted && isPrivacyAccepted && isMarketingAccepted)
-                                 : (isServiceAccepted && isPrivacyAccepted)
+    let allOn =
+      includeMarketing
+      ? (isServiceAccepted && isPrivacyAccepted && isMarketingAccepted)
+      : (isServiceAccepted && isPrivacyAccepted)
 
-    // If currently all ON, turn all OFF; otherwise turn all ON
     let newValue = !allOn
 
     isServiceAccepted = newValue
@@ -303,9 +303,11 @@ final class SignupMailTermsView: UIView {
 
   private func refreshAggregateStates() {
     // Update the All Accept icon based on current states
-    updateAllAcceptCheckboxImage(service: isServiceAccepted,
-                                 privacy: isPrivacyAccepted,
-                                 marketing: isMarketingAccepted)
+    updateAllAcceptCheckboxImage(
+      service: isServiceAccepted,
+      privacy: isPrivacyAccepted,
+      marketing: isMarketingAccepted
+    )
 
     // Enable next only when required terms are accepted
     updateNextButtonState(enabled: isServiceAccepted && isPrivacyAccepted)
@@ -355,7 +357,4 @@ final class SignupMailTermsView: UIView {
     nextButton.backgroundColor = .primary400
     nextButton.alpha = enabled ? 1.0 : 0.5
   }
-
-
 }
-

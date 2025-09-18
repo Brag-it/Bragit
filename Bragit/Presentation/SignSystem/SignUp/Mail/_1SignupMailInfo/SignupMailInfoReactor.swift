@@ -5,17 +5,19 @@
 //  Created by luca on 9/17/25.
 //
 
+import Foundation
+
+import Dependencies
 import ReactorKit
 import RxFlow
 import RxRelay
 import RxSwift
-import Foundation
 
 final class SignupMailInfoReactor: Reactor, Stepper {
   // MARK: - Reactor
   enum Action {
     case checkEmail(String)
-    case tapNext
+    case tapNext(mail: String, password: String, nickname: String)
   }
 
   enum Mutation {
@@ -34,61 +36,69 @@ final class SignupMailInfoReactor: Reactor, Stepper {
     var mailStatusText: String = " "
   }
 
-  let initialState: State
-
-  // MARK: - Stepper
+  let initialState: State = State()
   let steps = PublishRelay<Step>()
 
-  // MARK: - Init
-  init() {
-    self.initialState = State()
-  }
+  @Dependency(\.supabase) private var supabase
 
   // MARK: - Mutate
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
     case .checkEmail(let raw):
       let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-
-      guard Self.isValidEmail(email) else {
-        print("[Signup][MailCheck] invalid_format email=\(email)")
-        return .empty()
-      }
+      guard Self.isValidEmail(email) else { return .just(.setMailStatus(style: .reject, text: "사용 불가한 이메일입니다")) }
 
       return Observable<Mutation>.create { observer in
         let task = Task {
           do {
             let result = try await EmailAvailabilityChecker.check(email: email)
             if result.exists {
-              let providers = result.user?.identities?.compactMap { $0.provider }.joined(separator: ", ") ?? "unknown"
-              let status = (result.status ?? "").lowercased()
-              switch status {
-              case "waiting":
-                print("[Signup][MailCheck] status=waiting (인증 대기) providers=\(providers) email=\(email)")
-              case "confirmed":
-                print("[Signup][MailCheck] status=confirmed (이미 가입) providers=\(providers) email=\(email)")
-              case "banned":
-                print("[Signup][MailCheck] status=banned (제한) providers=\(providers) email=\(email)")
-              default:
-                print("[Signup][MailCheck] status=unknown providers=\(providers) email=\(email)")
-              }
+              observer.onNext(.setMailStatus(style: .reject, text: "이미 사용 중인 이메일입니다"))
             } else {
-              print("[Signup][MailCheck] status=not_found (사용 가능) email=\(email)")
+              observer.onNext(.setMailStatus(style: .accept, text: "사용 가능한 이메일입니다"))
             }
             observer.onCompleted()
           } catch {
-            print("[Signup][MailCheck] check failed: \(error) email=\(email)")
+            observer.onNext(.setMailStatus(style: .reject, text: "이메일 확인 실패"))
             observer.onCompleted()
           }
         }
         return Disposables.create { task.cancel() }
       }
-    case .tapNext:
-      steps.accept(AppStep.signupMailTerms)
-      return .empty()
+
+    case .tapNext(let mail, let password, let nickname):
+      let trimmedMail = mail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+      let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !trimmedMail.isEmpty, !trimmedPassword.isEmpty, !trimmedNickname.isEmpty else { return .empty() }
+
+      return Observable.create { [weak self] observer in
+        guard let self else { return Disposables.create() }
+        let task = Task {
+          KeychainMailStore.save(trimmedMail)
+          KeychainHelper.set(trimmedPassword, forKey: "pendingPassword")
+          UserDefaults.standard.set(trimmedNickname, forKey: "pending.nickname")
+
+          await MainActor.run { self.steps.accept(AppStep.signupMailTerms) }
+          observer.onCompleted()
+        }
+        return Disposables.create { task.cancel() }
+      }
     }
   }
 
+  // MARK: - Reduce
+  func reduce(state: State, mutation: Mutation) -> State {
+    var newState = state
+    switch mutation {
+    case .setMailStatus(let style, let text):
+      newState.mailStatusStyle = style
+      newState.mailStatusText = text
+    }
+    return newState
+  }
+
+  // MARK: - Utils
   private static func isValidEmail(_ email: String) -> Bool {
     guard !email.isEmpty else { return false }
     let pattern = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"
@@ -99,16 +109,5 @@ final class SignupMailInfoReactor: Reactor, Stepper {
     } catch {
       return false
     }
-  }
-
-  // MARK: - Reduce
-  func reduce(state: State, mutation: Mutation) -> State {
-    var newState = state
-    switch mutation {
-    case let .setMailStatus(style, text):
-      newState.mailStatusStyle = style
-      newState.mailStatusText = text
-    }
-    return newState
   }
 }

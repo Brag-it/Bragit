@@ -32,8 +32,6 @@ enum EmailAvailabilityCheckerError: Error, LocalizedError {
 }
 
 enum EmailAvailabilityChecker {
-  /// Calls the Supabase Edge Function `check-auth-user` with the given email.
-  /// - Returns: `EmailAvailabilityResult` with `exists` flag and optional providers.
   static func check(email raw: String) async throws -> EmailAvailabilityResult {
     let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     guard !email.isEmpty else {
@@ -49,7 +47,6 @@ enum EmailAvailabilityChecker {
       throw EmailAvailabilityCheckerError.requestFailed(status: 401, body: "Missing Supabase anon api key")
     }
 
-    // Build function URL: https://<host>/functions/v1/check-auth-user
     let urlString = "https://\(host)/functions/v1/check-auth-user"
     guard let url = URL(string: urlString) else { throw EmailAvailabilityCheckerError.invalidURL }
 
