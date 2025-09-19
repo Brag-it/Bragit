@@ -11,9 +11,8 @@
 // 아 리액트 어렵다
 
 import CryptoKit
-import Foundation
-
 import Dependencies
+import Foundation
 import Functions
 import ReactorKit
 import RxFlow
@@ -76,7 +75,7 @@ final class MainLoginReactor: Reactor, Stepper {
             return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
           },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil))
+        .just(.setNonce(raw: nil, hashed: nil)),
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
@@ -87,7 +86,7 @@ final class MainLoginReactor: Reactor, Stepper {
       return .empty()
     case .tapSignUp:
       // 일반(메일) 회원가입 시작
-        steps.accept(AppStep.signupMailInfo)
+      steps.accept(AppStep.signupMailInfo)
       return .empty()
     case .tapNext:
       steps.accept(AppStep.home)
@@ -123,10 +122,20 @@ final class MainLoginReactor: Reactor, Stepper {
           let session = try await self.supabase.auth.session
           let userId = session.user.id
 
+          print(
+            """
+            [AppleAuth] session
+            userId=\(userId.uuidString)
+            email=\(session.user.email ?? "nil")
+            mailParam=\(mail ?? "nil")
+            """
+          )
+
           print("[apple]: \(session.user.email as Any), \(mail as Any)")
 
           if session.user.email == nil || session.user.email?.isEmpty == true,
-            let mail, !mail.isEmpty {
+            let mail, !mail.isEmpty
+          {
             do {
               try await self.supabase.auth.update(
                 user: UserAttributes(
@@ -146,7 +155,10 @@ final class MainLoginReactor: Reactor, Stepper {
             .execute()
             .value
 
+          print("[AppleAuth] User_Info rows for id=\(userId.uuidString): \(users.count)")
+
           if users.first != nil {
+            print("[AppleAuth] Existing user. Routing to home.")
             @Sendable func setBlockUsers() {
               let blockManager = BlockManager()
               Task {
@@ -178,14 +190,9 @@ final class MainLoginReactor: Reactor, Stepper {
               setFollowUsers()
             }
           } else {
+            print("[AppleAuth] New user. Routing to signupAppleNickname.")
             await MainActor.run {
-              self.steps.accept(
-                AppStep.signupApple(
-                  initialMail: mail,
-                  refreshToken: refreshToken,
-                  isAppleLogin: true
-                )
-              )
+              self.steps.accept(AppStep.signupAppleNickname(refreshToken: refreshToken))
             }
           }
           observer.onCompleted()
@@ -228,10 +235,14 @@ final class MainLoginReactor: Reactor, Stepper {
       guard let self else { return Disposables.create() }
       Task {
         do {
+          print("[AppleAuth] signInWithApple start | idToken.len=\(idToken.count) nonce.len=\(nonce.count)")
           try await self.authClient.signInWithApple(idToken, nonce)
+          let sess = try? await self.supabase.auth.session
+          print("[AppleAuth] signInWithApple success | session=\(String(describing: sess))")
           observer.onNext(.setError(nil))
           observer.onCompleted()
         } catch {
+          print("[AppleAuth] signInWithApple failed: \(error)")
           observer.onNext(.setError(error.localizedDescription))
           observer.onCompleted()
         }
@@ -246,16 +257,18 @@ final class MainLoginReactor: Reactor, Stepper {
 
       let task = Task {
         do {
+          print("[AppleAuth] getRefreshToken start | authCode.len=\(authCode.count)")
           let response: Response = try await self.supabase.functions
             .invoke(
               "generate-refreshToken",
               options: FunctionInvokeOptions(body: ["authCode": authCode])
             )
-
+          print("[AppleAuth] getRefreshToken success | refreshToken.len=\(response.refreshToken.count)")
           observer.onNext(response.refreshToken)
           observer.onCompleted()
 
         } catch {
+          print("[AppleAuth] getRefreshToken failed: \(error)")
           observer.onError(error)
         }
       }

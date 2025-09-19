@@ -58,49 +58,6 @@ final class SignupMailConfirmViewController: UIViewController, View {
   }
 
   func bind(reactor: SignupMailConfirmReactor) {
-    // rootView.nextButton.rx.observe(Bool.self, "enabled")
-    //   .compactMap { $0 }
-    //   .bind(with: self) {owner, isEnabled in
-    //     owner.nextButton.alpha = isEnabled ? 1.0 : 0.5
-    //   }
-    //   .disposed(by: disposeBag)
-
-    // rootView.nextButton.rx.tap
-    //   .bind(with: self) { (owner: MailConfirmViewController, _) in
-    //     let code = owner.codeTextField.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) ?? ""
-    //     guard code.count == 6 else { return }
-    //     guard let email = KeychainMailStore.load(), !email.isEmpty else {
-    //       owner.updateCodeValidation(success: false, message: "이메일 정보를 불러올 수 없어요")
-    //       return
-    //     }
-
-    //       // Show loading state while verifying
-    //     owner.setLoadingState()
-    //     owner.view.isUserInteractionEnabled = false
-    //     owner.nextButton.alpha = 0.5
-
-    //     Task {
-    //       defer {
-    //         DispatchQueue.main.async {
-    //           owner.view.isUserInteractionEnabled = true
-    //           owner.nextButton.alpha = owner.nextButton.isEnabled ? 1.0 : 0.5
-    //         }
-    //       }
-    //       do {
-    //         try await owner.supabase.auth.verifyOTP(email: email, token: code, type: .email)
-    //         await MainActor.run {
-    //           print("[MailConfirm] 인증 완료")
-    //             // owner.steps.accept(AppStep.signupMail)
-    //         }
-    //       } catch {
-    //         await MainActor.run {
-    //           owner.setFailureState()
-    //         }
-    //       }
-    //     }
-    //   }
-    //   .disposed(by: disposeBag)
-
     rootView.helpButton.rx.tap
       .bind(with: self) { owner, _ in
         let popup = ConfirmPopupView(
@@ -152,15 +109,106 @@ final class SignupMailConfirmViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     rootView.nextButton.rx.tap
-      .map { SignupMailConfirmReactor.Action.tapNext }
-      .bind(to: reactor.action)
+      .bind(with: self) { owner, _ in
+        let code = owner.rootView.codeTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard code.count == 6 else { return }
+        guard let email = KeychainMailStore.load(), !email.isEmpty else {
+          owner.updateCodeValidation(success: false, message: "이메일 정보를 불러올 수 없어요")
+          return
+        }
+
+        owner.setLoadingState()
+        owner.view.isUserInteractionEnabled = false
+        owner.rootView.nextButton.alpha = 0.5
+
+        Task {
+          defer {
+            DispatchQueue.main.async {
+              owner.view.isUserInteractionEnabled = true
+              let isComplete = (owner.rootView.codeTextField.text?.count ?? 0) == 6
+              owner.rootView.nextButton.alpha = isComplete ? 1.0 : 0.5
+            }
+          }
+
+          do {
+            try await owner.supabase.auth.verifyOTP(email: email, token: code, type: .email)
+
+            // Fetch session and store current user id
+            let session = try await owner.supabase.auth.session
+            let userId = session.user.id.uuidString
+            UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
+
+            // Try to finalize signup with stored password and nickname (best-effort)
+            let pendingPassword: String? = KeychainHelper.get(forKey: "pendingPassword")
+            let pendingNickname: String = UserDefaults.standard.string(forKey: "pending.nickname") ?? ""
+
+            // Update password if available
+            if let pwd = pendingPassword, !pwd.isEmpty {
+              try await owner.supabase.auth.update(user: .init(password: pwd))
+            }
+            // Update nickname metadata if available (use AnyJSON for value)
+            if !pendingNickname.isEmpty {
+              try await owner.supabase.auth.update(user: .init(data: ["nickname": .string(pendingNickname)]))
+            }
+
+            print("[Signup] 가입 완료 - email: \(email), nickname: \(pendingNickname)")
+
+            // Background work: insert user info
+            Task.detached(priority: .background) { [supabase = owner.supabase] in
+              do {
+                // Construct user model and insert
+                let user = User(
+                  id: userId,
+                  nickname: pendingNickname,
+                  profile: nil,
+                  provider: "mail",
+                  signDate: Date(),
+                  latestUploaded: nil,
+                  refreshToken: nil
+                )
+                _ = try await supabase.from("User_Info").insert(user).execute()
+              } catch {
+                print("Post-signup background work failed: \(error)")
+              }
+            }
+
+            // Clear pending caches
+            KeychainMailStore.clear()
+            KeychainHelper.remove(forKey: "pendingPassword")
+            UserDefaults.standard.removeObject(forKey: "pending.nickname")
+
+            // Navigate forward on success (no need to show success UI explicitly)
+            await MainActor.run {
+              reactor.action.onNext(.tapNext)
+            }
+          } catch {
+            await MainActor.run {
+              owner.setFailureState()
+            }
+          }
+        }
+      }
       .disposed(by: disposeBag)
 
     rootView.backButton.rx.tap
-      .bind(with: self) { owner, _ in
-        owner.navigationController?.popViewController(animated: true)
-      }
+      .map { .tapBack }
+      .bind(to: reactor.action)
       .disposed(by: disposeBag)
+  }
+
+  private func setLoadingState() {
+    rootView.codeCheckLabel.text = "인증번호 확인 중..."
+    rootView.codeCheckLabel.textColor = .systemWarning
+    rootView.codeCheckIcon.image = .loading
+    rootView.codeCheckIcon.tintColor = .systemWarning
+  }
+
+  private func setFailureState() {
+    rootView.codeCheckLabel.text = "인증번호가 틀렸습니다"
+    rootView.codeCheckLabel.textColor = .systemDanger
+    rootView.codeCheckIcon.image = .reject
+    rootView.codeCheckIcon.tintColor = .systemDanger
+    rootView.codeTextField.layer.borderColor = UIColor.systemDanger.cgColor
   }
 
   private func remainingCooldownSeconds(now: Date = Date()) -> Int {

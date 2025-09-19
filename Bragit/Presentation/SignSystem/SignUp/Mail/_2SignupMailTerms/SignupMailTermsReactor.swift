@@ -17,14 +17,21 @@ import Supabase
 final class SignupMailTermsReactor: Reactor, Stepper {
   enum Action {
     case tapNext
+    case tapBack
   }
 
   enum Mutation {}
 
-  struct State {}
+  struct State {
+    let info: UserRegistrationInfo
+  }
 
-  let initialState: State = State()
+  let initialState: State
   let steps = PublishRelay<Step>()
+
+  init(info: UserRegistrationInfo){
+    self.initialState = State(info: info)
+  }
 
   @Dependency(\.supabase) private var supabase
 
@@ -40,16 +47,19 @@ final class SignupMailTermsReactor: Reactor, Stepper {
             } else {
               print("[Signup][Terms] No pending email to send OTP")
             }
-            await MainActor.run { self.steps.accept(AppStep.signupMailConfirm) }
+            await MainActor.run { self.steps.accept(AppStep.signupMailConfirm(self.currentState.info)) }
             observer.onCompleted()
           } catch {
             print("[Signup][Terms] send OTP failed: \(error)")
-            await MainActor.run { self.steps.accept(AppStep.signupMailConfirm) }
+            // await MainActor.run { self.steps.accept(AppStep.signupMailConfirm) }
             observer.onCompleted()
           }
         }
         return Disposables.create { task.cancel() }
       }
+      case .tapBack:
+        steps.accept(AppStep.pop)
+        return .empty()
     }
   }
 

@@ -14,6 +14,7 @@ final class SignupMailConfirmReactor: Reactor, Stepper {
   // MARK: - Reactor
   enum Action {
     case tapNext
+    case tapBack
   }
 
   enum Mutation {
@@ -23,19 +24,26 @@ final class SignupMailConfirmReactor: Reactor, Stepper {
   }
 
   let initialState: State
+  let info: UserRegistrationInfo
 
   // MARK: - Stepper
   let steps = PublishRelay<Step>()
 
   // MARK: - Init
-  init() {
+  init(info: UserRegistrationInfo) {
+    self.info = info
     self.initialState = State()
   }
 
   // MARK: - Mutate
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .tapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
     case .tapNext:
+      // 디버그: 로그인
+      // steps.accept(AppStep.login)
       steps.accept(AppStep.signupImageUpload)
       return .empty()
     }

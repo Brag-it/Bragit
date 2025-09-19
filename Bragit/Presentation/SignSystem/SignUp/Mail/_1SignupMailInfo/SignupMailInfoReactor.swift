@@ -5,9 +5,8 @@
 //  Created by luca on 9/17/25.
 //
 
-import Foundation
-
 import Dependencies
+import Foundation
 import ReactorKit
 import RxFlow
 import RxRelay
@@ -18,6 +17,7 @@ final class SignupMailInfoReactor: Reactor, Stepper {
   enum Action {
     case checkEmail(String)
     case tapNext(mail: String, password: String, nickname: String)
+    case tapBack
   }
 
   enum Mutation {
@@ -44,6 +44,9 @@ final class SignupMailInfoReactor: Reactor, Stepper {
   // MARK: - Mutate
   func mutate(action: Action) -> Observable<Mutation> {
     switch action {
+    case .tapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
     case .checkEmail(let raw):
       let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       guard Self.isValidEmail(email) else { return .just(.setMailStatus(style: .reject, text: "사용 불가한 이메일입니다")) }
@@ -71,6 +74,13 @@ final class SignupMailInfoReactor: Reactor, Stepper {
       let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
       let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmedMail.isEmpty, !trimmedPassword.isEmpty, !trimmedNickname.isEmpty else { return .empty() }
+        let info = UserRegistrationInfo(
+          mail: mail,
+          password: password,
+          nickname: nickname,
+          isAppleLogin: false,
+          refreshToken: nil
+        )
 
       return Observable.create { [weak self] observer in
         guard let self else { return Disposables.create() }
@@ -79,7 +89,7 @@ final class SignupMailInfoReactor: Reactor, Stepper {
           KeychainHelper.set(trimmedPassword, forKey: "pendingPassword")
           UserDefaults.standard.set(trimmedNickname, forKey: "pending.nickname")
 
-          await MainActor.run { self.steps.accept(AppStep.signupMailTerms) }
+          await MainActor.run { self.steps.accept(AppStep.signupMailTerms(info)) }
           observer.onCompleted()
         }
         return Disposables.create { task.cancel() }

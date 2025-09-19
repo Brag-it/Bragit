@@ -89,7 +89,7 @@ final class AppleInfoFormView: UIView {
       $0.textColor = labelColor
     }
     mailTextField.do {
-      $0.placeholder = "Bragit@bragit.com"
+      $0.placeholder = "bragit@bragit.com"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
@@ -308,7 +308,6 @@ final class AppleInfoFormView: UIView {
 final class AppleInfoViewController: UIViewController {
   var onNext: ((UserRegistrationInfo) -> Void)?
 
-  private let initialMail: String?
   private var isAppleLogin: Bool
   private let refreshToken: String?
 
@@ -337,12 +336,7 @@ final class AppleInfoViewController: UIViewController {
   private let reactorBag = DisposeBag()
   private let nicknameReactor = AppleInfoReactor()
 
-  init(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) {
-    if let space = initialMail?.trimmingCharacters(in: .whitespacesAndNewlines), !space.isEmpty {
-      self.initialMail = space
-    } else {
-      self.initialMail = nil
-    }
+  init(refreshToken: String?, isAppleLogin: Bool) {
     self.refreshToken = refreshToken
     self.isAppleLogin = isAppleLogin
     super.init(nibName: nil, bundle: nil)
@@ -547,10 +541,6 @@ final class AppleInfoViewController: UIViewController {
       formView.pwCheckIcon.image = nil
       formView.rePwCheckLabel.text = " "
       formView.rePwCheckIcon.image = nil
-
-      if let mail = initialMail {
-        formView.mailTextField.text = mail
-      }
     }
 
     formView.nicknameCheckLabel.text = " "

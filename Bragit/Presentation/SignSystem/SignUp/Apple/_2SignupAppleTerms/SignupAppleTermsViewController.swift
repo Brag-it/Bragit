@@ -1,5 +1,5 @@
 //
-//  SignupMailTermsViewController.swift
+//  SignupAppleTermsViewController.swift
 //  Bragit
 //
 //  Created by luca on 9/17/25.
@@ -11,18 +11,18 @@ import ReactorKit
 import RxCocoa
 import RxSwift
 
-// 이메일 가입 2단계
-// 가입자에게 약관 동의를 받음. 완료 후에는 가입 승인 인증코드 발송
+//
+//
 
-final class SignupMailTermsViewController: UIViewController, View {
+final class SignupAppleTermsViewController: UIViewController, View {
   var disposeBag = DisposeBag()
-  private let rootView = SignupMailTermsView()
+  private let rootView = SignupAppleTermsView()
 
   override func loadView() {
     self.view = rootView
   }
 
-  init(reactor: SignupMailTermsReactor) {
+  init(reactor: SignupAppleTermsReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
   }
@@ -41,7 +41,7 @@ final class SignupMailTermsViewController: UIViewController, View {
     view.backgroundColor = .white
   }
 
-  func bind(reactor: SignupMailTermsReactor) {
+  func bind(reactor: SignupAppleTermsReactor) {
     rootView.backButton.rx.tap
       .map { .tapBack }
       .bind(to: reactor.action)
@@ -73,7 +73,6 @@ final class SignupMailTermsViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
   }
-
   func pushTermsDetail(item: TermsItem) {
     let viewController = SettingTermsDetailViewController(item: item)
     navigationController?.pushViewController(viewController, animated: true)

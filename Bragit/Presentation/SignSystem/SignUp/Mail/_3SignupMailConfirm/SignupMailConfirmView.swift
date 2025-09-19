@@ -5,12 +5,11 @@
 //  Created by luca on 9/17/25.
 //
 
-import UIKit
-
 import Dependencies
 import RxSwift
 import SnapKit
 import Then
+import UIKit
 
 final class SignupMailConfirmView: UIView, UITextFieldDelegate {
   private let disposeBag = DisposeBag()

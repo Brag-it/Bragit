@@ -38,7 +38,7 @@ final class NickNameChangeViewController: UIViewController {
     $0.textField.autocapitalizationType = .none
     $0.textField.font = .pretendard(size: 14)
     $0.textField.returnKeyType = .done
-    $0.textField.placeholder = "1-8글자 내로 입력해주세요"
+    $0.textField.placeholder = "2-8글자 내로 입력해주세요"
   }
 
   private let nicknameCheckImageView = UIImageView()

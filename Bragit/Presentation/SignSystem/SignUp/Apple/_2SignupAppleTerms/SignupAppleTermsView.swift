@@ -1,17 +1,16 @@
 //
-//  SignupMailTermsView.swift
+//  SignupAppleTermsView.swift
 //  Bragit
 //
 //  Created by luca on 9/17/25.
 //
 
-import UIKit
-
 import SnapKit
 import Then
+import UIKit
 
-final class SignupMailTermsView: UIView {
-  // MARK: - State
+final class SignupAppleTermsView: UIView {
+
   private var isServiceAccepted: Bool = false
   private var isPrivacyAccepted: Bool = false
   private var isMarketingAccepted: Bool = false
