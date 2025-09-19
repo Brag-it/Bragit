@@ -5,9 +5,10 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import SnapKit
 import Then
-import UIKit
 
 final class SignupAppleTermsView: UIView {
 
@@ -169,7 +170,7 @@ final class SignupAppleTermsView: UIView {
       serviceAcceptStack,
       privacyAcceptStack,
       marketingAcceptStack,
-      nextButton,
+      nextButton
     ].forEach { addSubview($0) }
 
     descriptionTitleLabel.snp.makeConstraints {

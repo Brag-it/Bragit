@@ -170,7 +170,7 @@ final class SignupMailTermsView: UIView {
       serviceAcceptStack,
       privacyAcceptStack,
       marketingAcceptStack,
-      nextButton,
+      nextButton
     ].forEach { addSubview($0) }
 
     descriptionTitleLabel.snp.makeConstraints {

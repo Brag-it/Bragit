@@ -5,6 +5,8 @@
 //  Created by luca on 9/18/25.
 //
 
+import UIKit
+
 import Dependencies
 import ReactorKit
 import RxCocoa
@@ -13,7 +15,6 @@ import RxRelay
 import RxSwift
 import Storage
 import Supabase
-import UIKit
 
 final class SignupImageUploadReactor: Reactor, Stepper {
   // MARK: - Reactor
@@ -70,11 +71,11 @@ final class SignupImageUploadReactor: Reactor, Stepper {
           }
           .do { [weak self] mutation in
             guard let self else { return }
-            if case let .setProfileURL(url) = mutation, url != nil {
+            if case .setProfileURL(let url) = mutation, url != nil {
               self.steps.accept(AppStep.signupTagSelect)
             }
           },
-          .just(.setLoading(false))
+        .just(.setLoading(false)),
       ])
     case .pickedImageData(let data):
       print("🎨 사진 선택됨, 크기: \(data.count)")
@@ -86,14 +87,14 @@ final class SignupImageUploadReactor: Reactor, Stepper {
   func reduce(state: State, mutation: Mutation) -> State {
     var newState = state
     switch mutation {
-      case .setLoading(let isLoading):
-        newState.isLoading = isLoading
-      case .setError(let message):
-        newState.errorMessage = message
-      case .setProfileURL(let url):
-        newState.profileURL = url
-      case .setImageData(let data):
-        newState.imageData = data
+    case .setLoading(let isLoading):
+      newState.isLoading = isLoading
+    case .setError(let message):
+      newState.errorMessage = message
+    case .setProfileURL(let url):
+      newState.profileURL = url
+    case .setImageData(let data):
+      newState.imageData = data
     }
     return newState
   }

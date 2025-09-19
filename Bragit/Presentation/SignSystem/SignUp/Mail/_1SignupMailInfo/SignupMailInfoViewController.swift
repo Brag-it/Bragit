@@ -5,10 +5,11 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxCocoa
 import RxSwift
-import UIKit
 
 // 이메일 가입 1단계
 // 가입자에게 이메일, 비밀번호, 비밀번호 확인, 닉네임을 입력 받음

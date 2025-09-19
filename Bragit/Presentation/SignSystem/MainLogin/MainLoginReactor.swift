@@ -75,7 +75,7 @@ final class MainLoginReactor: Reactor, Stepper {
             return self.checkUserRegistrationAndRoute(mail: mail, refreshToken: refreshToken)
           },
         .just(.setLoading(false)),
-        .just(.setNonce(raw: nil, hashed: nil)),
+        .just(.setNonce(raw: nil, hashed: nil))
       ])
     case .tapAppleButton:
       let raw = Self.randomNonce()
@@ -122,20 +122,10 @@ final class MainLoginReactor: Reactor, Stepper {
           let session = try await self.supabase.auth.session
           let userId = session.user.id
 
-          print(
-            """
-            [AppleAuth] session
-            userId=\(userId.uuidString)
-            email=\(session.user.email ?? "nil")
-            mailParam=\(mail ?? "nil")
-            """
-          )
-
           print("[apple]: \(session.user.email as Any), \(mail as Any)")
 
           if session.user.email == nil || session.user.email?.isEmpty == true,
-            let mail, !mail.isEmpty
-          {
+            let mail, !mail.isEmpty {
             do {
               try await self.supabase.auth.update(
                 user: UserAttributes(

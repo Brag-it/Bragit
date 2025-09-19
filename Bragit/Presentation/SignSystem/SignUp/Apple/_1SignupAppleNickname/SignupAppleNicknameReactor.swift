@@ -75,7 +75,7 @@ final class SignupAppleNicknameReactor: Reactor, Stepper {
         return .concat([
           .just(Mutation.setStatusText(" ")),
           .just(Mutation.setStatusStyle(.none)),
-          .just(Mutation.setNextEnabled(false)),
+          .just(Mutation.setNextEnabled(false))
         ])
       }
 
@@ -84,7 +84,7 @@ final class SignupAppleNicknameReactor: Reactor, Stepper {
         return .concat([
           .just(Mutation.setStatusText("형식에 맞지 않는 닉네임입니다")),
           .just(Mutation.setStatusStyle(.reject)),
-          .just(Mutation.setNextEnabled(false)),
+          .just(Mutation.setNextEnabled(false))
         ])
       }
 
@@ -92,7 +92,7 @@ final class SignupAppleNicknameReactor: Reactor, Stepper {
       let start = Observable.concat([
         .just(Mutation.setStatusText("닉네임 확인 중...")),
         .just(Mutation.setStatusStyle(.loading)),
-        .just(Mutation.setNextEnabled(false)),
+        .just(Mutation.setNextEnabled(false))
       ])
 
       // Cancel previous check and increment generation (MailInfo style)

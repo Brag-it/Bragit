@@ -5,10 +5,11 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxCocoa
 import RxSwift
-import UIKit
 
 // 이메일 가입 4단계
 // 가입자에게 프로필 사진 등록에 대한 선택권을 줌
@@ -135,4 +136,3 @@ extension SignupImageUploadViewController: UIImagePickerControllerDelegate, UINa
     picker.dismiss(animated: true, completion: nil)
   }
 }
-

@@ -5,9 +5,10 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import SnapKit
 import Then
-import UIKit
 
 final class SignupAppleNicknameView: UIView {
   enum StatusStyle { case none, loading, accept, reject }
@@ -163,4 +164,3 @@ final class SignupAppleNicknameView: UIView {
     }
   }
 }
-

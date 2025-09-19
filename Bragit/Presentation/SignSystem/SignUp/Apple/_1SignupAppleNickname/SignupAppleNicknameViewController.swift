@@ -5,10 +5,11 @@
 //  Created by luca on 9/17/25.
 //
 
+import UIKit
+
 import ReactorKit
 import RxCocoa
 import RxSwift
-import UIKit
 
 // 이메일 가입 5단계
 // 가입자에게 관심있는 태그를 선택할 수 있는 선택지를 줌

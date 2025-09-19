@@ -5,10 +5,12 @@
 //  Created by luca on 9/17/25.
 //
 
-import SnapKit
-import Then
 import UIKit
 
+import SnapKit
+import Then
+
+typealias PopularTag = Tag
 final class SignupTagSelectView: UIView {
   var tags: [PopularTag] = []
 

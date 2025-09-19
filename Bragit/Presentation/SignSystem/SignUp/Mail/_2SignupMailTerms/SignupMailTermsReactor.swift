@@ -29,7 +29,7 @@ final class SignupMailTermsReactor: Reactor, Stepper {
   let initialState: State
   let steps = PublishRelay<Step>()
 
-  init(info: UserRegistrationInfo){
+  init(info: UserRegistrationInfo) {
     self.initialState = State(info: info)
   }
 
@@ -57,11 +57,11 @@ final class SignupMailTermsReactor: Reactor, Stepper {
         }
         return Disposables.create { task.cancel() }
       }
-      case .tapBack:
-        steps.accept(AppStep.pop)
-        return .empty()
+    case .tapBack:
+      steps.accept(AppStep.pop)
+      return .empty()
     }
   }
 
-  func reduce(state: State, mutation: Mutation) -> State { state }
+  func reduce(state: State, mutation: Mutation) -> State {}
 }
