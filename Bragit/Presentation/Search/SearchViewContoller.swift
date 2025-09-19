@@ -108,10 +108,11 @@ final class SearchViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     let textField = searchBar.textField
-    textField.rx.controlEvent(.editingChanged)
-      .withLatestFrom(textField.rx.text.orEmpty)
+    textField.rx.text.orEmpty
       .distinctUntilChanged()
+      .debounce(.milliseconds(250), scheduler: MainScheduler.instance)
       .map(SearchReactor.Action.updateText)
+      .debug("디버깅")
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
@@ -128,7 +129,8 @@ final class SearchViewController: UIViewController, View {
       .disposed(by: disposeBag)
 
     submitTrigger
-      .map { SearchReactor.Action.submit }
+      .withLatestFrom(searchBar.textField.rx.text.orEmpty)
+      .map { SearchReactor.Action.submit($0) }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 
