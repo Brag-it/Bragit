@@ -54,6 +54,7 @@ final class SettingView: UIView {
   private let settingItems: [SettingItem] = [
     SettingItem(title: "이용 약관", subtitle: ""),
     SettingItem(title: "오픈소스 라이선스", subtitle: ""),
+    SettingItem(title: "차단한 유저", subtitle: ""),
     //    SettingItem(title: "비밀번호 변경", subtitle: ""),
     SettingItem(title: "앱 버전", subtitle: "1.0.0")
   ]
