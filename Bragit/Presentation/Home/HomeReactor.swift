@@ -12,6 +12,7 @@ import RxFlow
 import RxRelay
 import Then
 import Dependencies
+import Algorithms
 
 class HomeReactor: Reactor, Stepper {
   var initialState: State
@@ -162,7 +163,8 @@ class HomeReactor: Reactor, Stepper {
       }
     case .appendPosts(let posts):
       return state.with {
-        $0.posts.append(contentsOf: posts)
+        let newPosts = $0.posts + posts
+        $0.posts = Array(newPosts.uniqued(on: \.id))
       }
     case .setPostsToReconfigure(let posts):
       return state.with {
