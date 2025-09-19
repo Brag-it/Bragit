@@ -295,7 +295,8 @@ class FavoriteReactor: Reactor, Stepper {
     case .appendPosts(let posts):
       return state.with {
         $0.hasNexPage = posts.count >= 10
-        $0.posts.append(contentsOf: posts)
+        let newPosts = $0.posts + posts
+        $0.posts = Array(newPosts.uniqued(on: \.id))
       }
     case .setPostType(let type):
       return state.with {

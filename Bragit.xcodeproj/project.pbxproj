@@ -24,6 +24,7 @@
 		E746A9292E6A751C00F285E7 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = E746A9282E6A751C00F285E7 /* Lottie */; };
 		E75DA8FA2E616AD700C324D3 /* RichTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = E75DA8F92E616AD700C324D3 /* RichTextKit */; };
 		E92FBB862E7B9E8C009D7A4F /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = E92FBB852E7B9E84009D7A4F /* README.md */; };
+		E92FC0002E7D51E8009D7A4F /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = E92FBFFF2E7D51E8009D7A4F /* Algorithms */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,6 +88,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E70E4F822E55DA8A00CE935E /* Kingfisher in Frameworks */,
+				E92FC0002E7D51E8009D7A4F /* Algorithms in Frameworks */,
 				E70E4F7F2E55DA4600CE935E /* RxFlow in Frameworks */,
 				E70E4F722E55D9CC00CE935E /* RxCocoa in Frameworks */,
 				E70E4F6F2E55D99E00CE935E /* Supabase in Frameworks */,
@@ -171,6 +173,7 @@
 				E75DA8F92E616AD700C324D3 /* RichTextKit */,
 				E746A9282E6A751C00F285E7 /* Lottie */,
 				E703E0C02E741F9800AE6217 /* Loaf */,
+				E92FBFFF2E7D51E8009D7A4F /* Algorithms */,
 			);
 			productName = Bragit;
 			productReference = E70E4E882E55D60D00CE935E /* Bragit.app */;
@@ -240,6 +243,7 @@
 				E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */,
 				E746A9272E6A751C00F285E7 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 				E703E0BF2E741F9800AE6217 /* XCRemoteSwiftPackageReference "Loaf" */,
+				E92FBFFE2E7D51E8009D7A4F /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E70E4E892E55D60D00CE935E /* Products */;
@@ -690,6 +694,14 @@
 				minimumVersion = 1.2.0;
 			};
 		};
+		E92FBFFE2E7D51E8009D7A4F /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -772,6 +784,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E75DA8F82E616AD700C324D3 /* XCRemoteSwiftPackageReference "RichTextKit" */;
 			productName = RichTextKit;
+		};
+		E92FBFFF2E7D51E8009D7A4F /* Algorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E92FBFFE2E7D51E8009D7A4F /* XCRemoteSwiftPackageReference "swift-algorithms" */;
+			productName = Algorithms;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
