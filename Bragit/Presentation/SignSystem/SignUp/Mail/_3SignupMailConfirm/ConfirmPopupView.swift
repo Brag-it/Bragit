@@ -7,10 +7,13 @@
 
 import UIKit
 
+import Dependencies
 import SnapKit
+import Supabase
 import Then
 
 final class ConfirmPopupView: UIView {
+  @Dependency(\.supabase) private var supabase
 
   // MARK: - Public Closures
 
@@ -125,7 +128,21 @@ final class ConfirmPopupView: UIView {
   // MARK: - Actions
 
   @objc private func leftButtonTapped() {
-    onLeftTap?()
+    // 재전송: Keychain에 저장된 이메일로 OTP 재발송
+    Task { [weak self] in
+      guard let self else { return }
+      do {
+        if let email = KeychainMailStore.load(), !email.isEmpty {
+          try await self.supabase.auth.signInWithOTP(email: email, shouldCreateUser: true)
+        } else {
+          print("[ConfirmPopup] No email in Keychain to resend OTP")
+        }
+      } catch {
+        print("[ConfirmPopup] Resend OTP failed: \(error)")
+      }
+      // 콜백 실행 및 닫기
+      self.onLeftTap?()
+    }
   }
 
   @objc private func rightButtonTapped() {
