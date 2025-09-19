@@ -64,7 +64,7 @@ enum AppStep: Step {
   case openSource                      // 오픈소스 라이선스
   case openSourceDetails(LicenseItem)  // 오픈소스 라이선스 상세
   case cancelAccount                   // 탈퇴하기
-
+  case blockUsers                      // 차단한 유저
   // 태그
   case tagInform(Tag)     // 태그 정보
 }

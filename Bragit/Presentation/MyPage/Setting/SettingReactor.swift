@@ -28,6 +28,7 @@ class SettingReactor: Reactor, Stepper {
     case logoutButtonTap
     case tapTerms
     case tapLicenses
+    case tapBlockUsers
   }
 
   enum Mutation {
@@ -59,6 +60,9 @@ class SettingReactor: Reactor, Stepper {
 
     case .tapLicenses:
       steps.accept(AppStep.openSource)
+      return .empty()
+    case .tapBlockUsers:
+      steps.accept(AppStep.blockUsers)
       return .empty()
     }
   }
