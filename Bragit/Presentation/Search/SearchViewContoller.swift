@@ -112,7 +112,6 @@ final class SearchViewController: UIViewController, View {
       .distinctUntilChanged()
       .debounce(.milliseconds(250), scheduler: MainScheduler.instance)
       .map(SearchReactor.Action.updateText)
-      .debug("디버깅")
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 

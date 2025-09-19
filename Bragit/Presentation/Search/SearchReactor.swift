@@ -121,7 +121,6 @@ class SearchReactor: Reactor, Stepper {
 
     case .submit(let query):
       let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-      print("디버깅깅: \(query)")
       guard !trimmed.isEmpty else { return .empty() }
       saveRecent(trimmed)
       return .concat([
@@ -129,7 +128,7 @@ class SearchReactor: Reactor, Stepper {
         .just(.setMode(.results)),
         .just(.setSuggestions([])),
         .just(.setPage(0)),
-        .just(.setRecent(recentSearches)),
+        .just(.setRecent(recentSearches))
       ])
       .concat(runScopeSearch(scope: currentState.scope, query: trimmed))
 
