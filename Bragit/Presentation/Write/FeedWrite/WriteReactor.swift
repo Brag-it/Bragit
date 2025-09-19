@@ -21,6 +21,10 @@ class WriteReactor: Reactor, Stepper {
 
   private let disposeBag = DisposeBag()
 
+  enum HeaderLevel: Int {
+    case none = 0, h1 = 1, h2 = 2
+  }
+
   // 사용자 액션 정의 (사용자의 의도)
   enum Action {
     case tapDismiss // 탭 닫기
@@ -30,6 +34,8 @@ class WriteReactor: Reactor, Stepper {
     case tapLoadPost    // 불러오기
     case updateTitle(String)
     case updateContent(NSAttributedString)
+    case header1Tapped
+    case header2Tapped
     case boldTapped
     case underlineTapped
     case strikethroughTapped
@@ -40,6 +46,7 @@ class WriteReactor: Reactor, Stepper {
   enum Mutation {
     case setTitle(String)
     case setContent(NSAttributedString)
+    case setHeaderLevel(HeaderLevel)
     case setBoldActive(Bool)
     case setUnderlineActive(Bool)
     case setStrikethroughActive(Bool)
@@ -51,6 +58,7 @@ class WriteReactor: Reactor, Stepper {
   struct State {
     var title: String = ""                                    // 제목
     var content: NSAttributedString = NSAttributedString("")  // 내용
+    var headerLevel: HeaderLevel = .none
     var isBoldActive = false
     var isUnderlineActive = false
     var isStrikethroughActive = false
@@ -82,6 +90,16 @@ class WriteReactor: Reactor, Stepper {
 
     case .updateContent(let content):
       return .just(.setContent(content))
+
+    case .header1Tapped:
+      let newLevel: HeaderLevel = currentState.headerLevel == .h1 ? .none : .h1
+      return .just(.setHeaderLevel(newLevel))
+
+    case .header2Tapped:
+      let newLevel: HeaderLevel = currentState.headerLevel == .h2 ? .none : .h2
+      return .just(.setHeaderLevel(newLevel))
+
+      return .just(.setHeaderLevel(newLevel))
 
     case .boldTapped:
       return .just(.setBoldActive(!currentState.isBoldActive))
@@ -155,6 +173,8 @@ class WriteReactor: Reactor, Stepper {
       newState.title = title
     case .setContent(let content):
       newState.content = content
+    case .setHeaderLevel(let level):
+      newState.headerLevel = level
     case .setBoldActive(let isActive):
       newState.isBoldActive = isActive
     case .setUnderlineActive(let isActive):

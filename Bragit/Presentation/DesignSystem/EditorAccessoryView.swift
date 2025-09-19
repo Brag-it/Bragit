@@ -12,6 +12,20 @@ import RxSwift
 import RxCocoa
 
 final class EditorAccessoryView: UIView {
+  // 제목 버튼
+  let header1Button = UIButton(type: .system).then {
+    $0.setTitle("H1", for: .normal)
+    $0.titleLabel?.font = .pretendard(size: 17)
+    $0.tintColor = .grayScaleBack
+  }
+
+  // 머리말 버튼
+  let header2Button = UIButton(type: .system).then {
+    $0.setTitle("H2", for: .normal)
+    $0.titleLabel?.font = .pretendard(size: 17)
+    $0.tintColor = .grayScaleBack
+  }
+
   // 볼드체 적용 버튼
   let boldButton = UIButton(type: .system).then {
     $0.setImage(UIImage(systemName: "bold"), for: .normal)
@@ -64,9 +78,11 @@ final class EditorAccessoryView: UIView {
     layer.borderColor = UIColor.systemGray3.cgColor
     layer.borderWidth = 1.0
 
-    [boldButton, underlineButton, strikethroughButton, imageButton].forEach {
-      stackView.addArrangedSubview($0)
-    }
+    [
+      header1Button, header2Button,
+      boldButton, underlineButton, strikethroughButton,
+      imageButton
+    ].forEach { stackView.addArrangedSubview($0) }
   }
 
   private func setupLayout() {

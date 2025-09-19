@@ -189,6 +189,16 @@ class WriteViewController: UIViewController, View {
       }
       .disposed(by: disposeBag)
 
+    editorView.accessoryView.header1Button.rx.tap
+      .map { Reactor.Action.header1Tapped }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
+    editorView.accessoryView.header2Button.rx.tap
+      .map { Reactor.Action.header2Tapped }
+      .bind(to: reactor.action)
+      .disposed(by: disposeBag)
+
     editorView.accessoryView.boldButton.rx.tap
       .map { Reactor.Action.boldTapped }
       .bind(to: reactor.action)
@@ -269,9 +279,12 @@ class WriteViewController: UIViewController, View {
     reactor.state
       .bind { [weak self] state in
         guard let self else { return }
+        editorView.toggleHeading(level: state.headerLevel.rawValue)
         editorView.applyBold(state.isBoldActive)
         editorView.applyUnderline(state.isUnderlineActive)
         editorView.applyStrikethrough(state.isStrikethroughActive)
+        editorView.accessoryView.header1Button.tintColor = state.headerLevel == .h1 ? .information : .grayScaleBack
+        editorView.accessoryView.header2Button.tintColor = state.headerLevel == .h2 ? .information : .grayScaleBack
         editorView.accessoryView.boldButton.tintColor = state.isBoldActive ? .information : .grayScaleBack
         editorView.accessoryView.underlineButton.tintColor = state.isUnderlineActive ? .information : .grayScaleBack
         editorView.accessoryView.strikethroughButton.tintColor = state.isStrikethroughActive ?
