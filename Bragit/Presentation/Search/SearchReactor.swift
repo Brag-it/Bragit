@@ -24,7 +24,7 @@ class SearchReactor: Reactor, Stepper {
   enum Action {
     case viewDidLoad
     case updateText(String)
-    case submit
+    case submit(String)
     case submitWithQuery(String, Bool)
     case clearAllRecent
     case deleteRecent(String)
@@ -98,15 +98,18 @@ class SearchReactor: Reactor, Stepper {
       // 공백이면 최근 검색 모드로 복귀
       if trimmed.isEmpty {
         return .concat([
-          .just(.setText("")),
           .just(.setMode(.recent)),
           .just(.setSuggestions([]))
         ])
       }
 
+      // 이미 결과 모드라면 모드 변경하지 않고 텍스트만 업데이트
+      if currentState.mode == .results {
+        return .just(.setText(trimmed))
+      }
+
       // 입력 중
-      let suggest = tagManager
-        .rxSearchTags(searchText: trimmed, page: 0, pageSize: currentState.pageSize)
+      let suggest = tagManager.rxSearchTags(searchText: trimmed, page: 0, pageSize: currentState.pageSize)
         .map { $0.map { $0.tag } }
         .map(Mutation.setSuggestions)
 
@@ -116,8 +119,8 @@ class SearchReactor: Reactor, Stepper {
         suggest
       ])
 
-    case .submit:
-      let trimmed = currentState.text.trimmingCharacters(in: .whitespacesAndNewlines)
+    case .submit(let query):
+      let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmed.isEmpty else { return .empty() }
       saveRecent(trimmed)
       return .concat([
@@ -125,11 +128,11 @@ class SearchReactor: Reactor, Stepper {
         .just(.setMode(.results)),
         .just(.setSuggestions([])),
         .just(.setPage(0)),
-        .just(.setRecent(recentSearches)),
-        self.mutate(action: .changeScope(.tag))
+        .just(.setRecent(recentSearches))
       ])
+      .concat(runScopeSearch(scope: currentState.scope, query: trimmed))
 
-    // 최근검색어/추천어 클릭 해당 검색어로 태그 검색
+      // 최근검색어/추천어 클릭 해당 검색어로 태그 검색
     case let .submitWithQuery(query, shouldSave):
       let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmed.isEmpty else { return .empty() }
@@ -141,7 +144,7 @@ class SearchReactor: Reactor, Stepper {
         .just(.setPage(0)),
         .just(.setRecent(recentSearches))
       ])
-      .concat(Observable.just(Action.changeScope(.tag)).flatMap(self.mutate))
+      .concat(runScopeSearch(scope: currentState.scope, query: trimmed))
 
     case .loadNextPage:
       switch currentState.mode {
@@ -242,56 +245,13 @@ class SearchReactor: Reactor, Stepper {
       return .just(.setRecent(recentSearches))
 
     case .changeScope(let scope):
-      // Set scope, reset page, set paging, run search for that scope, set results, set paging false
       let trimmed = currentState.text.trimmingCharacters(in: .whitespacesAndNewlines)
-      let page = 0
-      let pageSize = currentState.pageSize
-      let setScope = Observable<Mutation>.just(.setScope(scope))
-      let setPage = Observable<Mutation>.just(.setPage(0))
-      let setPaging = Observable<Mutation>.just(.setPaging(true))
-      let setPagingFalse = Observable<Mutation>.just(.setPaging(false))
-      let search: Observable<Mutation>
-      switch scope {
-      case .tag:
-        search = tagManager.rxSearchTags(searchText: trimmed, page: page, pageSize: pageSize)
-          .map { $0.map { SearchTagItem(tag: $0) } }
-          .map { tagItems in
-            let hasMoreTags = tagItems.count >= pageSize
-            return [
-              .setResults(tags: tagItems, posts: [], users: []),
-              .setHasMore(tags: hasMoreTags, posts: false, users: false)
-            ]
-          }
-          .flatMap { Observable.from($0) }
-      case .post:
-        search = searchManager.rxSearchPosts(searchText: trimmed, page: page, pageSize: pageSize)
-          .map { $0.map { SearchPostItem(post: $0) } }
-          .map { postItems in
-            let hasMorePosts = postItems.count >= pageSize
-            return [
-              .setResults(tags: [], posts: postItems, users: []),
-              .setHasMore(tags: false, posts: hasMorePosts, users: false)
-            ]
-          }
-          .flatMap { Observable.from($0) }
-      case .user:
-        search = searchManager.rxSearchUsers(searchText: trimmed, page: page, pageSize: pageSize)
-          .map { $0.map { SearchUserItem(user: $0) } }
-          .map { userItems in
-            let hasMoreUsers = userItems.count >= pageSize
-            return [
-              .setResults(tags: [], posts: [], users: userItems),
-              .setHasMore(tags: false, posts: false, users: hasMoreUsers)
-            ]
-          }
-          .flatMap { Observable.from($0) }
-      }
-      return .concat([
-        setScope,
-        setPage,
-        setPaging,
-        search,
-        setPagingFalse
+      return Observable.concat([
+        .just(.setScope(scope)),
+        .just(.setPage(0)),
+        .just(.setPaging(true)),
+        runScopeSearch(scope: scope, query: trimmed),
+        .just(.setPaging(false))
       ])
 
     case .didTapTag(let tag):
@@ -378,23 +338,6 @@ class SearchReactor: Reactor, Stepper {
     return newState
   }
 
-  // 검색어 입력 액션만 디바운스
-  func transform(action: Observable<Action>) -> Observable<Action> {
-    let typing = action
-      .compactMap { act -> String? in
-        if case let .updateText(text) = act { return text } else { return nil }
-      }
-      .debounce(.milliseconds(250), scheduler: MainScheduler.instance)
-      .distinctUntilChanged()
-      .map(Action.updateText)
-
-    let others = action.filter { act in
-      if case .updateText = act { return false } else { return true }
-    }
-
-    return Observable.merge(typing, others)
-  }
-
   func transform(state: Observable<State>) -> Observable<State> {
     return state.observe(on: MainScheduler.instance)
   }
@@ -439,5 +382,47 @@ extension SearchReactor {
       }
     }
     return mergedItems
+  }
+
+  func runScopeSearch(scope: SearchScope, query: String) -> Observable<Mutation> {
+    let page = 0
+    let pageSize = currentState.pageSize
+    switch scope {
+    case .tag:
+      return tagManager.rxSearchTags(searchText: query, page: page, pageSize: pageSize)
+        .map { $0.map { SearchTagItem(tag: $0) } }
+        .map { tagItems in
+          let hasMoreTags = tagItems.count >= pageSize
+          return [
+            Mutation.setResults(tags: tagItems, posts: [], users: []),
+            Mutation.setHasMore(tags: hasMoreTags, posts: false, users: false)
+          ]
+        }
+        .flatMap { Observable.from($0) }
+
+    case .post:
+      return searchManager.rxSearchPosts(searchText: query, page: page, pageSize: pageSize)
+        .map { $0.map { SearchPostItem(post: $0) } }
+        .map { postItems in
+          let hasMorePosts = postItems.count >= pageSize
+          return [
+            Mutation.setResults(tags: [], posts: postItems, users: []),
+            Mutation.setHasMore(tags: false, posts: hasMorePosts, users: false)
+          ]
+        }
+        .flatMap { Observable.from($0) }
+
+    case .user:
+      return searchManager.rxSearchUsers(searchText: query, page: page, pageSize: pageSize)
+        .map { $0.map { SearchUserItem(user: $0) } }
+        .map { userItems in
+          let hasMoreUsers = userItems.count >= pageSize
+          return [
+            Mutation.setResults(tags: [], posts: [], users: userItems),
+            Mutation.setHasMore(tags: false, posts: false, users: hasMoreUsers)
+          ]
+        }
+        .flatMap { Observable.from($0) }
+    }
   }
 }

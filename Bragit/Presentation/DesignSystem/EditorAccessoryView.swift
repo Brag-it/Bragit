@@ -64,9 +64,10 @@ final class EditorAccessoryView: UIView {
     layer.borderColor = UIColor.systemGray3.cgColor
     layer.borderWidth = 1.0
 
-    [boldButton, underlineButton, strikethroughButton, imageButton].forEach {
-      stackView.addArrangedSubview($0)
-    }
+    [
+      boldButton, underlineButton, strikethroughButton,
+      imageButton
+    ].forEach { stackView.addArrangedSubview($0) }
   }
 
   private func setupLayout() {
