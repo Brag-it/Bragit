@@ -97,7 +97,6 @@ final class FavoriteFeedView: UIView {
           layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
         header.pinToVisibleBounds = true
         section.boundarySupplementaryItems = [header]
-        section.contentInsetsReference = .layoutMargins
         return section
       }
     }
