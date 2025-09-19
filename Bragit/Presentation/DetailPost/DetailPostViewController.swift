@@ -89,7 +89,7 @@ class DetailPostViewController: UIViewController, View {
     $0.backgroundColor = .grayScale100
   }
 
-  private let contentView = UITextView().then {
+  private let contentView = LimitedMenuTextView().then {
     $0.isEditable = false
     $0.isScrollEnabled = false
     $0.textContainerInset = .zero
@@ -486,6 +486,11 @@ class DetailPostViewController: UIViewController, View {
       .disposed(by: disposeBag)
   }
   // swiftlint:enable cyclomatic_complexity
+
+  override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+    // 이미지 저장/공유 같은 액션을 전부 막음
+    return false
+  }
 
   static func replaceLinksWithImages(in attributed: NSAttributedString, maxWidth: CGFloat) async -> NSAttributedString {
     let mutable = NSMutableAttributedString(attributedString: attributed)
