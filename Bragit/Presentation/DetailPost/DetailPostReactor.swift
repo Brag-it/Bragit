@@ -17,6 +17,7 @@ class DetailPostReactor: Reactor, Stepper {
   var initialState: State
   @Dependency(\.userManager) var userManager
   @Dependency(\.postManager) var postManager
+  @Dependency(\.tagManager) var tagManager
   @LocalStorage(location: .likePosts) var likePosts: [String]?
   @LocalStorage(location: .nowUser) var nowUser: String?
   @LocalStorage(location: .followUser) var followUser: [String]?
@@ -198,10 +199,26 @@ class DetailPostReactor: Reactor, Stepper {
         .just(.setLoading(true)),
         postManager.rxDeletePost(postId: post.id.uuidString)
           .flatMap { _ in
-            Observable.from([
-              Mutation.setToast(ToastEvent(purpose: .deleted)),
-              Mutation.setDeleted
-            ])
+            let tags = self.post.tags
+
+            let updateTagOperations = tags.map { tag in
+              self.tagManager.rxDecrementTagCount(tagName: tag.tag)
+                .flatMap { newCount -> Observable<Void> in
+                  if newCount <= 0 {
+                    return .just(())
+                  } else {
+                    return .just(())
+                  }
+                }
+            }
+
+            return Observable.concat(updateTagOperations)
+              .ignoreElements()
+              .asCompletable()
+              .andThen(Observable.from([
+                Mutation.setToast(ToastEvent(purpose: .deleted)),
+                Mutation.setDeleted
+              ]))
           }
           .catch { error in
             return .just(.setToast(ToastEvent(purpose: .error(error.localizedDescription))))
