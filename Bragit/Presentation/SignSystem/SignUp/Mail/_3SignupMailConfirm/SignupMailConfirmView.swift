@@ -55,6 +55,7 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
     $0.layer.cornerRadius = 14
     $0.textAlignment = .center
     $0.isEnabled = true
+    $0.returnKeyType = .done
     $0.placeholder = "000000"
     $0.clearButtonMode = .never
     $0.font = .pretendard(size: 28, weight: .semibold)
@@ -185,5 +186,10 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
     let isComplete = (codeTextField.text?.count ?? 0) == 6
     nextButton.isEnabled = isComplete
     nextButton.alpha = isComplete ? 1.0 : 0.5
+  }
+
+  func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    textField.resignFirstResponder()
+    return true
   }
 }

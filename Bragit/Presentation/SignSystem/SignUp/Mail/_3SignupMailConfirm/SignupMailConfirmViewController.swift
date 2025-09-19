@@ -55,6 +55,9 @@ final class SignupMailConfirmViewController: UIViewController, View {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
+    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    tap.cancelsTouchesInView = false
+    view.addGestureRecognizer(tap)
   }
 
   func bind(reactor: SignupMailConfirmReactor) {
@@ -194,6 +197,12 @@ final class SignupMailConfirmViewController: UIViewController, View {
       .map { .tapBack }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
+
+    rootView.codeTextField.rx.controlEvent(.editingDidEndOnExit)
+      .bind(with: self) { owner, _ in
+        owner.rootView.codeTextField.resignFirstResponder()
+      }
+      .disposed(by: disposeBag)
   }
 
   private func setLoadingState() {
@@ -257,5 +266,8 @@ final class SignupMailConfirmViewController: UIViewController, View {
     rootView.codeCheckLabel.text = message
     rootView.codeCheckLabel.textColor = success ? .systemSafe : .systemDanger
     rootView.codeTextField.layer.borderColor = (success ? UIColor.systemSafe : UIColor.systemDanger).cgColor
+  }
+  @objc private func dismissKeyboard() {
+    view.endEditing(true)
   }
 }
