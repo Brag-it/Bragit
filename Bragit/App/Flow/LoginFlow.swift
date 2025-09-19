@@ -16,19 +16,36 @@ final class LoginFlow: Flow, Stepper {
   let steps = PublishRelay<Step>()
   private var pendingUserInfo: UserRegistrationInfo?
 
+  // Sets the first screen as root, then pushes subsequent screens
+  private func setOrPush(_ viewController: UIViewController, animated: Bool = true) {
+    if nav.viewControllers.isEmpty {
+      nav.setViewControllers([viewController], animated: false)
+    } else {
+      nav.pushViewController(viewController, animated: animated)
+    }
+  }
+
   func navigate(to step: Step) -> FlowContributors {
     guard let step = step as? AppStep else { return .none }
     switch step {
     case .login:
       return showLogin()
-    case .signup(let initialMail, let refreshToken, let isAppleLogin):
-      return showSignup(initialMail: initialMail, refreshToken: refreshToken, isAppleLogin: isAppleLogin)
-    case .signTermsConset:
-      return showTermsConsent()
-    case .signupPhoto:
-      return showSignupPhoto()
-    case .signSelectTag(let profileURL):
-      return showSignSelectTag(profileURL: profileURL)
+    case .signupApple(let refreshToken, let isAppleLogin):
+      return showSignupApple(refreshToken: refreshToken, isAppleLogin: isAppleLogin)
+    case .signupAppleNickname(let refreshToken):
+      return showSignupAppleNickname(refreshToken: refreshToken)
+    case .signupAppleTerms(let nickname, let refreshToken):
+      return showSignupAppleTerms(nickname: nickname, refreshToken: refreshToken)
+    case .signupMailInfo:
+      return showSignupMailInfo()
+    case .signupMailTerms(let info):
+      return showSignupMailTerms(info: info)
+    case .signupMailConfirm(let info):
+      return showSignupMailConfirm(info: info)
+    case .signupImageUpload:
+      return showSignupImageUpload()
+    case .signupTagSelect:
+      return showSignupTagSelect()
     case .signInMail:
       return showMailLogin()
     case .home:
@@ -36,8 +53,13 @@ final class LoginFlow: Flow, Stepper {
 
     // 추가: 뒤로 가기(pop) / dismiss 처리
     case .pop:
-      nav.popViewController(animated: true)
-      return .none
+      if nav.viewControllers.count > 1 {
+        nav.popViewController(animated: true)
+        return .none
+      } else {
+        // No previous screen to pop to; return to login root
+        return showLogin()
+      }
     case .dismiss:
       nav.dismiss(animated: true)
       return .none
@@ -48,11 +70,9 @@ final class LoginFlow: Flow, Stepper {
   }
 
   private func showLogin() -> FlowContributors {
-    let reactor = LoginReactor()
+    let reactor = MainLoginReactor()
     let loginVC = LoginViewController(reactor: reactor)
     nav.setViewControllers([loginVC], animated: true)
-
-    // 로그인 성공 시 reactor가 .home Step을 방출
     return .one(
       flowContributor: .contribute(
         withNextPresentable: loginVC,
@@ -61,55 +81,113 @@ final class LoginFlow: Flow, Stepper {
     )
   }
 
-  private func showSignup(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) -> FlowContributors {
-    let userInfoVC = UserInfoViewController(
-      initialMail: initialMail,
+  private func showSignupApple(refreshToken: String?, isAppleLogin: Bool) -> FlowContributors {
+    let reactor = AppleInfoReactor()
+    let appleInfoVC = AppleInfoViewController(
       refreshToken: refreshToken,
       isAppleLogin: isAppleLogin
     )
-    userInfoVC.onNext = { [weak self] (info: UserRegistrationInfo) in
-      print("[Flow]: \(initialMail as Any)")
+    appleInfoVC.onNext = { [weak self] (info: UserRegistrationInfo) in
       self?.pendingUserInfo = info
-      self?.steps.accept(AppStep.signTermsConset)
+      // self?.steps.accept(AppStep.signTermsConset)
     }
-    nav.pushViewController(userInfoVC, animated: true)
-    return .one(
-      flowContributor:
-        .contribute(withNextPresentable: userInfoVC, withNextStepper: self)
-    )
-  }
-
-  private func showTermsConsent() -> FlowContributors {
-    guard let info = pendingUserInfo else { return .none }
-    let reactor = SignTermsReactor()
-    let termsVC = SignTermsViewController(userInfo: info, reactor: reactor)
-    termsVC.onAgree = { [weak self] agreed in
-      self?.pendingUserInfo = agreed
-      reactor.steps.accept(AppStep.signupPhoto)
-    }
-    nav.pushViewController(termsVC, animated: true)
-    return .one(
-      flowContributor: .contribute(withNextPresentable: termsVC, withNextStepper: reactor)
-    )
-  }
-
-  private func showSignupPhoto() -> FlowContributors {
-    guard let info = pendingUserInfo else { return .none }
-    let reactor = ImageUploadReactor(userInfo: info)
-    let photoVC = ImageUploadViewController(userInfo: info, reactor: reactor)
-    nav.pushViewController(photoVC, animated: true)
-    return .one(flowContributor: .contribute(withNextPresentable: photoVC, withNextStepper: reactor))
-  }
-
-  private func showSignSelectTag(profileURL: String?) -> FlowContributors {
-    guard let info = pendingUserInfo else { return .none }
-    let reactor = TagCheckReactor(userInfo: info, profileURL: profileURL)
-    let tagVC = TagCheckViewController(userInfo: info, reactor: reactor)
-    nav.pushViewController(tagVC, animated: true)
+    setOrPush(appleInfoVC)
     return .one(
       flowContributor:
         .contribute(
-          withNextPresentable: tagVC,
+          withNextPresentable: appleInfoVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showSignupAppleNickname(refreshToken: String?) -> FlowContributors {
+    let reactor = SignupAppleNicknameReactor(refreshToken: refreshToken)
+    let signupAppleNicknameVC = SignupAppleNicknameViewController(reactor: reactor)
+    setOrPush(signupAppleNicknameVC)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupAppleNicknameVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showSignupAppleTerms(nickname: String, refreshToken: String?) -> FlowContributors {
+    let reactor = SignupAppleTermsReactor(nickname: nickname, refreshToken: refreshToken)
+    let signupAppleTermsVC = SignupAppleTermsViewController(reactor: reactor)
+    setOrPush(signupAppleTermsVC)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupAppleTermsVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showSignupMailInfo() -> FlowContributors {
+    print("[LoginFlow] showSignupMailInfo(): creating reactor and pushing SignupMailInfoViewController")
+    let reactor = SignupMailInfoReactor()
+    let signupMailInfoVC = SignupMailInfoViewController(reactor: reactor)
+    setOrPush(signupMailInfoVC)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupMailInfoVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showSignupMailTerms(info: UserRegistrationInfo) -> FlowContributors {
+    let reactor = SignupMailTermsReactor(info: info)
+    let signupMailTermsVC = SignupMailTermsViewController(reactor: reactor)
+    setOrPush(signupMailTermsVC)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupMailTermsVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showSignupMailConfirm(info: UserRegistrationInfo) -> FlowContributors {
+    let reactor = SignupMailConfirmReactor(info: info)
+    let signupMailConfirmVC = SignupMailConfirmViewController(reactor: reactor)
+    setOrPush(signupMailConfirmVC)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupMailConfirmVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showSignupImageUpload() -> FlowContributors {
+    let reactor = SignupImageUploadReactor()
+    let signupImageUploadVC = SignupImageUploadViewController(reactor: reactor)
+    setOrPush(signupImageUploadVC)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupImageUploadVC,
+          withNextStepper: reactor
+        )
+    )
+  }
+
+  private func showSignupTagSelect() -> FlowContributors {
+    let reactor = SignupTagSelectReactor()
+    let signupTagSelectVC = SignupTagSelectViewController(reactor: reactor)
+    setOrPush(signupTagSelectVC)
+    return .one(
+      flowContributor:
+        .contribute(
+          withNextPresentable: signupTagSelectVC,
           withNextStepper: reactor
         )
     )
@@ -119,17 +197,13 @@ final class LoginFlow: Flow, Stepper {
     let reactor = MailLoginReactor()
     let mailLoginVC = MailLoginViewController(reactor: reactor)
 
-    // 시스템 내비게이션 바의 뒤로가기 버튼 숨김
-    mailLoginVC.navigationItem.hidesBackButton = true
-    mailLoginVC.navigationItem.leftBarButtonItem = nil
-    mailLoginVC.navigationItem.title = ""
-
-    nav.pushViewController(mailLoginVC, animated: true)
+    nav.setViewControllers([mailLoginVC], animated: true)
     return .one(
-      flowContributor: .contribute(
-        withNextPresentable: mailLoginVC,
-        withNextStepper: reactor
-      )
+      flowContributor:
+        .contribute(
+          withNextPresentable: mailLoginVC,
+          withNextStepper: reactor
+        )
     )
   }
 }

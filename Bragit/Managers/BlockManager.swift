@@ -14,11 +14,11 @@ import Dependencies
 protocol BlockManagerProtocol {
   func fetchMyBlockUsers() async throws -> [String]
   func rxBlockUser(blockId: String) -> Observable<Void>
+  func rxUnBlockUser(blockId: String) -> Observable<Void>
 }
 
 class BlockManager: BlockManagerProtocol {
   @Dependency(\.supabase) var client
-  @LocalStorage(location: .nowUser) var userId: String?
 
   struct BlockResponse: Decodable {
     let blockId: String
@@ -48,6 +48,7 @@ class BlockManager: BlockManagerProtocol {
 
   // 블록한 유저 ID 가져오기
   func fetchMyBlockUsers() async throws -> [String] {
+    @LocalStorage(location: .nowUser) var userId: String?
 
     guard userId != nil else {
       print("⚠️ BlockManager userId nil")
@@ -67,7 +68,9 @@ class BlockManager: BlockManagerProtocol {
   // 유저 차단하기
   func rxBlockUser(blockId: String) -> Observable<Void> {
     .create { [weak self] observer in
-      guard let self = self, let userId = self.userId else {
+      @LocalStorage(location: .nowUser) var userId: String?
+
+      guard let self = self, let userId = userId else {
         observer.onCompleted()
         return Disposables.create()
       }
@@ -93,6 +96,35 @@ class BlockManager: BlockManagerProtocol {
             .from("Follow")
             .delete()
             .match(["user_id": blockId, "follow_id": userId])
+            .execute()
+
+          observer.onNext(())
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+
+      return Disposables.create()
+    }
+  }
+
+  // 유저 차단풀기
+  func rxUnBlockUser(blockId: String) -> Observable<Void> {
+    .create { [weak self] observer in
+      @LocalStorage(location: .nowUser) var userId: String?
+
+      guard let self = self, let userId = userId else {
+        observer.onCompleted()
+        return Disposables.create()
+      }
+
+      Task {
+        do {
+          try await self.client
+            .from("Block")
+            .delete()
+            .match(["user_id": userId, "block_id": blockId])
             .execute()
 
           observer.onNext(())

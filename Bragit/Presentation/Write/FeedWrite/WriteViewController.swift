@@ -13,12 +13,18 @@ import RxCocoa
 import SnapKit
 import Then
 import Loaf
+import Kingfisher
 
 class WriteViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let backAlert = AlertView.makeAlert(style: .tempSaveDraft)
   private let isEmptyAlert = AlertView.makeAlert(style: .isEmptyPost)
   private let loadPostAlert = AlertView.makeAlert(style: .loadPost)
+
+  private let activityIndicator = UIActivityIndicatorView(style: .large).then {
+    $0.hidesWhenStopped = true
+    $0.color = .primary400
+  }
 
   private let headerView = UIView()
 
@@ -72,8 +78,15 @@ class WriteViewController: UIViewController, View {
 
   // UI 설정
   private func setUIConstraints() {
-    [headerView, backButton, titleLabel, doneButton, titleTextField, dividerView, editorView]
+    [headerView, titleTextField, dividerView, activityIndicator, editorView]
       .forEach { view.addSubview($0) }
+    headerView.addSubview( backButton)
+    headerView.addSubview(titleLabel)
+    headerView.addSubview(doneButton)
+
+    activityIndicator.snp.makeConstraints {
+      $0.center.equalToSuperview()
+    }
 
     headerView.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide)
@@ -224,14 +237,33 @@ class WriteViewController: UIViewController, View {
       .bind(to: titleTextField.rx.text)
       .disposed(by: disposeBag)
 
-    reactor.state
+    let layoutWidthObservable = rx.viewDidLayoutSubviews
+      .map { [weak self] in
+        guard let self else { return 0.0 }
+        let width = editorView.textView.textContainer.size.width
+        return width > 0 ? width : editorView.textView.bounds.width
+      }
+      .filter { $0 > 0 }
+      .take(1)
+
+    let contentObservable = reactor.state
       .map { $0.content }
       .distinctUntilChanged()
-      .bind { [weak self] content in
-        guard let self else { return }
-        self.editorView.textView.attributedText = content
-        self.editorView.textView.layoutManager.ensureLayout(for: self.editorView.textView.textContainer)
+
+    Observable.combineLatest(contentObservable, layoutWidthObservable)
+      .flatMapLatest { content, maxWidth -> Observable<NSAttributedString> in
+        Observable.create { observer in
+          Task {
+            reactor.action.onNext(.setLoading(true))
+            let result = await DetailPostViewController.replaceLinksWithImages(in: content, maxWidth: maxWidth)
+            observer.onNext(result)
+            observer.onCompleted()
+            reactor.action.onNext(.setLoading(false))
+          }
+          return Disposables.create()
+        }
       }
+      .bind(to: editorView.textView.rx.attributedText)
       .disposed(by: disposeBag)
 
     reactor.state
@@ -244,6 +276,21 @@ class WriteViewController: UIViewController, View {
         editorView.accessoryView.underlineButton.tintColor = state.isUnderlineActive ? .information : .grayScaleBack
         editorView.accessoryView.strikethroughButton.tintColor = state.isStrikethroughActive ?
           .information : .grayScaleBack
+      }
+      .disposed(by: disposeBag)
+
+    reactor.state
+      .map { $0.isLoading }
+      .distinctUntilChanged()
+      .bind { [weak self] isLoading in
+        guard let self else { return }
+        if isLoading {
+          activityIndicator.startAnimating()
+          editorView.isHidden = true
+        } else {
+          activityIndicator.stopAnimating()
+          editorView.isHidden = false
+        }
       }
       .disposed(by: disposeBag)
   }

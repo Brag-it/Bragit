@@ -26,3 +26,11 @@ struct User: Codable, Hashable {
     case refreshToken = "apple_refresh_token"
   }
 }
+
+struct UserRegistrationInfo {
+  let mail: String
+  let password: String?
+  let nickname: String
+  let isAppleLogin: Bool
+  let refreshToken: String?
+}

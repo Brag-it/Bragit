@@ -128,13 +128,21 @@ class PreviewReactor: Reactor, Stepper {
       // 업로드
       let thumbnailUploadStream: Observable<URL?> = {
         guard let data = representativeImageData else { return .just(nil) }
-        return self.imageManager.rxUploadImage(data: data)
-          .map { $0 as URL? }
+        let fileName = "thumbnail-\(Int(Date().timeIntervalSince1970)).jpg"
+        return self.postManager.rxUploadImage(
+          data: data,
+          fileName: fileName,
+          folder: StoragePath.thumbnail(authorId: author)
+        )
+        .map { $0 as URL? }
       }()
 
       let attachmentsUploadStream: Observable<[URL]> = {
         guard !attachmentDataList.isEmpty else { return .just([]) }
-        return self.imageManager.rxUploadImages(datas: attachmentDataList)
+        return self.postManager.rxUploadImages(
+          datas: attachmentDataList,
+          folder: StoragePath.contents(authorId: author, postId: postId)
+        )
       }()
 
       return Observable.concat([
@@ -146,7 +154,10 @@ class PreviewReactor: Reactor, Stepper {
             print("본문 이미지 URL: \(attachmentURLs.map { $0.absoluteString })")
 
             let setUploadMutation = Mutation.setUploadResult(thumbnail: thumbnailURL, attachments: attachmentURLs)
-            let contentForSave = self.replacingAttachmentsWithURLs(in: self.currentState.content, urls: attachmentURLs)
+            let contentForSave = PreviewReactor.replacingAttachmentsWithURLs(
+              in: self.currentState.content,
+              urls: attachmentURLs
+            )
 
             let archivedContentData: Data
             do {
@@ -266,7 +277,7 @@ class PreviewReactor: Reactor, Stepper {
   }
 
   // 본문 내 이미지들을 URL 텍스트로 치환
-  func replacingAttachmentsWithURLs(
+  static func replacingAttachmentsWithURLs(
     in original: NSAttributedString,
     urls: [URL]
   ) -> NSAttributedString {

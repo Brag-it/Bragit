@@ -89,7 +89,7 @@ class DetailPostViewController: UIViewController, View {
     $0.backgroundColor = .grayScale100
   }
 
-  private let contentView = UITextView().then {
+  private let contentView = LimitedMenuTextView().then {
     $0.isEditable = false
     $0.isScrollEnabled = false
     $0.textContainerInset = .zero
@@ -398,7 +398,6 @@ class DetailPostViewController: UIViewController, View {
           )
         } else {
           profileImage.image = .profilePerson
-          followButton.isHidden = true
         }
       }
       .disposed(by: disposeBag)
@@ -423,7 +422,7 @@ class DetailPostViewController: UIViewController, View {
       .map { [weak self] in
         // 텍스트가 실제로 그려질 폭 계산
         guard let self = self else { return 0.0 }
-        let width = self.contentView.textContainer.size.width
+        let width = contentView.textContainer.size.width
         return width > 0 ? width : contentView.bounds.width
       }
       .filter { $0 > 0 }   // 폭이 0이면 아직 레이아웃 전이기 때문에 스킵
@@ -435,10 +434,10 @@ class DetailPostViewController: UIViewController, View {
         contentView.isHidden = true
       }
       .flatMapLatest { [weak self] pair -> Observable<NSAttributedString> in
-        guard let self = self else { return .empty() }
+        guard self != nil else { return .empty() }
         return Observable.create { observer in
           Task {
-            let text = await self.replaceLinksWithImages(in: pair.original, maxWidth: pair.maxWidth)
+            let text = await DetailPostViewController.replaceLinksWithImages(in: pair.original, maxWidth: pair.maxWidth)
             observer.onNext(text)
             observer.onCompleted()
           }
@@ -448,8 +447,8 @@ class DetailPostViewController: UIViewController, View {
       .observe(on: MainScheduler.instance)
       .do { [weak self] _ in
         guard let self = self else { return }
-        self.activityIndicator.stopAnimating()
-        self.contentView.isHidden = false
+        activityIndicator.stopAnimating()
+        contentView.isHidden = false
       }
       .bind(to: contentView.rx.attributedText)  // 치환 결과 적용
       .disposed(by: disposeBag)
@@ -488,7 +487,12 @@ class DetailPostViewController: UIViewController, View {
   }
   // swiftlint:enable cyclomatic_complexity
 
-  func replaceLinksWithImages(in attributed: NSAttributedString, maxWidth: CGFloat) async -> NSAttributedString {
+  override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+    // 이미지 저장/공유 같은 액션을 전부 막음
+    return false
+  }
+
+  static func replaceLinksWithImages(in attributed: NSAttributedString, maxWidth: CGFloat) async -> NSAttributedString {
     let mutable = NSMutableAttributedString(attributedString: attributed)
     var linkRanges: [(NSRange, URL)] = []
 

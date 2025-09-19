@@ -38,7 +38,7 @@ final class NickNameChangeViewController: UIViewController {
     $0.textField.autocapitalizationType = .none
     $0.textField.font = .pretendard(size: 14)
     $0.textField.returnKeyType = .done
-    $0.textField.placeholder = "1-8글자 내로 입력해주세요"
+    $0.textField.placeholder = "2-8글자 내로 입력해주세요"
   }
 
   private let nicknameCheckImageView = UIImageView()
@@ -133,7 +133,7 @@ final class NickNameChangeViewController: UIViewController {
           return .just(nil)
         }
 
-        if UserInfoValidator.isValidNickname(nickname) == false {
+        if AppleInfoValidator.isValidNickname(nickname) == false {
           return .just(false)
         }
 
@@ -203,7 +203,7 @@ final class NickNameChangeViewController: UIViewController {
           return .error(error)
         }
 
-        if UserInfoValidator.isValidNickname(nickname) == false {
+        if AppleInfoValidator.isValidNickname(nickname) == false {
           let error = NSError(
             domain: "NicknameError",
             code: 412,
