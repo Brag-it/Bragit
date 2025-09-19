@@ -1,26 +1,26 @@
-  //
-  //  ConfirmPopupView.swift
-  //  Bragit
-  //
-  //  Created by luca on 9/17/25.
-  //
+//
+//  ConfirmPopupView.swift
+//  Bragit
+//
+//  Created by luca on 9/17/25.
+//
 
 import UIKit
 
-import SnapKit
-import Then
 import Dependencies
+import SnapKit
 import Supabase
+import Then
 
 final class ConfirmPopupView: UIView {
   @Dependency(\.supabase) private var supabase
 
-    // MARK: - Public Closures
+  // MARK: - Public Closures
 
   var onLeftTap: (() -> Void)?
   var onRightTap: (() -> Void)?
 
-    // MARK: - Private UI
+  // MARK: - Private UI
 
   private let dimmedView = UIView().then {
     $0.backgroundColor = UIColor.black.withAlphaComponent(0.6)
@@ -63,7 +63,7 @@ final class ConfirmPopupView: UIView {
     $0.distribution = .fillEqually
   }
 
-    // MARK: - Init
+  // MARK: - Init
 
   init(
     title: String,
@@ -84,7 +84,7 @@ final class ConfirmPopupView: UIView {
     fatalError("init(coder:) has not been implemented")
   }
 
-    // MARK: - Setup
+  // MARK: - Setup
 
   private func setupViews() {
     addSubview(dimmedView)
@@ -103,8 +103,8 @@ final class ConfirmPopupView: UIView {
     containerView.snp.makeConstraints {
       $0.center.equalToSuperview()
       $0.width.equalTo(280)
-        // $0.leading.greaterThanOrEqualToSuperview().offset(24)
-        // $0.trailing.lessThanOrEqualToSuperview().inset(24)
+      // $0.leading.greaterThanOrEqualToSuperview().offset(24)
+      // $0.trailing.lessThanOrEqualToSuperview().inset(24)
     }
 
     titleLabel.snp.makeConstraints {
@@ -125,10 +125,10 @@ final class ConfirmPopupView: UIView {
     }
   }
 
-    // MARK: - Actions
+  // MARK: - Actions
 
   @objc private func leftButtonTapped() {
-      // 재전송: Keychain에 저장된 이메일로 OTP 재발송
+    // 재전송: Keychain에 저장된 이메일로 OTP 재발송
     Task { [weak self] in
       guard let self else { return }
       do {
@@ -140,7 +140,7 @@ final class ConfirmPopupView: UIView {
       } catch {
         print("[ConfirmPopup] Resend OTP failed: \(error)")
       }
-        // 콜백 실행 및 닫기
+      // 콜백 실행 및 닫기
       self.onLeftTap?()
     }
   }
@@ -149,7 +149,7 @@ final class ConfirmPopupView: UIView {
     onRightTap?()
   }
 
-    // MARK: - Public Methods
+  // MARK: - Public Methods
 
   public func setLeftButtonTitle(_ title: String) {
     if leftButton.title(for: .normal) == title { return }
@@ -167,7 +167,7 @@ final class ConfirmPopupView: UIView {
     }
   }
 
-    // MARK: - Convenience
+  // MARK: - Convenience
 
   static func present(
     on view: UIView,
