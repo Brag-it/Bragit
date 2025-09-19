@@ -23,6 +23,7 @@
 		E70E4F882E55DAEE00CE935E /* LookinServer in Frameworks */ = {isa = PBXBuildFile; productRef = E70E4F872E55DAEE00CE935E /* LookinServer */; };
 		E746A9292E6A751C00F285E7 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = E746A9282E6A751C00F285E7 /* Lottie */; };
 		E75DA8FA2E616AD700C324D3 /* RichTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = E75DA8F92E616AD700C324D3 /* RichTextKit */; };
+		E92FBB862E7B9E8C009D7A4F /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = E92FBB852E7B9E84009D7A4F /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +39,7 @@
 /* Begin PBXFileReference section */
 		E70E4E882E55D60D00CE935E /* Bragit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bragit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E70E4E9E2E55D60E00CE935E /* BragitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BragitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E92FBB852E7B9E84009D7A4F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -116,6 +118,7 @@
 		E70E4E7F2E55D60D00CE935E = {
 			isa = PBXGroup;
 			children = (
+				E92FBB852E7B9E84009D7A4F /* README.md */,
 				E70E4E8A2E55D60D00CE935E /* Bragit */,
 				E70E4EA12E55D60E00CE935E /* BragitTests */,
 				E70E4E892E55D60D00CE935E /* Products */,
@@ -293,6 +296,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E92FBB862E7B9E8C009D7A4F /* README.md in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
