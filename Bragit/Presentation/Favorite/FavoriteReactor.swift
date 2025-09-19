@@ -22,6 +22,7 @@ class FavoriteReactor: Reactor, Stepper {
   private let disposeBag = DisposeBag()
   let steps = PublishRelay<Step>()
   let doReload = PublishRelay<Void>()
+  let doScrollTop = PublishRelay<Void>()
 
   enum PostType: Hashable {
     case tag([Tag])
@@ -51,6 +52,7 @@ class FavoriteReactor: Reactor, Stepper {
     case setSelectedTag(Tag?)
     case setPostsToReconfigure([Post]?)
     case doReload
+    case doScrollTop
   }
 
   struct State: Then {
@@ -152,6 +154,7 @@ class FavoriteReactor: Reactor, Stepper {
               .just(.setPostType(.emptyTag(popularTags))),
               rxSetPost(postType: .emptyTag(popularTags)),
               .just(.doReload),
+              .just(.doScrollTop),
               .just(.setLoading(false))
             ])
           }
@@ -164,6 +167,7 @@ class FavoriteReactor: Reactor, Stepper {
               .just(.setPostType(.tag(favoriteTags ?? []))),
               rxSetPost(postType: .tag([currentState.selectedTag!])),
               .just(.doReload),
+              .just(.doScrollTop),
               .just(.setLoading(false))
             ])
           } else {
@@ -172,6 +176,7 @@ class FavoriteReactor: Reactor, Stepper {
               .just(.setPostType(.tag(favoriteTags ?? []))),
               rxSetPost(postType: .tag(favoriteTags ?? [])),
               .just(.doReload),
+              .just(.doScrollTop),
               .just(.setLoading(false))
             ])
           }
@@ -183,6 +188,7 @@ class FavoriteReactor: Reactor, Stepper {
             .just(.setLoading(true)),
             rxPostTypeChangeToEmptyUser(),
             .just(.doReload),
+            .just(.doScrollTop),
             .just(.setLoading(false))
           ])
         } else {
@@ -191,6 +197,7 @@ class FavoriteReactor: Reactor, Stepper {
             .just(.setLoading(true)),
             rxPostTypeChangeToUser(),
             .just(.doReload),
+            .just(.doScrollTop),
             .just(.setLoading(false))
           ])
         }
@@ -312,6 +319,9 @@ class FavoriteReactor: Reactor, Stepper {
       }
     case .doReload:
       doReload.accept(())
+      return state
+    case .doScrollTop:
+      doScrollTop.accept(())
       return state
     }
   }
