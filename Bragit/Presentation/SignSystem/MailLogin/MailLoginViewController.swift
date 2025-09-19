@@ -46,7 +46,7 @@ final class MailLoginViewController: UIViewController, View {
   }
 
   private let mailTextField = InsetTextField().then {
-    $0.placeholder = "Bragit@bragit.com"
+    $0.placeholder = "bragit@bragit.com"
     $0.font = .pretendard(size: 14, weight: .regular)
     $0.textColor = .grayScale900
     $0.backgroundColor = .white
@@ -98,6 +98,7 @@ final class MailLoginViewController: UIViewController, View {
     $0.titleLabel?.font = .pretendard(size: 16, weight: .regular)
     $0.setTitleColor(.grayScale700, for: .normal)
     $0.contentHorizontalAlignment = .center
+    $0.isHidden = true
   }
 
   private let activityIndicator = UIActivityIndicatorView(style: .medium).then {
@@ -197,7 +198,7 @@ final class MailLoginViewController: UIViewController, View {
     loginButton.snp.makeConstraints {
       $0.top.equalTo(passwordTextField.snp.bottom).offset(48)
       $0.leading.trailing.equalToSuperview().inset(20)
-      $0.height.equalTo(36)
+      $0.height.equalTo(52)
     }
 
     forgotPasswordButton.snp.makeConstraints {
@@ -214,7 +215,7 @@ final class MailLoginViewController: UIViewController, View {
 
   func bind(reactor: MailLoginReactor) {
     backButton.rx.tap
-      .map { Reactor.Action.tapBack }
+      .map { .tapBack }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
 

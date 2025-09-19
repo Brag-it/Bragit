@@ -6,7 +6,11 @@ import ReactorKit
 import RxSwift
 import RxCocoa
 
-final class UserInfoFormView: UIView {
+// TODO: 이메일, 비밀번호, 비밀번호 확인 삭제
+// TODO: 이메일 끌어오는 기능 삭제(AppStep, LoginFlow에서 initialMail: String, isAppleLogin: Bool 삭제)
+// TODO: Keychain 삭제
+
+final class AppleInfoFormView: UIView {
   let descriptionLabel = UILabel()
   let scrollView = UIScrollView()
   let contentView = UIView()
@@ -85,7 +89,7 @@ final class UserInfoFormView: UIView {
       $0.textColor = labelColor
     }
     mailTextField.do {
-      $0.placeholder = "Bragit@bragit.com"
+      $0.placeholder = "bragit@bragit.com"
       $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
       $0.layer.borderWidth = 1
       $0.layer.cornerRadius = 14
@@ -301,10 +305,9 @@ final class UserInfoFormView: UIView {
   }
 }
 
-final class UserInfoViewController: UIViewController {
+final class AppleInfoViewController: UIViewController {
   var onNext: ((UserRegistrationInfo) -> Void)?
 
-  private let initialMail: String?
   private var isAppleLogin: Bool
   private let refreshToken: String?
 
@@ -325,20 +328,15 @@ final class UserInfoViewController: UIViewController {
     $0.textAlignment = .center
   }
 
-  private let formView = UserInfoFormView()
+  private let formView = AppleInfoFormView()
   private var inputOrder: [UITextField] = []
   private var keyboardBottomInset: CGFloat = 0
   private weak var currentFirstResponder: UITextField?
 
   private let reactorBag = DisposeBag()
-  private let nicknameReactor = UserInfoReactor()
+  private let nicknameReactor = AppleInfoReactor()
 
-  init(initialMail: String?, refreshToken: String?, isAppleLogin: Bool) {
-    if let space = initialMail?.trimmingCharacters(in: .whitespacesAndNewlines), !space.isEmpty {
-      self.initialMail = space
-    } else {
-      self.initialMail = nil
-    }
+  init(refreshToken: String?, isAppleLogin: Bool) {
     self.refreshToken = refreshToken
     self.isAppleLogin = isAppleLogin
     super.init(nibName: nil, bundle: nil)
@@ -543,10 +541,6 @@ final class UserInfoViewController: UIViewController {
       formView.pwCheckIcon.image = nil
       formView.rePwCheckLabel.text = " "
       formView.rePwCheckIcon.image = nil
-
-      if let mail = initialMail {
-        formView.mailTextField.text = mail
-      }
     }
 
     formView.nicknameCheckLabel.text = " "
@@ -625,7 +619,7 @@ final class UserInfoViewController: UIViewController {
   @objc private func dismissKeyboard() { view.endEditing(true) }
 }
 
-extension UserInfoViewController {
+extension AppleInfoViewController {
 
   @objc func onMailEditingEnd() {
     if isAppleLogin {
@@ -640,7 +634,7 @@ extension UserInfoViewController {
       )
     } else {
       let text = formView.mailTextField.text ?? ""
-      mailValid = UserInfoValidator.isValidMail(text)
+      mailValid = AppleInfoValidator.isValidMail(text)
 
       applyCheckState(
         icon: formView.mailCheckIcon,
@@ -679,7 +673,7 @@ extension UserInfoViewController {
       let pwd = pwdRaw.trimmingCharacters(in: .whitespacesAndNewlines)
       let confirm = confirmRaw.trimmingCharacters(in: .whitespacesAndNewlines)
 
-      passwordValid = UserInfoValidator.isValidPassword(pwd)
+      passwordValid = AppleInfoValidator.isValidPassword(pwd)
 
       if !confirm.isEmpty {
         confirmMatched = (pwd == confirm)
@@ -739,20 +733,20 @@ extension UserInfoViewController {
   }
 }
 
-class InsetTextField: UITextField {
-  var textInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-  override func textRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-  override func editingRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-  override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
-    return bounds.inset(by: textInsets)
-  }
-}
+// class InsetTextField: UITextField {
+//   var textInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+//   override func textRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+//   override func editingRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+//   override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+//     return bounds.inset(by: textInsets)
+//   }
+// }
 
-extension UserInfoViewController: UITextFieldDelegate {
+extension AppleInfoViewController: UITextFieldDelegate {
   public func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
     if isAppleLogin,
       textField === formView.mailTextField

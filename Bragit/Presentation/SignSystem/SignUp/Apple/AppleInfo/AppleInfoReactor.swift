@@ -5,8 +5,10 @@ import Foundation
 import Dependencies
 import ReactorKit
 import RxSwift
+import RxFlow
+import RxRelay
 
-final class UserInfoReactor: Reactor {
+final class AppleInfoReactor: Reactor, Stepper {
   enum Action {
     case validateNickname(String)
   }
@@ -24,6 +26,7 @@ final class UserInfoReactor: Reactor {
 
   let initialState: State
   @Dependency(\.userManager) private var userManager
+  let steps = PublishRelay<Step>()
 
   init() {
     self.initialState = State()
@@ -35,7 +38,7 @@ final class UserInfoReactor: Reactor {
       let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
 
       // 1) 로컬 형식 검증 먼저
-      guard UserInfoValidator.isValidNickname(name) else {
+      guard AppleInfoValidator.isValidNickname(name) else {
         return .just(.setNickname(valid: false, text: "사용 불가한 닉네임입니다"))
       }
 

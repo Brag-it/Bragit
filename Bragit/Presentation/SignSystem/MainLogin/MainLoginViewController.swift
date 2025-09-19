@@ -56,27 +56,28 @@ final class LoginViewController: UIViewController, View {
 
   let mailButton = UIButton(type: .system).then {
     var config = UIButton.Configuration.gray()
-    config.title = "이메일로 로그인(미구현)"
-    $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
+    config.title = "이메일로 로그인"
     config.image = .mail
     config.imagePlacement = .leading
     config.imagePadding = 5
+    $0.titleLabel?.font = .pretendard(size: 14, weight: .medium)
+    $0.setTitleColor(.grayScale700, for: .normal)
     $0.configuration = config
-    $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
+    $0.layer.borderColor = UIColor.grayScale100.cgColor
     $0.layer.cornerRadius = 12
-    $0.backgroundColor = UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
+    $0.backgroundColor = .grayScale100
     $0.isEnabled = true
-    $0.isHidden = true
+    $0.isHidden = false
   }
 
   let signUpButton = UIButton(type: .system).then {
     $0.setTitle("회원 가입하기", for: .normal)
     $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
     $0.isEnabled = true
-    $0.isHidden = true
+    $0.isHidden = false
   }
 
-  init(reactor: LoginReactor) {
+  init(reactor: MainLoginReactor) {
     super.init(nibName: nil, bundle: nil)
     self.reactor = reactor
   }
@@ -90,7 +91,7 @@ final class LoginViewController: UIViewController, View {
     super.viewDidLoad()
     // TODO: 테스트
     //    title = "로그인"
-    view.backgroundColor = .white
+    view.backgroundColor = .grayScale50
 
     //    if reactor == nil { reactor = LoginReactor() }
 
@@ -111,7 +112,14 @@ final class LoginViewController: UIViewController, View {
     view.addSubview(logo)
     view.addSubview(stack)
     view.addSubview(signUpButton)
-    mailButton.titleLabel?.font = loginFont
+    if var config = mailButton.configuration {
+      config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+        var out = incoming
+        out.font = self.loginFont
+        return out
+      }
+      mailButton.configuration = config
+    }
     signUpButton.titleLabel?.font = signUpFont
 
     [nextButton, appleButton, googleButton, kakaoButton, mailButton].forEach {
@@ -143,7 +151,7 @@ final class LoginViewController: UIViewController, View {
   }
 
   // MARK: Reactor Binding
-  func bind(reactor: LoginReactor) {
+  func bind(reactor: MainLoginReactor) {
     // 디버그 강제 홈 이동 버튼
     nextButton.rx.tap
       .subscribe(with: reactor) { reactor, _ in
@@ -248,7 +256,7 @@ extension LoginViewController:
 
   func handleAppleCredential(
     _ credential: ASAuthorizationAppleIDCredential,
-    reactor: LoginReactor,
+    reactor: MainLoginReactor,
     hashedNonce: String
   ) {
     if let email = credential.email {

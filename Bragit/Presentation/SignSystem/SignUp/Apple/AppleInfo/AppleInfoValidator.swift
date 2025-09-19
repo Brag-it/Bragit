@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum UserInfoValidator {
+enum AppleInfoValidator {
   static func isValidMail(_ text: String) -> Bool {
     let pattern = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"
     return match(text, pattern, options: [.caseInsensitive])
