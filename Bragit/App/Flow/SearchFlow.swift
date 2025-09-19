@@ -38,6 +38,9 @@ final class SearchFlow: Flow {
     case .userProfile(let user):
       return searchShowUserProfile(user: user)
 
+    case .comment(let id):
+      return showComment(id: id)
+
     default:
       return .none
     }
@@ -87,6 +90,18 @@ final class SearchFlow: Flow {
 
     return .one(flowContributor: .contribute(
       withNextPresentable: userProfileVC,
+      withNextStepper: reactor
+    ))
+  }
+
+  func showComment(id: UUID) -> FlowContributors {
+    let reactor = CommentReactor(postId: id)
+    let commentVC = CommentViewController(reactor: reactor)
+
+    nav.pushViewController(commentVC, animated: true)
+
+    return .one(flowContributor: .contribute(
+      withNextPresentable: commentVC,
       withNextStepper: reactor
     ))
   }

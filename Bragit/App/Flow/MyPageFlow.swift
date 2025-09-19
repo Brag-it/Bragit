@@ -44,6 +44,8 @@ final class MyPageFlow: Flow {
       return showOpenSource()
     case .openSourceDetails(let license):
       return showOpenSourceDetail(license: license)
+    case .blockUsers:
+      return showBlockUsers()
     default:
       return .one(flowContributor: .forwardToParentFlow(withStep: step))
     }
@@ -153,6 +155,17 @@ final class MyPageFlow: Flow {
     return .one(flowContributor: .contribute(
       withNextPresentable: detailVC,
       withNextStepper: detailVC
+    ))
+  }
+
+  private func showBlockUsers() -> FlowContributors {
+    let reactor = BlockUserReactor()
+    let blockVC = BlockUserViewController(reactor: reactor)
+    blockVC.hidesBottomBarWhenPushed = true
+    nav.pushViewController(blockVC, animated: true)
+    return .one(flowContributor: .contribute(
+      withNextPresentable: blockVC,
+      withNextStepper: reactor
     ))
   }
 }

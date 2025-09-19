@@ -200,6 +200,12 @@ class FavoriteViewController: UIViewController, View {
       .bind { [favoriteView] in
         favoriteView.feedView.collectionView.reloadData()
       }.disposed(by: disposeBag)
+
+    reactor.doScrollTop
+      .observe(on: MainScheduler.instance)
+      .bind { [weak self] in
+        self?.scrollToTop()
+      }.disposed(by: disposeBag)
   }
   // swiftlint:enable cyclomatic_complexity
 

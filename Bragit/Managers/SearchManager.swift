@@ -20,6 +20,10 @@ struct SearchBundle {
 protocol SearchManagerProtocol {
   func searchAll(searchText: String, page: Int, pageSize: Int) async throws -> SearchBundle
   func rxSearchAll(searchText: String, page: Int, pageSize: Int) -> Observable<SearchBundle>
+  func searchPosts(searchText: String, page: Int, pageSize: Int) async throws -> [Post]
+  func rxSearchPosts(searchText: String, page: Int, pageSize: Int) -> Observable<[Post]>
+  func searchUsers(searchText: String, page: Int, pageSize: Int) async throws -> [User]
+  func rxSearchUsers(searchText: String, page: Int, pageSize: Int) -> Observable<[User]>
 }
 
 final class SearchManager: SearchManagerProtocol {
@@ -81,6 +85,72 @@ final class SearchManager: SearchManagerProtocol {
         do {
           let bundle = try await self.searchAll(searchText: searchText, page: page, pageSize: pageSize)
           observer.onNext(bundle)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+      return Disposables.create { task.cancel() }
+    }
+  }
+
+  func searchPosts(searchText: String, page: Int, pageSize: Int) async throws -> [Post] {
+    let start = page * pageSize
+    let end = start + pageSize - 1
+
+    // 제목/본문/설명 검색
+    let posts: [Post] = try await client
+      .from("Post")
+      .select("*, Tag(*), comment_count:Comment(count), User_Info(id, nickname, profile)")
+      .or("title.ilike.%\(searchText)%,content.ilike.%\(searchText)%,description.ilike.%\(searchText)%")
+      .range(from: start, to: end)
+      .execute()
+      .value
+
+    // 게시글 중복 제거
+    var unique: [UUID: Post] = [:]
+    posts.forEach { unique[$0.id] = $0 }
+    return Array(unique.values)
+  }
+
+  func rxSearchPosts(searchText: String, page: Int, pageSize: Int) -> Observable<[Post]> {
+    .create { [weak self] observer in
+      guard let self else { observer.onCompleted(); return Disposables.create() }
+      let task = Task {
+        do {
+          let posts = try await self.searchPosts(searchText: searchText, page: page, pageSize: pageSize)
+          observer.onNext(posts)
+          observer.onCompleted()
+        } catch {
+          observer.onError(error)
+        }
+      }
+      return Disposables.create { task.cancel() }
+    }
+  }
+
+  func searchUsers(searchText: String, page: Int, pageSize: Int) async throws -> [User] {
+    let start = page * pageSize
+    let end = start + pageSize - 1
+
+    let users: [User] = try await client
+      .from("User_Info")
+      .select("*")
+      .ilike("nickname", pattern: "%\(searchText)%")
+      .range(from: start, to: end)
+      .execute()
+      .value
+
+    return users
+  }
+
+  func rxSearchUsers(searchText: String, page: Int, pageSize: Int) -> Observable<[User]> {
+    .create { [weak self] observer in
+      guard let self else { observer.onCompleted(); return Disposables.create() }
+      let task = Task {
+        do {
+          let users = try await self.searchUsers(searchText: searchText, page: page, pageSize: pageSize)
+          observer.onNext(users)
           observer.onCompleted()
         } catch {
           observer.onError(error)

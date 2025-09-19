@@ -71,6 +71,8 @@ final class SettingViewController: UIViewController, View {
           return .tapTerms
         case "오픈소스 라이선스":
           return .tapLicenses
+        case "차단한 유저":
+          return .tapBlockUsers
         default:
           return nil
         }
