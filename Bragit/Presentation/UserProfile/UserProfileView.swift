@@ -138,10 +138,16 @@ final class UserProfileView: UIView {
           .disposed(by: cell.disposeBag)
       }
 
-      let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> { cell, _, item in
+      let postCellRegistration = UICollectionView.CellRegistration<PostCell, Post> {
+        [followDidTap, tagDidTap] cell, _, item in
         cell.configure(data: item)
         cell.tagsView.tagDidTap
-          .bind(to: self.tagDidTap)
+          .bind(to: tagDidTap)
+          .disposed(by: cell.reusableDisposeBag)
+
+        cell.followDidTap
+          .map {_ in}
+          .bind(to: followDidTap)
           .disposed(by: cell.reusableDisposeBag)
       }
 
