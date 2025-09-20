@@ -27,7 +27,25 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
     $0.textAlignment = .center
   }
 
-  // MARK: UI 컴포넌트 정의
+  private let codeContainer = UIView().then {
+    $0.layer.borderColor = UIColor.grayScale100.cgColor
+    $0.layer.borderWidth = 1
+    $0.layer.cornerRadius = 14
+    $0.backgroundColor = .white
+  }
+
+  private var timerDigitLabels: [UILabel] = []
+  private var timerStackView: UIStackView?
+
+  private var timerColonLabel: UILabel?
+  private var timerNormalColor: UIColor = .grayScale700
+  private var timerWarningColor: UIColor = .systemWarning
+  private var timerDangerColor: UIColor = .systemDanger
+  private var warningThresholdSeconds: Int = 60
+  private var dangerThresholdSeconds: Int = 30
+
+  private var timerMirror: Timer?
+  private var lastTimerText: String?
 
   private let descriptionTitleLabel = UILabel().then {
     $0.text = "입력한 메일 주소로 인증 코드를 보냈어요"
@@ -50,15 +68,18 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
   }
 
   let codeTextField = UITextField().then {
-    $0.layer.borderColor = UIColor.grayScale100.cgColor
-    $0.layer.borderWidth = 1
-    $0.layer.cornerRadius = 14
+    $0.layer.borderColor = UIColor.clear.cgColor
+    $0.layer.borderWidth = 0
+    $0.layer.cornerRadius = 0
+    $0.backgroundColor = .clear
     $0.textAlignment = .center
     $0.isEnabled = true
     $0.returnKeyType = .done
     $0.placeholder = "000000"
     $0.clearButtonMode = .never
     $0.font = .pretendard(size: 28, weight: .semibold)
+    $0.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    $0.setContentHuggingPriority(.defaultLow, for: .horizontal)
     $0.textColor = .grayScale900
     $0.keyboardType = .numberPad
     $0.autocapitalizationType = .none
@@ -138,7 +159,7 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
 
   private func configureUI() {
     [codeCheckIcon, codeCheckLabel].forEach { codeCheckStack.addArrangedSubview($0) }
-    [descriptionTitleLabel, descriptionLabel, codeTextField, codeCheckStack, helpButton, nextButton].forEach {
+    [descriptionTitleLabel, descriptionLabel, codeContainer, codeCheckStack, helpButton, nextButton].forEach {
       addSubview($0)
     }
 
@@ -152,14 +173,20 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 
-    codeTextField.snp.makeConstraints {
+    codeContainer.snp.makeConstraints {
       $0.top.equalTo(descriptionLabel.snp.bottom).offset(40)
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(64)
     }
 
+    codeContainer.addSubview(codeTextField)
+    codeTextField.snp.makeConstraints {
+      $0.leading.equalToSuperview().inset(20)
+      $0.centerY.equalToSuperview()
+    }
+
     codeCheckStack.snp.makeConstraints {
-      $0.top.equalTo(codeTextField.snp.bottom).offset(8)
+      $0.top.equalTo(codeContainer.snp.bottom).offset(8)
       $0.leading.trailing.equalToSuperview().inset(20)
     }
 
@@ -173,6 +200,116 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
       $0.leading.trailing.equalToSuperview().inset(20)
       $0.height.equalTo(52)
     }
+  }
+
+  public func attachCodeTimerLabel(_ label: UILabel) {
+    let timerFont = UIFont.pretendard(size: 13, weight: .medium)
+    self.timerNormalColor = label.textColor ?? .grayScale700
+
+    codeContainer.addSubview(label)
+    label.font = timerFont
+    label.isHidden = true
+    label.snp.makeConstraints {
+      $0.trailing.equalToSuperview().inset(20)
+      $0.centerY.equalToSuperview()
+    }
+
+    let stack = UIStackView()
+    stack.axis = .horizontal
+    stack.alignment = .center
+    stack.spacing = 0
+    codeContainer.addSubview(stack)
+    self.timerStackView = stack
+
+    let digitSample = "8" as NSString
+    let digitWidth = ceil(digitSample.size(withAttributes: [.font: timerFont]).width)
+
+    func makeDigitLabel() -> UILabel {
+      let label = UILabel()
+      label.font = timerFont
+      label.textColor = self.timerNormalColor
+      label.textAlignment = .center
+      label.text = "0"
+      label.setContentHuggingPriority(.required, for: .horizontal)
+      label.setContentCompressionResistancePriority(.required, for: .horizontal)
+      label.snp.makeConstraints { make in
+        make.width.equalTo(digitWidth)
+      }
+      return label
+    }
+
+    let min10 = makeDigitLabel()
+    let min1 = makeDigitLabel()
+    let colon = UILabel()
+    colon.font = timerFont
+    colon.textColor = self.timerNormalColor
+    colon.text = ":"
+    colon.textAlignment = .center
+    self.timerColonLabel = colon
+    let sec10 = makeDigitLabel()
+    let sec1 = makeDigitLabel()
+
+    [min10, min1, colon, sec10, sec1].forEach { stack.addArrangedSubview($0) }
+    self.timerDigitLabels = [min10, min1, sec10, sec1]
+
+    let initial = label.text ?? "02:59"
+    self.lastTimerText = initial
+    self.setTimerText(initial)
+    applyTimerColor(forSeconds: seconds(from: initial))
+
+    self.timerMirror?.invalidate()
+    self.timerMirror = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self, weak label] _ in
+      guard let self = self, let text = label?.text else { return }
+      if text != self.lastTimerText {
+        self.lastTimerText = text
+        self.setTimerText(text)
+      }
+    }
+    RunLoop.main.add(self.timerMirror!, forMode: .common)
+
+    stack.snp.makeConstraints { make in
+      make.trailing.equalToSuperview().inset(20)
+      make.centerY.equalToSuperview()
+    }
+
+    codeTextField.snp.remakeConstraints { make in
+      make.leading.equalToSuperview().inset(20)
+      make.trailing.equalTo(stack.snp.leading).offset(-10)
+      make.centerY.equalToSuperview()
+    }
+  }
+
+  public func setTimerText(_ text: String) {
+    let digits = text.filter { $0.isNumber }
+    guard digits.count >= 4, timerDigitLabels.count == 4 else { return }
+    let arr = Array(digits.prefix(4))
+    timerDigitLabels[0].text = String(arr[0])
+    timerDigitLabels[1].text = String(arr[1])
+    timerDigitLabels[2].text = String(arr[2])
+    timerDigitLabels[3].text = String(arr[3])
+    applyTimerColor(forSeconds: seconds(from: text))
+  }
+
+  private func seconds(from text: String) -> Int? {
+    let parts = text.split(separator: ":")
+    guard parts.count == 2,
+      let minute = Int(parts[0]),
+      let sec = Int(parts[1]) else { return nil }
+    return minute * 60 + sec
+  }
+
+  private func applyTimerColor(forSeconds seconds: Int?) {
+    let secs = seconds ?? Int.max
+    let color: UIColor
+    if secs < dangerThresholdSeconds {
+      color = timerDangerColor
+    } else if secs < warningThresholdSeconds {
+      color = timerWarningColor
+    } else {
+      color = timerNormalColor
+    }
+    timerDigitLabels.forEach { $0.textColor = color }
+    timerColonLabel?.textColor = color
   }
 
   @objc private func codeEditingChanged() {
@@ -191,5 +328,19 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
   func textFieldShouldReturn(_ textField: UITextField) -> Bool {
     textField.resignFirstResponder()
     return true
+  }
+
+  public func bindTimerText(_ source: Observable<String>) {
+    source
+      .observe(on: MainScheduler.instance)
+      .subscribe { [weak self] text in
+        self?.lastTimerText = text
+        self?.setTimerText(text)
+      }
+      .disposed(by: disposeBag)
+  }
+
+  deinit {
+    timerMirror?.invalidate()
   }
 }

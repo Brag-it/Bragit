@@ -21,6 +21,19 @@ final class SignupMailConfirmViewController: UIViewController, View {
   private let cooldownDuration: TimeInterval = 40
   private weak var currentPopup: ConfirmPopupView?
 
+  private var codeExpiryTimer: Timer?
+  private var codeExpiryEndDate: Date?
+  private let codeExpiryDuration: TimeInterval = 180
+  private let codeTimerLabel: UILabel = {
+    let label = UILabel()
+    label.text = "03:00"
+    label.textColor = .secondaryLabel
+    label.font = .systemFont(ofSize: 14, weight: .regular)
+    label.textAlignment = .right
+    label.translatesAutoresizingMaskIntoConstraints = false
+    return label
+  }()
+
   var disposeBag = DisposeBag()
   private let rootView = SignupMailConfirmView()
   @Dependency(\.supabase) private var supabase
@@ -45,11 +58,23 @@ final class SignupMailConfirmViewController: UIViewController, View {
     } else {
       ensureCooldownTimerRunningIfNeeded()
     }
+
+    if codeExpiryEndDate == nil {
+      startCodeExpiryTimer()
+    }
   }
 
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
+  }
+
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    resendCooldownTimer?.invalidate()
+    resendCooldownTimer = nil
+    codeExpiryTimer?.invalidate()
+    codeExpiryTimer = nil
   }
 
   override func viewDidLoad() {
@@ -58,6 +83,8 @@ final class SignupMailConfirmViewController: UIViewController, View {
     let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
     tap.cancelsTouchesInView = false
     view.addGestureRecognizer(tap)
+
+    rootView.attachCodeTimerLabel(codeTimerLabel)
   }
 
   func bind(reactor: SignupMailConfirmReactor) {
@@ -80,6 +107,7 @@ final class SignupMailConfirmViewController: UIViewController, View {
           }
           owner.startCooldown()
           popup?.dismiss()
+          owner.startCodeExpiryTimer(reset: true)
 
           Task {
             do {
@@ -136,30 +164,28 @@ final class SignupMailConfirmViewController: UIViewController, View {
           do {
             try await owner.supabase.auth.verifyOTP(email: email, token: code, type: .email)
 
-            // Fetch session and store current user id
+            await MainActor.run { [weak owner] in
+              owner?.invalidateCodeExpiryTimer()
+            }
+
             let session = try await owner.supabase.auth.session
             let userId = session.user.id.uuidString
             UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
 
-            // Try to finalize signup with stored password and nickname (best-effort)
             let pendingPassword: String? = KeychainHelper.get(forKey: "pendingPassword")
             let pendingNickname: String = UserDefaults.standard.string(forKey: "pending.nickname") ?? ""
 
-            // Update password if available
             if let pwd = pendingPassword, !pwd.isEmpty {
               try await owner.supabase.auth.update(user: .init(password: pwd))
             }
-            // Update nickname metadata if available (use AnyJSON for value)
             if !pendingNickname.isEmpty {
               try await owner.supabase.auth.update(user: .init(data: ["nickname": .string(pendingNickname)]))
             }
 
             print("[Signup] 가입 완료 - email: \(email), nickname: \(pendingNickname)")
 
-            // Background work: insert user info
             Task.detached(priority: .background) { [supabase = owner.supabase] in
               do {
-                // Construct user model and insert
                 let user = User(
                   id: userId,
                   nickname: pendingNickname,
@@ -175,12 +201,10 @@ final class SignupMailConfirmViewController: UIViewController, View {
               }
             }
 
-            // Clear pending caches
             KeychainMailStore.clear()
             KeychainHelper.remove(forKey: "pendingPassword")
             UserDefaults.standard.removeObject(forKey: "pending.nickname")
 
-            // Navigate forward on success (no need to show success UI explicitly)
             await MainActor.run {
               reactor.action.onNext(.tapNext)
             }
@@ -246,7 +270,6 @@ final class SignupMailConfirmViewController: UIViewController, View {
   private func ensureCooldownTimerRunningIfNeeded() {
     let remain = remainingCooldownSeconds()
     if remain > 0, resendCooldownTimer == nil {
-      // Resume ticking UI if popup is visible
       resendCooldownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
         guard let self else { return }
         let remain = self.remainingCooldownSeconds()
@@ -262,6 +285,47 @@ final class SignupMailConfirmViewController: UIViewController, View {
     }
   }
 
+  private func remainingExpirySeconds(now: Date = Date()) -> Int {
+    guard let end = codeExpiryEndDate else { return 0 }
+    let remain = Int(ceil(end.timeIntervalSince(now)))
+    return max(0, remain)
+  }
+
+  private func startCodeExpiryTimer(reset: Bool = false) {
+    if reset || codeExpiryEndDate == nil {
+      codeExpiryEndDate = Date().addingTimeInterval(codeExpiryDuration)
+    }
+    codeExpiryTimer?.invalidate()
+    updateCodeTimerLabel()
+    codeExpiryTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+      guard let self else { return }
+      self.updateCodeTimerLabel()
+    }
+  }
+
+  private func invalidateCodeExpiryTimer() {
+    codeExpiryTimer?.invalidate()
+    codeExpiryTimer = nil
+  }
+
+  private func updateCodeTimerLabel() {
+    let remain = remainingExpirySeconds()
+    if remain <= 0 {
+      codeTimerLabel.text = "00:00"
+      codeTimerLabel.textColor = .systemDanger
+      invalidateCodeExpiryTimer()
+      return
+    }
+    let minutes = remain / 60
+    let seconds = remain % 60
+    codeTimerLabel.text = String(format: "%02d:%02d", minutes, seconds)
+    if remain <= 30 {
+      codeTimerLabel.textColor = .systemWarning
+    } else {
+      codeTimerLabel.textColor = .secondaryLabel
+    }
+  }
+
   private func updateCodeValidation(success: Bool, message: String) {
     rootView.codeCheckLabel.text = message
     rootView.codeCheckLabel.textColor = success ? .systemSafe : .systemDanger
@@ -271,3 +335,4 @@ final class SignupMailConfirmViewController: UIViewController, View {
     view.endEditing(true)
   }
 }
+
