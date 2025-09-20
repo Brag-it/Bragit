@@ -147,6 +147,7 @@ final class SignupMailConfirmViewController: UIViewController, View {
         }
 
         owner.startCooldown()
+        owner.updatePopupCooldownUI()
         owner.startCodeExpiryTimer(reset: true)
 
         Task {
@@ -276,8 +277,17 @@ final class SignupMailConfirmViewController: UIViewController, View {
     return max(0, remain)
   }
 
+  private func updatePopupCooldownUI() {
+    let remain = remainingCooldownSeconds()
+    if let popup = currentPopup {
+      popup.setLeftButtonTitle(remain > 0 ? "재전송(\(remain)초)" : "재전송")
+      popup.setLeftButtonEnabled(remain == 0)
+    }
+  }
+
   private func startCooldown() {
     cooldownEndDate = Date().addingTimeInterval(cooldownDuration)
+    updatePopupCooldownUI()
     resendCooldownTimer?.invalidate()
     resendCooldownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
       guard let self else { return }
@@ -296,6 +306,7 @@ final class SignupMailConfirmViewController: UIViewController, View {
   private func ensureCooldownTimerRunningIfNeeded() {
     let remain = remainingCooldownSeconds()
     if remain > 0, resendCooldownTimer == nil {
+      updatePopupCooldownUI()
       resendCooldownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
         guard let self else { return }
         let remain = self.remainingCooldownSeconds()
