@@ -26,7 +26,7 @@ final class SignupMailConfirmViewController: UIViewController, View {
   private let codeExpiryDuration: TimeInterval = 180
   private let codeTimerLabel: UILabel = {
     let label = UILabel()
-    label.text = "03:00"
+    label.text = "02:59"
     label.textColor = .secondaryLabel
     label.font = .systemFont(ofSize: 14, weight: .regular)
     label.textAlignment = .right
@@ -136,6 +136,32 @@ final class SignupMailConfirmViewController: UIViewController, View {
         popup.setLeftButtonTitle(remain > 0 ? "재전송(\(remain)초)" : "재전송")
         popup.setLeftButtonEnabled(remain == 0)
         owner.ensureCooldownTimerRunningIfNeeded()
+      }
+      .disposed(by: disposeBag)
+
+    rootView.resendTap
+      .bind(with: self) { owner, _ in
+        guard let email = KeychainMailStore.load(), !email.isEmpty else {
+          owner.updateCodeValidation(success: false, message: "이메일 정보를 불러올 수 없어요")
+          return
+        }
+
+        owner.startCooldown()
+        owner.startCodeExpiryTimer(reset: true)
+
+        Task {
+          do {
+            try await owner.supabase.auth.signInWithOTP(email: email, shouldCreateUser: true)
+            await MainActor.run {
+              owner.rootView.codeCheckLabel.text = "인증 메일을 재전송했어요"
+              owner.rootView.codeCheckLabel.textColor = .systemSafe
+              owner.rootView.codeCheckIcon.image = .accept
+              owner.rootView.codeCheckIcon.tintColor = .systemSafe
+            }
+          } catch {
+            print("[Signup][MailConfirm] 재전송 실패: \(error.localizedDescription)")
+          }
+        }
       }
       .disposed(by: disposeBag)
 

@@ -37,6 +37,16 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
   private var timerDigitLabels: [UILabel] = []
   private var timerStackView: UIStackView?
 
+  let resendButton = UIButton(type: .system).then {
+    $0.setTitle("재전송", for: .normal)
+    $0.titleLabel?.font = .pretendard(size: 13, weight: .medium)
+    $0.setTitleColor(.grayScale900, for: .normal)
+    $0.isHidden = true
+  }
+
+  private var tfTrailingToTimer: Constraint?
+  private var tfTrailingToResend: Constraint?
+
   private var timerColonLabel: UILabel?
   private var timerNormalColor: UIColor = .grayScale700
   private var timerWarningColor: UIColor = .systemWarning
@@ -46,6 +56,8 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
 
   private var timerMirror: Timer?
   private var lastTimerText: String?
+
+  public let resendTap = PublishSubject<Void>()
 
   private let descriptionTitleLabel = UILabel().then {
     $0.text = "입력한 메일 주소로 인증 코드를 보냈어요"
@@ -202,6 +214,10 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
     }
   }
 
+  @objc private func handleResendTap() {
+    resendTap.onNext(())
+  }
+
   public func attachCodeTimerLabel(_ label: UILabel) {
     let timerFont = UIFont.pretendard(size: 13, weight: .medium)
     self.timerNormalColor = label.textColor ?? .grayScale700
@@ -252,6 +268,13 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
     [min10, min1, colon, sec10, sec1].forEach { stack.addArrangedSubview($0) }
     self.timerDigitLabels = [min10, min1, sec10, sec1]
 
+    codeContainer.addSubview(resendButton)
+    resendButton.addTarget(self, action: #selector(handleResendTap), for: .touchUpInside)
+    resendButton.snp.makeConstraints { make in
+      make.trailing.equalToSuperview().inset(20)
+      make.centerY.equalToSuperview()
+    }
+
     let initial = label.text ?? "02:59"
     self.lastTimerText = initial
     self.setTimerText(initial)
@@ -274,9 +297,16 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
 
     codeTextField.snp.remakeConstraints { make in
       make.leading.equalToSuperview().inset(20)
-      make.trailing.equalTo(stack.snp.leading).offset(-10)
       make.centerY.equalToSuperview()
     }
+    codeTextField.snp.makeConstraints { make in
+      self.tfTrailingToTimer = make.trailing.equalTo(stack.snp.leading).offset(-10).constraint
+    }
+    codeTextField.snp.makeConstraints { make in
+      self.tfTrailingToResend = make.trailing.equalTo(resendButton.snp.leading).offset(-10).constraint
+    }
+    self.tfTrailingToTimer?.activate()
+    self.tfTrailingToResend?.deactivate()
   }
 
   public func setTimerText(_ text: String) {
@@ -288,6 +318,11 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
     timerDigitLabels[2].text = String(arr[2])
     timerDigitLabels[3].text = String(arr[3])
     applyTimerColor(forSeconds: seconds(from: text))
+    if let secs = seconds(from: text), secs <= 0 {
+      showResendButton()
+    } else {
+      showTimer()
+    }
   }
 
   private func seconds(from text: String) -> Int? {
@@ -310,6 +345,20 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
     }
     timerDigitLabels.forEach { $0.textColor = color }
     timerColonLabel?.textColor = color
+  }
+
+  private func showResendButton() {
+    timerStackView?.isHidden = true
+    resendButton.isHidden = false
+    tfTrailingToTimer?.deactivate()
+    tfTrailingToResend?.activate()
+  }
+
+  private func showTimer() {
+    resendButton.isHidden = true
+    timerStackView?.isHidden = false
+    tfTrailingToResend?.deactivate()
+    tfTrailingToTimer?.activate()
   }
 
   @objc private func codeEditingChanged() {
@@ -340,7 +389,13 @@ final class SignupMailConfirmView: UIView, UITextFieldDelegate {
       .disposed(by: disposeBag)
   }
 
+  public func resetTimer(to text: String = "02:59") {
+    showTimer()
+    setTimerText(text)
+  }
+
   deinit {
     timerMirror?.invalidate()
   }
 }
+
