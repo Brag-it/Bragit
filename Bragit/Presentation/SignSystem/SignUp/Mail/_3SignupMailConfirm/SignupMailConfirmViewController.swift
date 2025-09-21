@@ -197,6 +197,8 @@ final class SignupMailConfirmViewController: UIViewController, View {
 
             let session = try await owner.supabase.auth.session
             let userId = session.user.id.uuidString
+            @LocalStorage(location: .nowUser) var nowUserId: String?
+            nowUserId = userId
             UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
 
             let pendingPassword: String? = KeychainHelper.get(forKey: "pendingPassword")
@@ -372,4 +374,3 @@ final class SignupMailConfirmViewController: UIViewController, View {
     view.endEditing(true)
   }
 }
-

@@ -90,6 +90,7 @@ final class SignupAppleTermsReactor: Reactor, Stepper {
             print("[SignupAppleTerms] Upsert success")
 
             self.nowUserId = userId
+            UserDefaults.standard.set(userId, forKey: LocalStorageCase.nowUser.rawValue)
             self.steps.accept(AppStep.signupImageUpload)
             observer.onCompleted()
           } catch {
@@ -108,8 +109,5 @@ final class SignupAppleTermsReactor: Reactor, Stepper {
   }
 
   // MARK: - Reduce
-  func reduce(state: State, mutation: Mutation) -> State {
-    var state = state
-    return state
-  }
+  func reduce(state: State, mutation: Mutation) -> State {}
 }
