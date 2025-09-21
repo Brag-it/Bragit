@@ -175,6 +175,7 @@ final class SignupMailInfoViewController: UIViewController, View {
       nicknameValidFromState
     ) { $0 && $1 && $2 && $3 }
     .distinctUntilChanged()
+    .observe(on: MainScheduler.instance)
     .bind(with: self) { owner, enabled in
       owner.rootView.setNextEnabled(enabled)
     }
