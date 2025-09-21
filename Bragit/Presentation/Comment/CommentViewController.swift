@@ -63,6 +63,14 @@ final class CommentViewController: UIViewController, View {
   private let commentTextView = UITextView()
   private let sendButton = UIButton(type: .custom)
 
+  private let placeholderLabel = UILabel().then {
+    $0.text = "칭찬을 해보세요!"
+    $0.font = .pretendard(size: 15, weight: .regular)
+    $0.textColor = .grayScale400
+    $0.numberOfLines = 1
+    $0.isUserInteractionEnabled = false
+  }
+
   private lazy var dismissTapGesture: UITapGestureRecognizer = {
     let tap = UITapGestureRecognizer()
     tap.cancelsTouchesInView = false
@@ -127,6 +135,7 @@ final class CommentViewController: UIViewController, View {
     bar.addSubview(sendImageView)
     bar.addSubview(sendButton)
     textContainer.addSubview(commentTextView)
+    textContainer.addSubview(placeholderLabel)
     textContainer.addSubview(bottomBarTapButton)
 
     let initialBarHalf: CGFloat = 27
@@ -167,6 +176,11 @@ final class CommentViewController: UIViewController, View {
     commentTextView.snp.makeConstraints {
       $0.edges.equalToSuperview()
     }
+    placeholderLabel.snp.makeConstraints {
+      $0.top.equalTo(commentTextView.snp.top).offset(10)
+      $0.leading.equalToSuperview().inset(10)
+      $0.trailing.lessThanOrEqualToSuperview().inset(34)
+    }
 
     bottomBarTapButton.snp.makeConstraints {
       $0.top.bottom.leading.equalToSuperview()
@@ -178,6 +192,8 @@ final class CommentViewController: UIViewController, View {
     bar.bringSubviewToFront(sendButton)
 
     updateLockVisibility(visible: false)
+
+    updatePlaceholderVisibility()
 
     return bar
   }()
@@ -200,6 +216,7 @@ final class CommentViewController: UIViewController, View {
 
     // 초기 높이 보정
     adjustInputHeight(animated: false)
+    updatePlaceholderVisibility()
   }
 
   private func setupLayout() {
@@ -315,6 +332,7 @@ final class CommentViewController: UIViewController, View {
         self.commentTextView.text = ""
         self.commentTextView.resignFirstResponder()
         self.adjustInputHeight(animated: true)
+        self.updatePlaceholderVisibility()
       }
       .bind(to: reactor.action)
       .disposed(by: disposeBag)
@@ -524,6 +542,7 @@ final class CommentViewController: UIViewController, View {
         guard let self else { return }
         self.commentTextView.text = ""
         self.adjustInputHeight(animated: true)
+        self.updatePlaceholderVisibility()
 
         if self.tableView.numberOfRows(inSection: 0) > 0 {
           self.tableView.scrollToRow(
@@ -588,6 +607,11 @@ final class CommentViewController: UIViewController, View {
     } else {
       updates()
     }
+  }
+
+  private func updatePlaceholderVisibility() {
+    let text = commentTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    placeholderLabel.isHidden = !text.isEmpty || commentTextView.isFirstResponder
   }
 }
 
@@ -731,6 +755,7 @@ extension CommentViewController: UITextViewDelegate {
         textView.text = ""
         textView.resignFirstResponder()
         adjustInputHeight(animated: true)
+        updatePlaceholderVisibility()
       }
       return false
     }
@@ -739,14 +764,17 @@ extension CommentViewController: UITextViewDelegate {
 
   func textViewDidChange(_ textView: UITextView) {
     adjustInputHeight(animated: true)
+    updatePlaceholderVisibility()
   }
 
   func textViewDidBeginEditing(_ textView: UITextView) {
     bottomBarTapButton.isUserInteractionEnabled = false
+    updatePlaceholderVisibility()
   }
 
   func textViewDidEndEditing(_ textView: UITextView) {
     bottomBarTapButton.isUserInteractionEnabled = true
+    updatePlaceholderVisibility()
   }
 }
 
