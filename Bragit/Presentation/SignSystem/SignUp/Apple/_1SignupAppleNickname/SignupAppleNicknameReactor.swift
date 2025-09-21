@@ -79,7 +79,6 @@ final class SignupAppleNicknameReactor: Reactor, Stepper {
         ])
       }
 
-      // Regex validation: 2-8 characters, no spaces
       guard AppleInfoValidator.isValidNickname(nickname) else {
         return .concat([
           .just(Mutation.setStatusText("형식에 맞지 않는 닉네임입니다")),
@@ -88,35 +87,31 @@ final class SignupAppleNicknameReactor: Reactor, Stepper {
         ])
       }
 
-      // Loading state
       let start = Observable.concat([
         .just(Mutation.setStatusText("닉네임 확인 중...")),
         .just(Mutation.setStatusStyle(.loading)),
         .just(Mutation.setNextEnabled(false))
       ])
 
-      // Cancel previous check and increment generation (MailInfo style)
       nicknameCheckTask?.cancel()
       nicknameCheckGeneration &+= 1
       let currentGen = nicknameCheckGeneration
 
-      // Supabase duplication check
       let check = Observable<Mutation>.create { [weak self] observer in
         guard let self = self else { return Disposables.create() }
-        // Start a cancellable Task and store it (MailInfo style)
         let task = Task { [weak self] in
           guard let self = self else { return }
           do {
+            let normalized = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
             struct Row: Decodable { let nickname: String }
             let rows: [Row] = try await self.supabase
               .from("User_Info")
               .select("nickname")
-              .eq("nickname", value: nickname)
+              .ilike("nickname", pattern: normalized)
               .limit(1)
               .execute()
               .value
 
-            // Ensure this result is still relevant
             guard !Task.isCancelled, currentGen == self.nicknameCheckGeneration else {
               observer.onCompleted()
               return
@@ -135,7 +130,6 @@ final class SignupAppleNicknameReactor: Reactor, Stepper {
             }
             observer.onCompleted()
           } catch {
-            // Ensure this error is still relevant
             guard !Task.isCancelled, currentGen == self.nicknameCheckGeneration else {
               observer.onCompleted()
               return
@@ -169,3 +163,4 @@ final class SignupAppleNicknameReactor: Reactor, Stepper {
     return newState
   }
 }
+

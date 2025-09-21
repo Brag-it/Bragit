@@ -19,10 +19,13 @@ final class SignupMailInfoReactor: Reactor, Stepper {
     case checkEmail(String)
     case tapNext(mail: String, password: String, nickname: String)
     case tapBack
+    case validateNickname(String)
   }
 
   enum Mutation {
     case setMailStatus(style: MailStatusStyle, text: String)
+    case setNicknameChecking(Bool)
+    case setNickname(valid: Bool, text: String)
   }
 
   enum MailStatusStyle {
@@ -35,12 +38,15 @@ final class SignupMailInfoReactor: Reactor, Stepper {
   struct State {
     var mailStatusStyle: MailStatusStyle = .none
     var mailStatusText: String = " "
+    var nicknameValid: Bool = false
+    var nicknameStatusText: String = " "
   }
 
   let initialState: State = State()
   let steps = PublishRelay<Step>()
 
   @Dependency(\.supabase) private var supabase
+  @Dependency(\.userManager) private var userManager
 
   // MARK: - Mutate
   func mutate(action: Action) -> Observable<Mutation> {
@@ -70,18 +76,50 @@ final class SignupMailInfoReactor: Reactor, Stepper {
         return Disposables.create { task.cancel() }
       }
 
+    case .validateNickname(let raw):
+      let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+      if name.isEmpty {
+        return .concat([
+          .just(.setNickname(valid: false, text: " ")),
+          .just(.setNicknameChecking(false)),
+        ])
+      }
+      if !AppleInfoValidator.isValidNickname(name) {
+        return .just(.setNickname(valid: false, text: "사용 불가한 닉네임입니다"))
+      }
+      let start = Observable.just(Mutation.setNicknameChecking(true))
+      let check = userManager.rxhasNickName(nickName: name)
+        .map { isTaken in
+          isTaken
+            ? Mutation.setNickname(
+              valid: false,
+              text: "사용 중인 닉네임입니다"
+            )
+            : Mutation.setNickname(valid: true, text: "사용 가능한 닉네임입니다")
+        }
+        .catch { _ in
+          .just(
+            Mutation.setNickname(
+              valid: false,
+              text: "닉네임 확인 실패"
+            )
+          )
+        }
+      let end = Observable.just(Mutation.setNicknameChecking(false))
+      return .concat([start, check, end])
+
     case .tapNext(let mail, let password, let nickname):
       let trimmedMail = mail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
       let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
       let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmedMail.isEmpty, !trimmedPassword.isEmpty, !trimmedNickname.isEmpty else { return .empty() }
-        let info = UserRegistrationInfo(
-          mail: mail,
-          password: password,
-          nickname: nickname,
-          isAppleLogin: false,
-          refreshToken: nil
-        )
+      let info = UserRegistrationInfo(
+        mail: mail,
+        password: password,
+        nickname: nickname,
+        isAppleLogin: false,
+        refreshToken: nil
+      )
 
       return Observable.create { [weak self] observer in
         guard let self else { return Disposables.create() }
@@ -105,6 +143,15 @@ final class SignupMailInfoReactor: Reactor, Stepper {
     case .setMailStatus(let style, let text):
       newState.mailStatusStyle = style
       newState.mailStatusText = text
+
+    case .setNicknameChecking(let flag):
+      if flag {
+        newState.nicknameStatusText = "중복 확인 중..."
+      }
+
+    case .setNickname(let valid, let text):
+      newState.nicknameValid = valid
+      newState.nicknameStatusText = text
     }
     return newState
   }

@@ -18,6 +18,11 @@ final class SignupMailInfoViewController: UIViewController, View {
   var disposeBag = DisposeBag()
   private let rootView = SignupMailInfoView()
 
+  private struct NicknameStatus: Equatable {
+    let valid: Bool
+    let text: String
+  }
+
   override func loadView() {
     self.view = rootView
   }
@@ -129,21 +134,45 @@ final class SignupMailInfoViewController: UIViewController, View {
       .startWith(false)
       .share(replay: 1)
 
-    let nicknameValid =
-      nicknameEditingEnd
+    let nicknameOnEnd = nicknameEditingEnd
       .withLatestFrom(nicknameText)
-      .map { AppleInfoValidator.isValidNickname($0) }
-      .do { [weak self] isValid in
-        self?.rootView.showNicknameValidity(isValid: isValid)
-      }
-      .startWith(false)
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .share(replay: 1)
+
+    nicknameOnEnd
+      .bind(with: self) { owner, name in
+        owner.reactor?.action.onNext(.validateNickname(name))
+      }
+      .disposed(by: disposeBag)
+
+    let nicknameStatusStream = reactor.state
+      .map { state -> NicknameStatus in
+        NicknameStatus(valid: state.nicknameValid, text: state.nicknameStatusText)
+      }
+      .distinctUntilChanged()
+      .observe(on: MainScheduler.instance)
+
+    nicknameStatusStream
+      .bind(with: self) { owner, status in
+        let text = status.text
+        let style: SignupMailInfoView.NicknameStatusStyle
+        switch text {
+        case "중복 확인 중...": style = .loading
+        case "사용 가능한 닉네임입니다": style = .accept
+        case " ": style = .none
+        default: style = .reject
+        }
+        owner.rootView.setNicknameStatus(style: style, message: text)
+      }
+      .disposed(by: disposeBag)
+
+    let nicknameValidFromState = reactor.state.map { $0.nicknameValid }.distinctUntilChanged().share(replay: 1)
 
     Observable.combineLatest(
       mailValid,
       passwordValid,
       confirmMatched,
-      nicknameValid
+      nicknameValidFromState
     ) { $0 && $1 && $2 && $3 }
     .distinctUntilChanged()
     .bind(with: self) { owner, enabled in
@@ -152,3 +181,4 @@ final class SignupMailInfoViewController: UIViewController, View {
     .disposed(by: disposeBag)
   }
 }
+

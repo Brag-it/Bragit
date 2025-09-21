@@ -236,7 +236,6 @@ final class SignupMailInfoView: UIView {
   }
 
   func showConfirmMatch(isMatched: Bool) {
-    // If the confirm field is empty, don't perform or reflect match validation
     let raw = rePwTextField.text ?? ""
     let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
     if text.isEmpty {
@@ -264,6 +263,31 @@ final class SignupMailInfoView: UIView {
     nicknameCheckIcon.image = (isValid ? UIImage.accept : UIImage.reject).withRenderingMode(.alwaysOriginal)
     nicknameCheckLabel.text = isValid ? "사용 가능한 닉네임입니다" : "사용 불가한 닉네임입니다"
     nicknameCheckLabel.textColor = isValid ? .systemSafe : .systemDanger
+  }
+
+  enum NicknameStatusStyle { case none, loading, accept, reject }
+
+  func setNicknameStatus(style: NicknameStatusStyle, message: String) {
+    switch style {
+    case .none:
+      nicknameCheckIcon.isHidden = true
+      nicknameCheckLabel.text = " "
+    case .loading:
+      nicknameCheckIcon.isHidden = false
+      nicknameCheckIcon.image = UIImage.loading.withRenderingMode(.alwaysOriginal)
+      nicknameCheckLabel.text = message
+      nicknameCheckLabel.textColor = .systemWarning
+    case .accept:
+      nicknameCheckIcon.isHidden = false
+      nicknameCheckIcon.image = UIImage.accept.withRenderingMode(.alwaysOriginal)
+      nicknameCheckLabel.text = message
+      nicknameCheckLabel.textColor = .systemSafe
+    case .reject:
+      nicknameCheckIcon.isHidden = false
+      nicknameCheckIcon.image = UIImage.reject.withRenderingMode(.alwaysOriginal)
+      nicknameCheckLabel.text = message
+      nicknameCheckLabel.textColor = .systemDanger
+    }
   }
 
   func setNextEnabled(_ enabled: Bool) {
