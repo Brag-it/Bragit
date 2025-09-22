@@ -5,10 +5,10 @@
 //  Created by luca on 8/21/25.
 //
 
-import AuthenticationServices
-import CryptoKit
 import UIKit
 
+import AuthenticationServices
+import CryptoKit
 import ReactorKit
 import RxCocoa
 import RxSwift
@@ -22,7 +22,7 @@ final class LoginViewController: UIViewController, View {
   var disposeBag = DisposeBag()
 
   // MARK: - 임시 버튼
-  private let nextButton = UIButton(type: .system).then {
+  private let debugButton = UIButton(type: .system).then {
     $0.setTitle("Next", for: .normal)
     $0.isHidden = true
   }
@@ -33,49 +33,69 @@ final class LoginViewController: UIViewController, View {
 
   // MARK: UI
   // 버튼은 어차피 나중에 api로 제공되니 임시로 넣은 것
-  let googleButton = UIButton(type: .system).then {
-    $0.layer.cornerRadius = 12
-    $0.backgroundColor = .white
-    $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
-    $0.setTitle("Google로 로그인(아직)", for: .normal)
-    $0.isEnabled = false
-    $0.isHidden = true
-  }
+  // let googleButton = UIButton(type: .system).then {
+  //   $0.layer.cornerRadius = 12
+  //   $0.backgroundColor = .white
+  //   $0.layer.borderColor = UIColor(named: "grayScale100")?.cgColor
+  //   $0.setTitle("Google로 로그인(아직)", for: .normal)
+  //   $0.isEnabled = false
+  //   $0.isHidden = true
+  // }
 
-  let kakaoButton = UIButton(type: .system).then {
-    $0.layer.cornerRadius = 12
-    $0.backgroundColor = UIColor(red: 0.996, green: 0.898, blue: 0, alpha: 1)
-    $0.setTitle("카카오로 로그인􀀲", for: .normal)
-    $0.isEnabled = false
-    $0.isHidden = true
-  }
+  // let kakaoButton = UIButton(type: .system).then {
+  //   $0.layer.cornerRadius = 12
+  //   $0.backgroundColor = UIColor(red: 0.996, green: 0.898, blue: 0, alpha: 1)
+  //   $0.setTitle("카카오로 로그인􀀲", for: .normal)
+  //   $0.isEnabled = false
+  //   $0.isHidden = true
+  // }
 
-  let appleButton = ASAuthorizationAppleIDButton(type: .signIn, style: .black).then {
-    $0.cornerRadius = 12
-  }
+  // let appleButton = ASAuthorizationAppleIDButton(type: .signIn, style: .black).then {
+  //   $0.cornerRadius = 12
+  // }
 
-  let mailButton = UIButton(type: .system).then {
-    var config = UIButton.Configuration.gray()
-    config.title = "이메일로 로그인"
-    config.image = .mail
-    config.imagePlacement = .leading
-    config.imagePadding = 5
-    $0.titleLabel?.font = .pretendard(size: 14, weight: .medium)
-    $0.setTitleColor(.grayScale700, for: .normal)
-    $0.configuration = config
-    $0.layer.borderColor = UIColor.grayScale100.cgColor
-    $0.layer.cornerRadius = 12
-    $0.backgroundColor = .grayScale100
-    $0.isEnabled = true
-    $0.isHidden = false
-  }
+  private let appleButton = SignButton(
+    title: "Apple로 로그인",
+    icon: .apple,
+    backgroundColor: .black,
+    foregroundColor: .white
+  )
 
-  let signUpButton = UIButton(type: .system).then {
-    $0.setTitle("회원 가입하기", for: .normal)
-    $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
-    $0.isEnabled = true
-    $0.isHidden = false
-  }
+  private let mailButton = SignButton(
+    title: "이메일로 로그인",
+    icon: .mail,
+    backgroundColor: .clear,
+    foregroundColor: .grayScale600
+  )
+
+  private let signUpButton = SignButton(
+    title: "회원 가입하기",
+    icon: nil,
+    backgroundColor: .clear,
+    foregroundColor: .black
+  )
+  // let mailButton = UIButton(type: .system).then {
+  //   var config = UIButton.Configuration.gray()
+  //   $0.configuration = config
+  //   config.title = "이메일로 로그인"
+  //   config.image = .mail
+  //   config.imagePlacement = .leading
+  //   config.imagePadding = 5
+  //   $0.titleLabel?.font = .pretendard(size: 14, weight: .medium)
+  //   $0.setTitleColor(.grayScale700, for: .normal)
+  //   $0.layer.borderColor = UIColor.grayScale100.cgColor
+  //   $0.layer.cornerRadius = 12
+  //   $0.backgroundColor = .grayScale100
+  //   $0.isEnabled = true
+  //   $0.isHidden = false
+  // }
+
+  // let signUpButton = UIButton(type: .system).then {
+  //   $0.setTitle("회원 가입하기", for: .normal)
+  //   $0.setTitleColor(UIColor(red: 0.439, green: 0.439, blue: 0.439, alpha: 1), for: .normal)
+  //   $0.isEnabled = true
+  //   $0.isHidden = false
+  // }
 
   init(reactor: MainLoginReactor) {
     super.init(nibName: nil, bundle: nil)
@@ -100,33 +120,11 @@ final class LoginViewController: UIViewController, View {
 
   // MARK: LAYOUT
   private func setupLayout() {
-    view.addSubview(nextButton)
-    //    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, kakaoButton, mailButton]).then {
-    let stack = UIStackView(arrangedSubviews: [appleButton, googleButton, mailButton]).then {
-      $0.axis = .vertical
-      $0.spacing = 10
-      $0.alignment = .fill
-      $0.distribution = .fill
-    }
+
+    // view.addSubview(debugButton)
 
     view.addSubview(logo)
-    view.addSubview(stack)
-    view.addSubview(signUpButton)
-    if var config = mailButton.configuration {
-      config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-        var out = incoming
-        out.font = self.loginFont
-        return out
-      }
-      mailButton.configuration = config
-    }
-    signUpButton.titleLabel?.font = signUpFont
-
-    [nextButton, appleButton, googleButton, kakaoButton, mailButton].forEach {
-      $0.snp.makeConstraints {
-        $0.height.equalTo(48)
-      }
-    }
+    [debugButton, appleButton, mailButton, signUpButton].forEach { view.addSubview($0) }
 
     logo.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide).inset(40)
@@ -134,26 +132,27 @@ final class LoginViewController: UIViewController, View {
       $0.height.equalTo(358)
     }
 
-    nextButton.snp.makeConstraints {
-      $0.bottom.equalTo(stack.snp.top).offset(-32)
-      $0.leading.trailing.equalTo(stack)
-    }
-
-    stack.snp.makeConstraints {
-      $0.bottom.equalTo(signUpButton.snp.top).offset(-32)
-      $0.leading.trailing.equalToSuperview().inset(20)
-    }
-
+    //아래부터 생성됨
     signUpButton.snp.makeConstraints {
-      $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
-      $0.centerX.equalToSuperview()
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
+    }
+
+    mailButton.snp.makeConstraints {
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalTo(signUpButton.snp.top).offset(-20)
+    }
+
+    appleButton.snp.makeConstraints {
+      $0.leading.trailing.equalToSuperview().inset(20)
+      $0.bottom.equalTo(mailButton.snp.top).offset(-10)
     }
   }
 
   // MARK: Reactor Binding
   func bind(reactor: MainLoginReactor) {
     // 디버그 강제 홈 이동 버튼
-    nextButton.rx.tap
+    debugButton.rx.tap
       .subscribe(with: reactor) { reactor, _ in
         reactor.action.onNext(.tapNext)
       }
@@ -204,7 +203,8 @@ final class LoginViewController: UIViewController, View {
 // MARK: Apple UI
 extension LoginViewController:
   ASAuthorizationControllerDelegate,
-  ASAuthorizationControllerPresentationContextProviding {
+  ASAuthorizationControllerPresentationContextProviding
+{
   private func startAppleFlow(hashedNonce: String) {
     let request = ASAuthorizationAppleIDProvider().createRequest()
     request.requestedScopes = [.fullName, .email]
@@ -218,7 +218,7 @@ extension LoginViewController:
   }
 
   private func showEmailLoginAlert() {
-  //
+    //
   }
 
   func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
@@ -268,7 +268,8 @@ extension LoginViewController:
     }
     guard
       let authCodeData = credential.authorizationCode,
-      let authCode = String(data: authCodeData, encoding: .utf8) else { return }
+      let authCode = String(data: authCodeData, encoding: .utf8)
+    else { return }
     reactor.action.onNext(.tapApple(idToken: idToken, nonce: hashedNonce, mail: initialMail, authCode: authCode))
   }
 }
